@@ -42,7 +42,7 @@ See [[World Progression]], [[Regions and Biomes]], [[Enemy Progression]].
 See [[Character Progression]], [[Attributes]], [[Classes and Specializations]], [[Class Resources]].
 
 ## Statistics
-Initial attributes: Strength, Dexterity, Constitution, Intelligence, Willpower, and Ego. The stat model distinguishes base attributes, derived combat statistics, offensive/defensive modifiers, resource statistics, and conditional effects. Effective stats combine progression, equipped items, talents, and temporary effects.
+The implemented foundation uses Health, Damage, Armor, Movement Speed, Attack Speed, and Dodge, with neutral multipliers for future skill costs, cooldowns, cast times, and durations. Native Minecraft attributes combine equipment and other native modifier sources. The current scope has no primary attributes, attribute points, talent system, or conditional modifier framework; broader progression notes remain roadmap material.
 
 See [[Statistics]], [[Stat Calculation Pipeline]].
 

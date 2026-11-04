@@ -10,8 +10,8 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Trusted logical-server API; callers must mark a containing inventory changed after mutation.
- * No detached page bank exists. A future equipment evaluator should read pages from equipped
- * stacks and discard its derived results on equipment changes, without mutating permanent profiles.
+ * No detached page bank exists. Native equipment attributes read the component and refresh on
+ * equipment changes, including in-place component changes, without mutating permanent profiles.
  */
 public final class AffixPages {
     private AffixPages() {}

@@ -1,5 +1,6 @@
 package dev.covenant.rpg;
 
+import dev.covenant.rpg.classes.PlayerClass;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -16,7 +17,23 @@ public final class PlayerProfiles {
         return player.getData(RpgData.PROFILE);
     }
 
-    /** Called by a future, server-validated character creation flow. Rejects repeat initialization. */
+    /**
+     * Resolved class for gameplay or owner-side UI; empty for uninitialized or unknown saved IDs.
+     * The raw selected ID remains available through get(player).selectedClass().
+     */
+    public static Optional<PlayerClass> getSelectedClass(Player player) {
+        return get(player).selectedClass().flatMap(PlayerClass::find);
+    }
+
+    /**
+     * One-time selection of a defined class. Creates the existing profile at level 1, XP 0,
+     * without a specialization or resource. Rejects already-created characters.
+     */
+    public static void selectClass(ServerPlayer player, PlayerClass selectedClass) {
+        initialize(player, selectedClass.id(), Optional.empty(), 0);
+    }
+
+    /** Trusted storage API for server integrations, including IDs not in the built-in class catalog. */
     public static void initialize(ServerPlayer player, Identifier selectedClass,
             Optional<Identifier> resourceType, double maximumResource) {
         requireServerThread(player);

@@ -2,6 +2,54 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Basic class definitions
+
+- `scripts/Dev.ps1 test`: all 10 required dedicated GameTests passed (nine authored
+  Covenant tests and the existing vanilla test). The new `class_foundation` test
+  exercises Stalker, Reaver, and Weaver through the registered command with no
+  operator permissions: discovery/completion, selection, invalid input, repeated
+  selection rejection, and rejection of non-player sources.
+- Each choice retains its exact existing-profile snapshot through actual player-file
+  save/load, the profile network codec, death cloning, and End-return cloning.
+  Unknown saved IDs remain unchanged and resolve without a fallback definition.
+  Bow, sword, and axe equipment remains usable for every class; selection adds no
+  resource or stat bonus. All class code loaded on the dedicated test server.
+- `scripts/Dev.ps1 build`: passed, including radial geometry checks. The production
+  JAR contains class definitions/commands and excludes test classes/resources.
+  JSON parsing, added-source whitespace checks, and `git diff --check` passed.
+- Real-client command presentation/translation and attachment delivery, actual
+  disconnect/reconnect, death, dimension travel, and full server restart with
+  players remain manual checks. The Prism JAR was not replaced.
+
+## RPG stat foundation
+
+- `scripts/Dev.ps1 test`: all 9 required dedicated GameTests passed (eight authored
+  Covenant tests plus the existing vanilla test). Four new tests exercise native
+  base values, flat/base-percent/total-percent order, independent affix entries,
+  equipment removal/replacement, in-place page updates, inventory/wrong-slot
+  exclusion, weapon attributes/recharge, repeated queries, transfers, breakage,
+  neutral/modified skill coefficients, external native modifier coexistence,
+  actual player-file stat reconstruction, and death/End clone fixtures.
+- Current health above the unequipped maximum initially failed a focused reload
+  regression (26 became 20). The narrow player-load Mixin repairs the vanilla
+  inventory/health load order. Tests now preserve both full and injured health
+  above base maximum, preserve End-return current health, remove stale bonuses on
+  death without gear, and restore full effective health with `keep_inventory`.
+- Deterministic dodge fixtures verify 0% and clamped 100%, actual melee/projectile
+  damage cancellation before armor durability/immunity, and fall/explosion/void
+  exclusions. Native sync flags include all new attributes and attack damage.
+- All new gameplay code loaded on the dedicated test server. Real-client delivery,
+  rendered tooltips, disconnect/reconnect, actual travel/death, complete server
+  restart with players, and unrelated mod compatibility remain manual checks.
+  Damage uses vanilla attack damage; arbitrary projectile/skill damage is not
+  rescaled. Jewelry/custom slot integration and acquisition/UI remain deferred.
+- `scripts/Dev.ps1 build`: passed, including radial geometry checks. Production
+  JAR inspection confirmed the stat classes, health-load Mixin, and its metadata
+  registration are present, with test classes/resources excluded. `git diff
+  --check`, new-source whitespace, and modified JSON resource checks passed.
+- The Prism instance was not replaced. See `RPG_STATS.md` for the complete stat
+  contract and API boundaries.
+
 ## RPG data foundation
 
 - `scripts/Dev.ps1 test`: passed. The dedicated GameTest server reported all

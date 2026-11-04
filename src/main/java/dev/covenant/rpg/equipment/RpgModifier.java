@@ -9,7 +9,9 @@ import net.minecraft.util.StringRepresentable;
 
 /**
  * One independent modifier of a namespaced RPG stat. Amounts are finite; multiplicative amounts
- * are fractions (0.10 means 10%). Evaluation and mapping to combat attributes are deferred.
+ * are fractions (0.10 means 10%). Stat IDs are Minecraft attribute registry IDs.
+ * Evaluation uses vanilla order: (base + sum(ADD)) * (1 + sum(MULTIPLY_BASE)),
+ * then each (1 + MULTIPLY_TOTAL), finally the attribute's range clamp.
  */
 public record RpgModifier(Identifier stat, Operation operation, double amount) {
     public static final Codec<RpgModifier> CODEC = ExtraCodecs.catchDecoderException(RecordCodecBuilder.create(i -> i.group(

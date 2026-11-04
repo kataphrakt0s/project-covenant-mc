@@ -25,8 +25,30 @@ an immutable, persistent, owner-synced NeoForge player attachment with death cop
 each page-bearing stack has maximum size 1. Equipment modifiers stay on items,
 separate from permanent character progression. Open namespaced categories use item
 tags for compatibility. No character creation UI, acquisition, random rolling,
-stat aggregation, combat changes, or accessory-mod integration exists yet.
+or accessory-mod integration exists yet.
 See `docs/RPG_DATA.md` for APIs, format contracts, and copy/split semantics.
+
+The initial class identities are **Stalker** (bow/ranged precision and distance),
+**Reaver** (dedicated melee), and **Weaver** (elemental offensive magic).
+`/covenant class` lists descriptions and the current choice; any player can choose
+once with `/covenant class select covenant:stalker` (or `reaver` / `weaver` in that
+namespace). Selection initializes the existing profile, without a new resource or
+progression system. Its saved class ID retains the profile's persistence and owner
+sync guarantees. Classes currently grant no bonuses, abilities, or equipment
+restrictions. `PlayerProfiles.getSelectedClass` resolves built-in definitions;
+unknown saved IDs are preserved without fallback. See `docs/RPG_DATA.md`.
+
+The deliberately small stat foundation uses native attributes for health, vanilla
+attack damage, armor, movement speed, and attack speed, plus player-only Dodge and
+four neutral skill multipliers (cost, cooldown, cast time, duration). Equipped
+pages contribute transient native modifiers in their matching vanilla slot;
+inventory pages do not. No effective equipment values are saved in profiles.
+The server handles dodge and equipment calculation; native attribute packets sync
+values. A narrow player-load Mixin and clone handler restore equipped max health
+before restoring current health, avoiding vanilla's early load clamp without
+duplicating saved health. There are no primary attributes, stat points, skills,
+or new resources in this implementation; earlier broader design notes are roadmap material.
+See `docs/RPG_STATS.md` for IDs, units, formulas, extension APIs, and boundaries.
 
 ## Identity and toolchain
 

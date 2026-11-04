@@ -1,8 +1,10 @@
 # RPG data architecture
 
-This is storage and server API infrastructure. Character creation screens, class definitions,
-XP curves, page acquisition, rolling/loot, accessory integrations, and effective stat evaluation
-are deferred. There are no gameplay packets, commands, tick scans, or combat attribute changes.
+This is storage and server API infrastructure with basic class identities and command selection.
+Character creation screens, XP curves, page acquisition, rolling/loot, and accessory integrations
+are deferred.
+Effective stat evaluation uses native equipment attributes; see [RPG_STATS.md](RPG_STATS.md).
+There are no custom gameplay packets or global tick scans.
 
 ## Permanent character state
 
@@ -10,8 +12,8 @@ are deferred. There are no gameplay packets, commands, tick scans, or combat att
 an immutable `CharacterProfile`: creation flag, level, current RPG experience balance (long),
 optional class/specialization/resource identifiers, and current/maximum resource (double units).
 These identifiers describe future RPG content, not item registry entries. A resource-less class
-has no resource type and both resource values are zero. Class selection must be validated against
-future class definitions by the server creation flow.
+has no resource type and both resource values are zero. Player-facing class selection validates
+against the built-in definitions on the logical server.
 
 New players get the uninitialized snapshot on login: false, level/XP/resource zero, no selections.
 `PlayerProfiles.initialize(ServerPlayer, ...)` creates level 1, XP 0, no specialization, and a full
@@ -25,6 +27,42 @@ progression. Vanilla player save/load stores the attachment. NeoForge sends owne
 on initial login, respawn, dimension transitions, and attachment replacement. Client UI can read
 `PlayerProfiles.get(player)`; it has no authority to submit progression changes. Mutation APIs
 require a logical server player and the server thread.
+
+## Class identities and selection
+
+The small built-in `PlayerClass` catalog defines stable IDs, localized names, and descriptions:
+
+| Saved ID | Name | Intended identity and equipment |
+| --- | --- | --- |
+| `covenant:stalker` | Stalker | Precision ranged damage and distance; bows and other ranged weapons. |
+| `covenant:reaver` | Reaver | Direct close-quarters damage; swords, axes, and other melee weapons. |
+| `covenant:weaver` | Weaver | Simple elemental offensive magic; magical equipment where supported. |
+
+Players use `/covenant class` to see their current class, descriptions, and the selection command.
+`/covenant class select covenant:stalker` (or `covenant:reaver` / `covenant:weaver`) selects once.
+Tab completion suggests IDs. Operator permission is unnecessary. Commands act only on the
+executing player; console calls, unknown IDs, and selection after character creation are rejected.
+There is no class switching/reset command or selection screen in this foundation.
+
+`PlayerProfiles.selectClass(ServerPlayer, PlayerClass)` creates the existing profile at level 1,
+XP 0, no specialization, no resource, and zero resource units. There is no separate class XP or
+level. Class IDs use the existing `class` field, so no schema migration is needed. Save/load,
+reconnect, death, and dimension changes use the same attachment persistence/copy/owner sync path.
+Nothing writes class identity or progression into Affix Pages.
+
+Other systems call `PlayerProfiles.getSelectedClass(player)` for an `Optional<PlayerClass>`;
+`PlayerClass.find(id)` resolves an ID, and `PlayerClass.all()` exposes immutable definitions.
+Uninitialized profiles and unknown saved IDs resolve empty. The raw ID remains available through
+`PlayerProfiles.get(player).selectedClass()`. Existing unknown IDs are neither rewritten nor
+treated as uninitialized; no automatic rename from earlier placeholder class IDs is performed.
+The low-level trusted `initialize`/`update` APIs still support open IDs for server integrations.
+
+Definitions are code-backed, with display text in `assets/covenant/lang/en_us.json`; there is no
+new datapack registry or reload framework. Add a catalog entry and translations to expose a future
+class in discovery/selection. Existing saved IDs must remain stable or receive an explicit migration.
+Classes provide query hooks for future content but no passive stat modifiers, equipment gates,
+skills, elemental abilities, specialization mechanics, or resource systems. Native attack damage
+does not provide a general ranged/elemental damage stat; no class bonus bridge is added here.
 
 ## Per-item Affix Pages
 
@@ -44,8 +82,9 @@ Each modifier has a stat identifier, operation (`add`, `multiply_base`, `multipl
 finite double amount. Multiplicative amounts are fractions: 0.10 represents 10%. Repeated stat
 entries are preserved; they are not collapsed into one bonus. Format limits are 64 affixes per
 page, 64 base modifiers, and 64 modifiers per affix, bounding serialized lists. Lists are copied
-and immutable, including nested affix lists. Future aggregation should use the equipped page UUID
-and affix/modifier position as source identity and evaluate operations consistently.
+and immutable, including nested affix lists. Native equipment aggregation uses the page UUID
+and affix/modifier position as stable source identity. Stat IDs resolve directly to attribute
+registry IDs; unknown IDs remain intact but inactive.
 
 `AffixPages.attach(ServerLevel, stack, category, modifiers, affixes)` checks the server thread,
 category compatibility, absence of a page, and item count exactly 1 before changing anything.
@@ -58,8 +97,8 @@ Moving slots, putting gear in containers, dropping/picking it up, player transfe
 and unequipping use Minecraft's existing component-bearing stacks. Item persistence and inventory
 network synchronization include both the page and max-stack override automatically. No owner,
 slot, or item-type lookup is used to find a page. No equipment modifiers are written into a
-permanent character profile. A future effective-stat evaluator must read current equipment and
-remove contributions when that equipment changes; no aggregation cache exists yet.
+permanent character profile. Native equipment updates remove and reconstruct transient attribute
+contributions when equipment or its components change; no custom aggregation cache exists.
 
 ### Copy and split contract
 
@@ -84,7 +123,8 @@ Categories are open `EquipmentCategory(Identifier)` values, not a closed enum or
 keys. Category `namespace:path` checks item tag `namespace:affix_compatible/path`. Unknown or empty
 tags deny compatibility; no universal fallback permits arbitrary gear. Multiple category tags may
 include an item, but the attached page has one chosen category. A tag reload never rewrites existing
-page data. Compatibility gates attachment; future equipment rules decide whether a page contributes.
+page data. Compatibility gates attachment; the page category selects its active equipment slot
+as documented in `RPG_STATS.md`. Custom/jewelry categories have no active slot mapping yet.
 
 Built-ins are `covenant:main_hand`, `off_hand`, `head_armor`, `body_armor`, `leg_armor`, `foot_armor`,
 `ring`, `necklace`, `accessory`, and `trinket`. Initial tags support vanilla tools/weapons, shields,
@@ -120,11 +160,16 @@ custom-category opt-in, stack copying/splitting, and invalid data. Test code/res
 `src/gameTest`, load only in that run configuration, and are excluded from the production JAR.
 The empty 5x5x5 NBT structure is a test fixture.
 
+The `class_foundation` GameTest exercises all three registered choices without operator permissions,
+command discovery/completion, invalid and repeated selections, non-player rejection, ordinary
+equipment use, actual player-file reload, death/End cloning, network codecs, and unknown saved IDs.
+
 These tests do not replace real-client login/reconnect, dimension travel, restart, GUI inventory,
-multiplayer trade, or creative-mode observations. Full combat/stat aggregation and unrelated mods'
-custom inventory implementations remain outside this stage.
+multiplayer trade, or creative-mode observations. Additional stat checks and combat/integration
+boundaries are documented in `RPG_STATS.md`; unrelated mods' custom inventories remain untested.
 
 API references: [NeoForge attachments](https://docs.neoforged.net/docs/datastorage/attachments/),
-[item components](https://docs.neoforged.net/docs/items/datacomponents/), and
+[item components](https://docs.neoforged.net/docs/items/datacomponents/),
+[commands](https://docs.neoforged.net/docs/misc/commands/), and
 [GameTests](https://docs.neoforged.net/docs/misc/gametest/), checked against the resolved
 Minecraft 26.1.2 / NeoForge 26.1.2.125 sources.

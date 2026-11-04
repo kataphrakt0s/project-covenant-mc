@@ -11,12 +11,15 @@ import dev.covenant.rpg.equipment.AffixPages;
 import dev.covenant.rpg.equipment.EquipmentCategory;
 import dev.covenant.rpg.equipment.PageProgression;
 import dev.covenant.rpg.equipment.RpgModifier;
+import dev.covenant.rpg.stats.RpgStats;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.NbtOps;
@@ -27,10 +30,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.bus.api.IEventBus;
@@ -48,6 +56,11 @@ public final class RpgGameTests {
         FUNCTIONS.register("item_lifecycle", () -> RpgGameTests::itemLifecycle);
         FUNCTIONS.register("stack_safety", () -> RpgGameTests::stackSafety);
         FUNCTIONS.register("data_validation", () -> RpgGameTests::dataValidation);
+        FUNCTIONS.register("stat_equipment", () -> RpgGameTests::statEquipment);
+        FUNCTIONS.register("skill_stats", () -> RpgGameTests::skillStats);
+        FUNCTIONS.register("stat_persistence", () -> RpgGameTests::statPersistence);
+        FUNCTIONS.register("dodge", () -> RpgGameTests::dodge);
+        FUNCTIONS.register("class_foundation", () -> ClassGameTests::run);
     }
 
     public RpgGameTests(IEventBus modBus) { FUNCTIONS.register(modBus); }
@@ -213,6 +226,244 @@ public final class RpgGameTests {
         helper.succeed();
     }
 
+    private static void statEquipment(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        near(player.getAttributeValue(RpgStats.HEALTH), 20, "Base health");
+        near(player.getAttributeValue(RpgStats.DAMAGE), 1, "Base attack damage");
+        near(player.getAttributeValue(RpgStats.ARMOR), 0, "Base armor");
+        near(player.getAttributeValue(RpgStats.MOVEMENT_SPEED), 0.1, "Base movement speed");
+        near(player.getAttributeValue(RpgStats.ATTACK_SPEED), 4, "Base attack speed");
+        near(player.getAttributeValue(RpgStats.DODGE), 0, "Base dodge");
+        check(RpgStats.DAMAGE.value().isClientSyncable(), "Attack damage must sync too");
+
+        ItemStack first = new ItemStack(Items.IRON_CHESTPLATE);
+        var page = AffixPages.attach(helper.getLevel(), first, EquipmentCategory.BODY_ARMOR,
+                List.of(stat(RpgStats.HEALTH, RpgModifier.Operation.ADD, 4),
+                        stat(RpgStats.HEALTH, RpgModifier.Operation.ADD, 4),
+                        stat(RpgStats.HEALTH, RpgModifier.Operation.MULTIPLY_BASE, 0.25),
+                        stat(RpgStats.HEALTH, RpgModifier.Operation.MULTIPLY_TOTAL, 0.1),
+                        stat(RpgStats.ARMOR, RpgModifier.Operation.ADD, 3),
+                        stat(RpgStats.MOVEMENT_SPEED, RpgModifier.Operation.MULTIPLY_BASE, 0.2),
+                        new RpgModifier(id("unknown_future_stat"), RpgModifier.Operation.ADD, 99)),
+                List.of(new Affix(id("healthy"), id("common"), 1,
+                        List.of(stat(RpgStats.HEALTH, RpgModifier.Operation.MULTIPLY_TOTAL, 0.2)))));
+        player.getInventory().setItem(5, first);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.HEALTH), 20, "Inventory gear must not contribute");
+        first = player.getInventory().removeItem(5, 1);
+        player.setItemSlot(EquipmentSlot.MAINHAND, first);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.HEALTH), 20, "Chest page must not work in hand");
+        player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        player.setItemSlot(EquipmentSlot.CHEST, first);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.HEALTH), 46.2, "All three operations and independent affix modifiers");
+        near(player.getAttributeValue(RpgStats.ARMOR), 9, "Vanilla chest armor plus page armor");
+        near(player.getAttributeValue(RpgStats.MOVEMENT_SPEED), 0.12, "Movement percent modifier");
+        for (int i = 0; i < 10; i++) {
+            first.getAttributeModifiers();
+            player.tick();
+            near(player.getAttributeValue(RpgStats.HEALTH), 46.2, "Repeated queries/ticks must not compound");
+        }
+
+        ItemStack weapon = new ItemStack(Items.IRON_SWORD);
+        player.setItemSlot(EquipmentSlot.MAINHAND, weapon);
+        player.tick();
+        double weaponDamage = player.getAttributeValue(RpgStats.DAMAGE);
+        double weaponSpeed = player.getAttributeValue(RpgStats.ATTACK_SPEED);
+        AffixPages.attach(helper.getLevel(), weapon, EquipmentCategory.MAIN_HAND,
+                List.of(stat(RpgStats.DAMAGE, RpgModifier.Operation.ADD, 2),
+                        stat(RpgStats.ATTACK_SPEED, RpgModifier.Operation.ADD, 0.5)), List.of());
+        player.tick();
+        near(player.getAttributeValue(RpgStats.DAMAGE), weaponDamage + 2, "Page adds to native weapon damage");
+        near(player.getAttributeValue(RpgStats.ATTACK_SPEED), weaponSpeed + 0.5, "Native attack speed");
+        near(player.getCurrentItemAttackStrengthDelay(), 20 / (weaponSpeed + 0.5), "Native attack recharge uses stat");
+
+        ItemStack second = new ItemStack(Items.IRON_CHESTPLATE);
+        AffixPages.attach(helper.getLevel(), second, EquipmentCategory.BODY_ARMOR,
+                List.of(stat(RpgStats.HEALTH, RpgModifier.Operation.ADD, 2)), List.of());
+        player.setItemSlot(EquipmentSlot.CHEST, second);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.HEALTH), 22, "Identical item with a different page replaces contribution");
+        near(player.getAttributeValue(RpgStats.MOVEMENT_SPEED), 0.1, "Old page attributes are removed");
+        AffixPages.update(helper.getLevel(), second,
+                List.of(stat(RpgStats.HEALTH, RpgModifier.Operation.ADD, 10)), List.of(), PageProgression.NONE);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.HEALTH), 30, "In-place component updates replace old modifiers");
+        player.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.HEALTH), 20, "Unequip health");
+        near(player.getAttributeValue(RpgStats.ARMOR), 0, "Unequip armor");
+        near(player.getAttributeValue(RpgStats.DAMAGE), 1, "Unequip weapon");
+        near(player.getAttributeValue(RpgStats.ATTACK_SPEED), 4, "Unequip attack speed");
+
+        var recipient = helper.makeMockPlayer(GameType.SURVIVAL);
+        SimpleContainer container = new SimpleContainer(9);
+        container.setItem(0, first);
+        recipient.setItemSlot(EquipmentSlot.CHEST, container.removeItem(0, 1));
+        recipient.tick();
+        checkPage(recipient.getItemBySlot(EquipmentSlot.CHEST), page);
+        near(recipient.getAttributeValue(RpgStats.HEALTH), 46.2, "Transferred page contributes to recipient");
+        check(PlayerProfiles.get(recipient).equals(CharacterProfile.UNINITIALIZED), "No equipment stats in profile");
+        var receivedGear = recipient.getItemBySlot(EquipmentSlot.CHEST);
+        receivedGear.setDamageValue(receivedGear.getMaxDamage());
+        recipient.tick();
+        near(recipient.getAttributeValue(RpgStats.HEALTH), 20, "Broken equipment stops contributing");
+        helper.succeed();
+    }
+
+    private static void skillStats(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        for (var coefficient : List.of(RpgStats.RESOURCE_COST, RpgStats.COOLDOWN,
+                RpgStats.CAST_TIME, RpgStats.SKILL_DURATION)) {
+            near(RpgStats.scaleSkillValue(player, coefficient, 10), 10, "Neutral skill coefficient");
+            check(coefficient.value().isClientSyncable(), "Skill attribute must sync");
+        }
+        ItemStack gear = new ItemStack(Items.IRON_HELMET);
+        AffixPages.attach(helper.getLevel(), gear, EquipmentCategory.HEAD_ARMOR,
+                List.of(stat(RpgStats.RESOURCE_COST, RpgModifier.Operation.MULTIPLY_BASE, -0.2),
+                        stat(RpgStats.COOLDOWN, RpgModifier.Operation.MULTIPLY_TOTAL, -0.25),
+                        stat(RpgStats.CAST_TIME, RpgModifier.Operation.ADD, -0.5),
+                        stat(RpgStats.SKILL_DURATION, RpgModifier.Operation.MULTIPLY_BASE, 0.5)), List.of());
+        player.setItemSlot(EquipmentSlot.HEAD, gear);
+        player.tick();
+        near(RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, 100), 80, "Resource cost reduction");
+        near(RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, 25), 20, "Different resource/base cost");
+        near(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, 40), 30, "Cooldown reduction");
+        near(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, 3), 1.5, "Cast time reduction");
+        near(RpgStats.scaleSkillValue(player, RpgStats.SKILL_DURATION, 8), 12, "Duration increase");
+        near(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, 0), 0, "Zero base stays zero");
+        var external = new AttributeModifier(id("test_external_source"), 0.5, AttributeModifier.Operation.ADD_VALUE);
+        player.getAttribute(RpgStats.RESOURCE_COST).addTransientModifier(external);
+        near(RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, 100), 120, "External native modifier combines with page");
+        player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        player.tick();
+        near(RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, 100), 150, "Unequip preserves external source");
+        player.getAttribute(RpgStats.RESOURCE_COST).removeModifier(external);
+        for (var coefficient : List.of(RpgStats.RESOURCE_COST, RpgStats.COOLDOWN,
+                RpgStats.CAST_TIME, RpgStats.SKILL_DURATION)) {
+            near(RpgStats.scaleSkillValue(player, coefficient, 10), 10, "Unequip resets skill coefficient");
+        }
+        player.getAttribute(RpgStats.CAST_TIME).setBaseValue(-2);
+        near(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, 3), 0, "Negative coefficient clamps to zero");
+        expectFailure(() -> RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, -1));
+        expectFailure(() -> RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, Double.NaN));
+        helper.succeed();
+    }
+
+    @SuppressWarnings("removal")
+    private static void statPersistence(GameTestHelper helper) {
+        List<ServerPlayer> players = new ArrayList<>();
+        try {
+            var source = helper.makeMockServerPlayerInLevel();
+            players.add(source);
+            ItemStack gear = new ItemStack(Items.IRON_CHESTPLATE);
+            var page = AffixPages.attach(helper.getLevel(), gear, EquipmentCategory.BODY_ARMOR,
+                    List.of(stat(RpgStats.HEALTH, RpgModifier.Operation.ADD, 6),
+                            stat(RpgStats.DODGE, RpgModifier.Operation.ADD, 0.25),
+                            stat(RpgStats.RESOURCE_COST, RpgModifier.Operation.MULTIPLY_BASE, -0.2)), List.of());
+            source.setItemSlot(EquipmentSlot.CHEST, gear);
+            source.doTick();
+            near(source.getAttributeValue(RpgStats.HEALTH), 26, "Equipped before save");
+            source.setHealth(26);
+            var list = helper.getLevel().getServer().getPlayerList();
+            list.saveAll();
+            var disk = list.loadPlayerData(source.nameAndId()).orElseThrow();
+            disk.remove("UUID");
+            var loaded = helper.makeMockServerPlayerInLevel();
+            players.add(loaded);
+            var reporter = new ProblemReporter.Collector();
+            loaded.load(TagValueInput.create(reporter, helper.getLevel().registryAccess(), disk));
+            check(reporter.isEmpty(), "Stat player-file decoding");
+            loaded.doTick();
+            checkPage(loaded.getItemBySlot(EquipmentSlot.CHEST), page);
+            near(loaded.getAttributeValue(RpgStats.HEALTH), 26, "File reload reconstructs equipment once");
+            near(loaded.getHealth(), 26, "Current health above unequipped maximum survives reload");
+            near(loaded.getAttributeValue(RpgStats.DODGE), 0.25, "Dodge reload");
+            near(RpgStats.scaleSkillValue(loaded, RpgStats.RESOURCE_COST, 50), 40, "Skill reload");
+            loaded.doTick();
+            near(loaded.getAttributeValue(RpgStats.HEALTH), 26, "Reload must not compound");
+            source.setHealth(23.5F);
+            var injured = helper.makeMockServerPlayerInLevel();
+            players.add(injured);
+            restore(helper, source, injured);
+            injured.doTick();
+            near(injured.getHealth(), 23.5, "Injured health above base maximum reloads without healing");
+            var endReturn = helper.makeMockServerPlayerInLevel();
+            players.add(endReturn);
+            endReturn.restoreFrom(source, true);
+            endReturn.doTick();
+            near(endReturn.getAttributeValue(RpgStats.HEALTH), 26, "End clone reconstructs retained equipment");
+            near(endReturn.getHealth(), 23.5, "End return preserves current health above base maximum");
+            var died = helper.makeMockServerPlayerInLevel();
+            players.add(died);
+            died.restoreFrom(source, false);
+            died.doTick();
+            near(died.getAttributeValue(RpgStats.HEALTH), 20, "Death without retained gear has no stale bonus");
+            near(died.getAttributeValue(RpgStats.DODGE), 0, "Death removes equipment dodge");
+            var rules = helper.getLevel().getGameRules();
+            boolean keepInventory = rules.get(GameRules.KEEP_INVENTORY);
+            try {
+                rules.set(GameRules.KEEP_INVENTORY, true, helper.getLevel().getServer());
+                var retained = helper.makeMockServerPlayerInLevel();
+                players.add(retained);
+                retained.restoreFrom(source, false);
+                retained.doTick();
+                near(retained.getAttributeValue(RpgStats.HEALTH), 26, "Retained equipment is reconstructed after death");
+                near(retained.getHealth(), 26, "Death with retained gear starts at effective full health");
+            } finally {
+                rules.set(GameRules.KEEP_INVENTORY, keepInventory, helper.getLevel().getServer());
+            }
+            loaded.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+            loaded.doTick();
+            near(loaded.getAttributeValue(RpgStats.HEALTH), 20, "No saved transient health bonus after unequip");
+            near(loaded.getAttributeValue(RpgStats.DODGE), 0, "No saved transient dodge bonus");
+            check(PlayerProfiles.get(loaded).equals(CharacterProfile.UNINITIALIZED), "Profile stays independent");
+            helper.succeed();
+        } finally {
+            players.forEach(player -> helper.getLevel().getServer().getPlayerList().remove(player));
+        }
+    }
+
+    private static void dodge(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        var attacker = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack gear = new ItemStack(Items.IRON_CHESTPLATE);
+        AffixPages.attach(level, gear, EquipmentCategory.BODY_ARMOR,
+                List.of(stat(RpgStats.DODGE, RpgModifier.Operation.ADD, 2)), List.of());
+        player.setItemSlot(EquipmentSlot.CHEST, gear);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.DODGE), 1, "Dodge capped at 100%");
+        float health = player.getHealth();
+        check(!player.hurtServer(level, level.damageSources().playerAttack(attacker), 4), "100% dodge rejects melee hit");
+        near(player.getHealth(), health, "Dodge preserves health");
+        check(gear.getDamageValue() == 0 && player.invulnerableTime == 0, "Dodged hit must not damage armor or add immunity");
+        var arrow = EntityType.ARROW.create(level, EntitySpawnReason.COMMAND);
+        check(!player.hurtServer(level, level.damageSources().arrow(arrow, attacker), 4), "100% dodge rejects projectile");
+        check(player.hurtServer(level, level.damageSources().fall(), 3), "Dodge must not prevent falling damage");
+        check(player.getHealth() < health, "Environmental damage still hurts");
+        player.invulnerableTime = 0;
+        check(player.hurtServer(level, level.damageSources().explosion(attacker, attacker), 3), "Explosions cannot be dodged");
+        player.invulnerableTime = 0;
+        check(player.hurtServer(level, level.damageSources().fellOutOfWorld(), 1), "Bypass damage cannot be dodged");
+        player.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        player.tick();
+        near(player.getAttributeValue(RpgStats.DODGE), 0, "Unequip removes dodge");
+        player.invulnerableTime = 0;
+        check(player.hurtServer(level, level.damageSources().playerAttack(attacker), 1), "Zero dodge allows melee hit");
+        helper.succeed();
+    }
+
+    private static RpgModifier stat(Holder<Attribute> attribute, RpgModifier.Operation operation, double amount) {
+        return new RpgModifier(BuiltInRegistries.ATTRIBUTE.getKey(attribute.value()), operation, amount);
+    }
+
+    private static void near(double actual, double expected, String message) {
+        check(Math.abs(actual - expected) < 0.00001, message + ": expected " + expected + ", got " + actual);
+    }
+
     private static List<RpgModifier> modifiers(double amount) {
         return List.of(new RpgModifier(id("power"), RpgModifier.Operation.ADD, amount),
                 new RpgModifier(id("vitality"), RpgModifier.Operation.MULTIPLY_BASE, 0.1));
@@ -266,7 +517,7 @@ public final class RpgGameTests {
     }
 
     private static void check(boolean condition, String message) {
-        if (!condition) { throw new AssertionError(message); }
+        if (!condition) { throw new IllegalStateException(message); }
     }
 
     private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("covenant", path); }

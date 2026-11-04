@@ -6,7 +6,7 @@ and isolate Gradle's cache, avoiding the default Java 24 installation.
 ```powershell
 .\scripts\Dev.ps1 doctor   # Java, Gradle, Prism, instance pins
 .\scripts\Dev.ps1 build    # Compile/check and package build/libs/covenant-0.1.0-dev.jar
-.\scripts\Dev.ps1 test     # Dedicated GameTests for RPG data (separate from build)
+.\scripts\Dev.ps1 test     # Dedicated GameTests for RPG data/stats (separate from build)
 .\scripts\Dev.ps1 deploy   # Build and copy the JAR to the isolated Prism instance
 .\scripts\Dev.ps1 prism    # Build, deploy, and launch through Prism
 .\scripts\Dev.ps1 client   # Launch the source-based Gradle development client
@@ -39,6 +39,14 @@ Other mods and worlds are retained. New dependencies require explicit setup.
 
 Prism uses your existing launcher account. If Microsoft authentication expires,
 sign in through Prism. Project scripts do not read or manage account credentials.
+
+For class selection, use a fresh player and run `/covenant class` in chat to inspect
+the localized roster and current choice. Tab-complete and run
+`/covenant class select covenant:stalker` (or `covenant:reaver` / `covenant:weaver`)
+without operator permissions. Confirm repeated selection is rejected, ordinary
+equipment remains usable, and `/covenant class` retains the choice after reconnect,
+death, dimension travel, and a full save/restart. Use separate fresh players for
+the other choices; no reselection command exists in this foundation.
 
 ## New machine or moved checkout
 
@@ -88,7 +96,7 @@ generates `.vscode/launch.json`; it is ignored because it contains absolute path
   server in ignored `runs/gametest`. It exits automatically with a failure code if
   a required test fails. This is separate from `build`; test sources and fixtures
   are excluded from the production JAR and normal client/server runs. See
-  `docs/RPG_DATA.md` for coverage and manual lifecycle boundaries.
+  `docs/RPG_DATA.md` and `docs/RPG_STATS.md` for coverage and manual lifecycle boundaries.
 - Run the Prism smoke check for changed resources, registration, or client behavior.
 - For common gameplay changes, check dedicated-server startup and the relevant
   multiplayer/save lifecycle. Do not import client classes into common code.
