@@ -6,6 +6,7 @@ and isolate Gradle's cache, avoiding the default Java 24 installation.
 ```powershell
 .\scripts\Dev.ps1 doctor   # Java, Gradle, Prism, instance pins
 .\scripts\Dev.ps1 build    # Compile/check and package build/libs/covenant-0.1.0-dev.jar
+.\scripts\Dev.ps1 test     # Dedicated GameTests for RPG data (separate from build)
 .\scripts\Dev.ps1 deploy   # Build and copy the JAR to the isolated Prism instance
 .\scripts\Dev.ps1 prism    # Build, deploy, and launch through Prism
 .\scripts\Dev.ps1 client   # Launch the source-based Gradle development client
@@ -82,8 +83,12 @@ generates `.vscode/launch.json`; it is ignored because it contains absolute path
 - Define observable acceptance criteria before implementing a feature.
 - Build with `scripts/Dev.ps1 build`; this includes the dependency-free
   `radialMenuTest` Java task for sector ordering, boundaries, the center dead zone,
-  and viewport sizing. The standard `test` task has no framework tests; there are
-  no GameTests yet. Add targeted checks for meaningful behavior when needed.
+  and viewport sizing. The standard Gradle `test` task has no framework tests.
+- Run `scripts/Dev.ps1 test` for the RPG lifecycle GameTests on a dedicated test
+  server in ignored `runs/gametest`. It exits automatically with a failure code if
+  a required test fails. This is separate from `build`; test sources and fixtures
+  are excluded from the production JAR and normal client/server runs. See
+  `docs/RPG_DATA.md` for coverage and manual lifecycle boundaries.
 - Run the Prism smoke check for changed resources, registration, or client behavior.
 - For common gameplay changes, check dedicated-server startup and the relevant
   multiplayer/save lifecycle. Do not import client classes into common code.

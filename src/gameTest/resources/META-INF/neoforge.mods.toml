@@ -1,0 +1,11 @@
+license="All Rights Reserved"
+[[mods]]
+modId="covenant_test"
+version="1"
+displayName="Covenant lifecycle tests"
+[[dependencies.covenant_test]]
+modId="covenant"
+type="required"
+versionRange="[0.1.0-dev]"
+ordering="AFTER"
+side="BOTH"

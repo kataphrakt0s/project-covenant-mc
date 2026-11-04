@@ -2,6 +2,40 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## RPG data foundation
+
+- `scripts/Dev.ps1 test`: passed. The dedicated GameTest server reported all
+  5 required tests passing, including the four authored Covenant lifecycle tests.
+  Covenant checks cover default/initialized profiles, full entity serialization
+  and actual player-file save/load (including a paged inventory item), repeat
+  creation rejection, death and End-return cloning, profile/item network codec
+  round trips, independent pages on identical items, inventory/container movement,
+  equip/unequip, dropped-item serialization/pickup, custom tag category compatibility,
+  singleton enforcement, copy/split behavior, immutable nested lists, progression
+  updates retaining page identity, and invalid data. No GameTest errors were logged.
+- `scripts/Dev.ps1 build`: passed, including the existing radial geometry checks.
+  The standard Gradle `test` task is still `NO-SOURCE`; GameTests run separately
+  through the new script task. The production JAR was inspected: RPG classes and
+  compatibility tags are included; test mod/classes/fixtures are excluded.
+- `scripts/Dev.ps1 server`: loaded only Minecraft, NeoForge, and Covenant, loaded
+  the compatibility tags, and reached `Done (0.500s)!` on `127.0.0.1:25565`.
+  No Covenant loading or serialization errors occurred. The environment blocked
+  Mojang public-key retrieval and hardware WMI queries; the isolated offline
+  development server continued to its ready state. Console `stop` input did not
+  reach the Gradle child despite a PTY, so its specifically identified Java
+  process was terminated after startup and initial chunk saving. This server task
+  is a startup check, not a successful Gradle task exit. GameTests shut down and
+  saved normally.
+- `git diff --check` and whitespace inspection of added sources passed.
+- Real-client attachment delivery, multiplayer transfers, disconnect/reconnect,
+  actual dimension travel, and a complete server restart with players remain
+  manual checks. Codec round trips and clone fixtures do not establish these
+  interactive behaviors. The Prism JAR was not replaced. No creation UI,
+  acquisition/rolling, combat stat aggregation, or accessory integration was added.
+
+See `RPG_DATA.md` for format contracts, server APIs, compatibility tags, and the
+distinction between safe transfer snapshots and deliberate creative item cloning.
+
 ## Radial menu foundation
 
 - `scripts/Dev.ps1 build`: passed with the ten-slot client menu and localized

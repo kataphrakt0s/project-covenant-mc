@@ -12,6 +12,10 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 sourceSets.main.resources.srcDir 'src/generated/resources'
 sourceSets.main.resources.exclude '**/.cache/**'
 sourceSets {
+    gameTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
     geometryTest {
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
@@ -20,11 +24,23 @@ sourceSets {
 
 neoForge {
     version = project.neo_version
+    addModdingDependenciesTo sourceSets.gameTest
+    mods {
+        "${mod_id}" { sourceSet sourceSets.main }
+        covenant_test { sourceSet sourceSets.gameTest }
+    }
     runs {
         client { client() }
         server {
             server()
             programArgument '--nogui'
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.gameTest
+            gameDirectory = project.file('runs/gametest')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'covenant_test'
+            loadedMods = [mods.covenant, mods.covenant_test]
         }
         data {
             clientData()
@@ -32,10 +48,10 @@ neoForge {
                     '--output', file('src/generated/resources').absolutePath,
                     '--existing', file('src/main/resources').absolutePath
         }
-        configureEach { logLevel = org.slf4j.event.Level.INFO }
-    }
-    mods {
-        "${mod_id}" { sourceSet sourceSets.main }
+        configureEach {
+            logLevel = org.slf4j.event.Level.INFO
+            if (name != 'gameTestServer') { loadedMods = [mods.covenant] }
+        }
     }
 }
 
