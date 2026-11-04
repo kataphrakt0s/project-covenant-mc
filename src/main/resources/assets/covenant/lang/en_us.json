@@ -1,0 +1,8 @@
+{
+  "key.category.covenant.controls": "Project Covenant",
+  "key.covenant.radial_menu": "Hold Radial Menu",
+  "screen.covenant.radial.title": "Covenant",
+  "screen.covenant.radial.option": "Option %s",
+  "screen.covenant.radial.placeholder": "Coming soon",
+  "screen.covenant.radial.release": "Release %s to close  |  Esc to cancel"
+}

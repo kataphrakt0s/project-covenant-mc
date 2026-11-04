@@ -1,0 +1,57 @@
+package dev.covenant.client;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import dev.covenant.Covenant;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.common.NeoForge;
+import org.lwjgl.glfw.GLFW;
+
+/** Physical-client entry point; common code must not reference this class. */
+@Mod(value = Covenant.MOD_ID, dist = Dist.CLIENT)
+public final class CovenantClient {
+    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(
+            Identifier.fromNamespaceAndPath(Covenant.MOD_ID, "controls"));
+    private final KeyMapping radialMenu = new KeyMapping("key.covenant.radial_menu",
+            KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
+
+    public CovenantClient(IEventBus modBus) {
+        modBus.addListener(this::registerKeys);
+        NeoForge.EVENT_BUS.addListener(this::onKey);
+        NeoForge.EVENT_BUS.addListener(this::onMouseButton);
+    }
+
+    private void registerKeys(RegisterKeyMappingsEvent event) {
+        event.registerCategory(CATEGORY);
+        event.register(radialMenu);
+    }
+
+    private boolean canOpen() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.screen == null && minecraft.getOverlay() == null
+                && minecraft.player != null && minecraft.player.isAlive()
+                && minecraft.level != null && minecraft.isWindowActive();
+    }
+
+    private void onKey(InputEvent.Key event) {
+        // Only the initial press opens the wheel. OS repeats must not reopen it after Escape.
+        if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
+                && radialMenu.isConflictContextAndModifierActive() && radialMenu.matches(event.getKeyEvent())) {
+            Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, false, event.getKey()));
+        }
+    }
+
+    private void onMouseButton(InputEvent.MouseButton.Post event) {
+        if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
+                && radialMenu.isActiveAndMatches(InputConstants.Type.MOUSE.getOrCreate(event.getButton()))) {
+            Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, true, event.getButton()));
+        }
+    }
+}
