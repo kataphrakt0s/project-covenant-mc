@@ -11,7 +11,7 @@ import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2f;
 import org.lwjgl.glfw.GLFW;
 
-/** Hold-to-open client UI. Placeholder slots deliberately perform no gameplay actions. */
+/** Hold-to-open client UI. Slots one and two open Skills and Stats. */
 final class RadialMenuScreen extends Screen {
     private static final Component PLACEHOLDER = Component.translatable("screen.covenant.radial.placeholder");
     private final Component[] options = new Component[RadialMenuLayout.SLOT_COUNT];
@@ -27,6 +27,8 @@ final class RadialMenuScreen extends Screen {
         for (int slot = 0; slot < options.length; slot++) {
             options[slot] = Component.translatable("screen.covenant.radial.option", slot + 1);
         }
+        options[0] = Component.translatable("screen.covenant.skills.title");
+        options[1] = Component.translatable("screen.covenant.stats.title");
     }
 
     @Override
@@ -46,16 +48,20 @@ final class RadialMenuScreen extends Screen {
                 ? GLFW.glfwGetMouseButton(minecraft.getWindow().handle(), activationCode) == GLFW.GLFW_PRESS
                 : activationCode != GLFW.GLFW_KEY_UNKNOWN
                     && InputConstants.isKeyDown(minecraft.getWindow(), activationCode);
-        if (!held || !minecraft.isWindowActive() || minecraft.level == null
+        if (!minecraft.isWindowActive() || minecraft.level == null
                 || minecraft.player == null || !minecraft.player.isAlive()) {
             onClose();
+        } else if (!held) {
+            release(minecraft.mouseHandler.getScaledXPos(minecraft.getWindow()),
+                    minecraft.mouseHandler.getScaledYPos(minecraft.getWindow()));
         }
     }
 
     @Override
     public boolean keyReleased(KeyEvent event) {
         if (!mouseBinding && event.key() == activationCode) {
-            onClose();
+            release(minecraft.mouseHandler.getScaledXPos(minecraft.getWindow()),
+                    minecraft.mouseHandler.getScaledYPos(minecraft.getWindow()));
             return true;
         }
         return super.keyReleased(event);
@@ -64,13 +70,33 @@ final class RadialMenuScreen extends Screen {
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         if (mouseBinding && event.button() == activationCode) {
-            onClose();
+            release(event.x(), event.y());
         }
         return true;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            openSlot(hovered(event.x(), event.y()));
+        }
+        return true;
+    }
+
+    private int hovered(double x, double y) {
+        return RadialMenuLayout.hoveredSlot(x - width / 2, y - height / 2, RadialMenuLayout.radius(width, height));
+    }
+
+    private void release(double mouseX, double mouseY) {
+        if (!openSlot(hovered(mouseX, mouseY))) { onClose(); }
+    }
+
+    private boolean openSlot(int slot) {
+        switch (slot) {
+            case 0 -> minecraft.setScreen(new SkillsScreen());
+            case 1 -> minecraft.setScreen(new StatsScreen());
+            default -> { return false; }
+        }
         return true;
     }
 
@@ -99,7 +125,8 @@ final class RadialMenuScreen extends Screen {
                     slot == hovered ? 0xFFFFD084 : 0xFFE2E8ED);
         }
         graphics.centeredText(font, hovered < 0 ? title : options[hovered], centerX, centerY - 10, 0xFFF5DBA6);
-        graphics.centeredText(font, PLACEHOLDER, centerX, centerY + 4, 0xFFABB6C2);
+        graphics.centeredText(font, hovered >= 0 && hovered <= 1 ? Component.translatable("screen.covenant.radial.open") : PLACEHOLDER,
+                centerX, centerY + 4, 0xFFABB6C2);
         graphics.centeredText(font, releaseHint, centerX, centerY + radius + 10, 0xFFE2E8ED);
     }
 }

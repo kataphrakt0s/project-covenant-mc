@@ -6,6 +6,12 @@
   "mixins": [
     "PlayerHealthLoadMixin"
   ],
+  "client": [
+    "client.BowUsePoseMixin",
+    "client.LocalBowUsePoseMixin",
+    "client.BowFirstPersonMixin",
+    "client.BowThirdPersonMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

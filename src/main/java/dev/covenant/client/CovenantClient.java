@@ -2,12 +2,18 @@ package dev.covenant.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.covenant.Covenant;
+import dev.covenant.rpg.skills.Skills;
+import dev.covenant.rpg.skills.SkillVisuals;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
@@ -22,15 +28,25 @@ public final class CovenantClient {
     private final KeyMapping radialMenu = new KeyMapping("key.covenant.radial_menu",
             KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
 
-    public CovenantClient(IEventBus modBus) {
+    public CovenantClient(IEventBus modBus, ModContainer container) {
+        container.registerConfig(ModConfig.Type.CLIENT, SkillClientConfig.SPEC);
+        modBus.addListener(CovenantClient::registerRenderers);
+        modBus.addListener(ResourceHud::register);
         modBus.addListener(this::registerKeys);
         NeoForge.EVENT_BUS.addListener(this::onKey);
         NeoForge.EVENT_BUS.addListener(this::onMouseButton);
+        NeoForge.EVENT_BUS.addListener(SkillKeyMappings::started);
+        NeoForge.EVENT_BUS.addListener(SkillVisuals::arrowTick);
+    }
+
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(Skills.ARCANE_BOLT.get(), ThrownItemRenderer::new);
     }
 
     private void registerKeys(RegisterKeyMappingsEvent event) {
         event.registerCategory(CATEGORY);
         event.register(radialMenu);
+        SkillKeyMappings.register(event, CATEGORY);
     }
 
     private boolean canOpen() {
@@ -45,6 +61,8 @@ public final class CovenantClient {
         if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
                 && radialMenu.isConflictContextAndModifierActive() && radialMenu.matches(event.getKeyEvent())) {
             Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, false, event.getKey()));
+        } else if (event.getAction() == GLFW.GLFW_PRESS && canOpen()) {
+            SkillKeyMappings.press(InputConstants.getKey(event.getKeyEvent()));
         }
     }
 
@@ -52,6 +70,8 @@ public final class CovenantClient {
         if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
                 && radialMenu.isActiveAndMatches(InputConstants.Type.MOUSE.getOrCreate(event.getButton()))) {
             Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, true, event.getButton()));
+        } else if (event.getAction() == GLFW.GLFW_PRESS && canOpen()) {
+            SkillKeyMappings.press(InputConstants.Type.MOUSE.getOrCreate(event.getButton()));
         }
     }
 }

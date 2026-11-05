@@ -61,6 +61,14 @@ public final class RpgGameTests {
         FUNCTIONS.register("stat_persistence", () -> RpgGameTests::statPersistence);
         FUNCTIONS.register("dodge", () -> RpgGameTests::dodge);
         FUNCTIONS.register("class_foundation", () -> ClassGameTests::run);
+        FUNCTIONS.register("stat_commands", () -> StatCommandGameTests::run);
+        FUNCTIONS.register("affix_commands", () -> AffixCommandGameTests::run);
+        FUNCTIONS.register("affix_restart", () -> AffixCommandGameTests::restart);
+        FUNCTIONS.register("skill_lifecycle", () -> SkillGameTests::lifecycle);
+        FUNCTIONS.register("skill_recovery", () -> SkillGameTests::recovery);
+        FUNCTIONS.register("skill_effects", () -> SkillGameTests::effects);
+        FUNCTIONS.register("skill_loadout", () -> SkillLoadoutGameTests::run);
+        FUNCTIONS.register("skill_tree", () -> SkillTreeGameTests::run);
     }
 
     public RpgGameTests(IEventBus modBus) { FUNCTIONS.register(modBus); }

@@ -48,6 +48,16 @@ public final class AffixPages {
         stack.set(RpgData.AFFIX_PAGE.get(), next);
     }
 
+    /**
+     * Removes the entire page in place. Preserves every other component, including the singleton
+     * limit: attachment did not retain its prior value, so restoring it would require guessing.
+     * The caller must notify the containing inventory; native equipment updates remove its bonuses.
+     */
+    public static boolean remove(ServerLevel level, ItemStack stack) {
+        requireServerThread(level);
+        return stack.remove(RpgData.AFFIX_PAGE.get()) != null;
+    }
+
     private static void requireServerThread(ServerLevel level) {
         if (!level.getServer().isSameThread()) {
             throw new IllegalStateException("Affix Page changes require the logical server thread");

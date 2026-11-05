@@ -10,4 +10,8 @@ Implemented foundation: stable IDs `covenant:stalker`, `covenant:reaver`, and `c
 
 Future scope: recognizable class abilities and resources, meaningful within-class customization, specializations, and talents. No specialization structure, talent economy, or cross-class customization is implemented.
 
+Planned Reaver build direction: support both bleed-focused and non-bleed builds.
+Overpower rewards attacking a non-bleeding enemy with a huge melee hit. This is
+design intent recorded in [[Skill Trees Brainstorm]], not implemented behavior.
+
 Related: [[Abilities]], [[Class Resources]], [[Character Progression]].

@@ -1,6 +1,7 @@
 package dev.covenant.rpg.stats;
 
 import dev.covenant.Covenant;
+import java.util.List;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.DamageTypeTags;
@@ -48,6 +49,22 @@ public final class RpgStats {
     public static final DeferredHolder<Attribute, Attribute> CAST_TIME = register("cast_time", 1, 1024, Attribute.Sentiment.NEGATIVE);
     /** Skill duration coefficient: default 1; range [0, 1024]; 1.2 lasts 20% longer. */
     public static final DeferredHolder<Attribute, Attribute> SKILL_DURATION = register("skill_duration", 1, 1024, Attribute.Sentiment.POSITIVE);
+
+    /** Focus regeneration coefficient; default 1, hard upper bound 1.25. No Focus capacity attribute. */
+    public static final DeferredHolder<Attribute, Attribute> FOCUS_REGENERATION = register("focus_regeneration", 1, 1.25, Attribute.Sentiment.POSITIVE);
+    /** Rage capacity coefficient applied to server config; default 1, range [0, 1024]. */
+    public static final DeferredHolder<Attribute, Attribute> RAGE_CAPACITY = register("rage_capacity", 1, 1024, Attribute.Sentiment.POSITIVE);
+    /** In-combat Rage generation coefficient; default 1, range [0, 1024]. */
+    public static final DeferredHolder<Attribute, Attribute> RAGE_GENERATION = register("rage_generation", 1, 1024, Attribute.Sentiment.POSITIVE);
+    /** Mana capacity coefficient applied to server config; default 1, range [0, 1024]. */
+    public static final DeferredHolder<Attribute, Attribute> MANA_CAPACITY = register("mana_capacity", 1, 1024, Attribute.Sentiment.POSITIVE);
+    /** Mana regeneration coefficient applied to server config; default 1, range [0, 1024]. */
+    public static final DeferredHolder<Attribute, Attribute> MANA_REGENERATION = register("mana_regeneration", 1, 1024, Attribute.Sentiment.POSITIVE);
+
+    /** Supported Covenant stats, in display order; registry IDs are also the debug command identifiers. */
+    public static final List<Holder<Attribute>> SUPPORTED = List.of(HEALTH, DAMAGE, ARMOR,
+            MOVEMENT_SPEED, ATTACK_SPEED, DODGE, RESOURCE_COST, COOLDOWN, CAST_TIME, SKILL_DURATION,
+            FOCUS_REGENERATION, RAGE_CAPACITY, RAGE_GENERATION, MANA_CAPACITY, MANA_REGENERATION);
 
     private RpgStats() {}
 

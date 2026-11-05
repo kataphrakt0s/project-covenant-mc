@@ -4,6 +4,10 @@ Read `CONTEXT.md` before feature work. Use `skills/covenant-development/SKILL.md
 for the build, validation, and Prism deployment workflow. See `docs/DEVELOPMENT.md`
 for machine setup and commands.
 
+Use `skills/grill-plan/SKILL.md` when the user asks to "grill me", stress-test a
+plan, or work down a design tree. Ask one question at a time with a recommendation,
+check the existing code first, and record decisions in the relevant design docs.
+
 ## Engineering conventions
 
 - Target Minecraft Java **26.1.2**, NeoForge, and Java **25**. Pinned versions live

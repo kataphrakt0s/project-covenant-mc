@@ -21,14 +21,34 @@ Other mods and worlds are retained. New dependencies require explicit setup.
 
 ## In-game smoke check
 
+The user performs manual client playtesting. For routine feature work, Codex runs
+appropriate automated checks and hands over a short list of relevant in-game
+checks. Client launches, UI automation, screenshots, and test-world creation for
+validation happen only when the user requests client testing. Pending playtesting
+does not block delivery.
+
 1. Launch with `scripts/Dev.ps1 prism` or double-click the development instance.
 2. In Mods, confirm **Project Covenant**, mod ID `covenant`, version `0.1.0-dev`.
 3. Create a disposable Creative world. Enter it, move, break/place a vanilla block,
    save and quit, then reopen it.
-4. Hold **G**: confirm a centered wheel with exactly ten numbered wedges. Hover
-   each wedge and confirm the matching Option 1-10 label. The center and outside
-   the ring have no selection. Release G: the wheel closes and mouse look resumes.
-   Clicking a placeholder must have no effect. The world continues while open.
+4. Hold **G**: confirm a centered wheel with exactly ten numbered wedges. Slot 1
+   is Skills, slot 2 is Stats, and the remaining slots show Option 3-10. Hover Skills and release G or
+   left-click to open its window. The center and outside the ring have no selection.
+   Other releases close the wheel. Clicking a placeholder has no effect. The world
+   continues while open. In Skills, only the current class's tree appears. Left-click
+   to allocate/select; right-click removes the node and its learned dependents.
+   The whole tree fits the page using compact nodes with full hover tooltips.
+   The right-hand Keybindings tab has the learned-skill picker
+   and eight slots: click a slot to assign; right-click to clear. See
+   `RPG_SKILLS.md` for binding, persistence and cancellation checks.
+   Open Stats the same way from slot 2; releasing G must leave it open. On a fresh
+   player, hover each class to read its description and select one without operator
+   permission. Confirm the header updates and choice buttons disappear. Reopen,
+   reconnect, and respawn to check the retained choice. Scroll the stats list through
+   its final entry; check wrapping, scrollbar/arrow-key scrolling, and GUI scales.
+   Equip a weapon/armor/page and apply a temporary effect or debug adjustment; check
+   the corresponding effective value and modifier line. Check no-class and selected
+   layouts, Escape/Done, and both click/release handoffs with keyboard/mouse bindings.
 5. Check quick taps, repeated holds, Escape while G remains held (no reopening
    until a fresh press), and switching away from the window. Chat, inventory,
    pause, and the title screen must not open the wheel. Rebind Hold Radial Menu
@@ -46,7 +66,47 @@ the localized roster and current choice. Tab-complete and run
 without operator permissions. Confirm repeated selection is rejected, ordinary
 equipment remains usable, and `/covenant class` retains the choice after reconnect,
 death, dimension travel, and a full save/restart. Use separate fresh players for
-the other choices; no reselection command exists in this foundation.
+the other choices, or use operator-only `/covenant class switch <id>` to test
+resource preservation and class restrictions. Ordinary selection stays one-time.
+
+For resources and skills, use `/covenant resource` and `/covenant skill` for
+inspection, `/covenant skill use <id>` for activation, and operator-only
+`/covenant resource set <amount>` to seed the active balance. See
+[RPG_SKILLS.md](RPG_SKILLS.md#in-game-testing) for each skill's test steps,
+configuration, modifier IDs, persistence and cancellation expectations.
+
+For stat debugging, use a player with operator permission (normally level 2).
+Run `/covenant stats`, tab-complete `/covenant stats get `, then try
+`/covenant stats set covenant:dodge 0.2` and inspect it again. Equipment/page
+modifiers still apply to the temporary testing base. `/covenant stats reset`
+restores normal calculations immediately. Save/reconnect also clears overrides;
+normal profile/page data remains intact. See `RPG_STATS.md` for IDs, ranges, and
+the command contract.
+
+For Affix Page debugging, hold a single iron sword and use operator level 2:
+`/covenant affix apply covenant:main_hand minecraft:max_health 6`, then
+`/covenant affix inspect`. The normal equipment update should give 26 max health
+without healing. Move it through inventory/chest/drop and re-equip, then use
+`/covenant affix remove` or `clear` while holding it. Existing pages must be removed
+before applying another. Category/stat arguments support tab completion. See
+`RPG_DATA.md` for validation rules and the preserved stack-limit limitation.
+
+The dedicated `affix_restart` fixture seeds a command-created item in a native
+player file on a normal `scripts/Dev.ps1 test` run. After that server exits cleanly,
+verify it in a fresh server process:
+
+```powershell
+$env:COVENANT_AFFIX_RESTART_CHECK = 'verify'
+try { .\scripts\Dev.ps1 test }
+finally { Remove-Item Env:COVENANT_AFFIX_RESTART_CHECK }
+```
+
+The fixture checks a different server process ID and reloads the saved item/page
+with native player storage. Minecraft deletes the GameTest world on each launch;
+the fixture therefore retains a byte-for-byte copy of the native player file
+outside that world and restores it before loading. This checks cross-process item
+persistence, rather than a complete retained-world restart. Both the native file
+and expectation metadata live in ignored `runs/gametest/affix-command-restart*`.
 
 ## New machine or moved checkout
 
@@ -91,13 +151,16 @@ generates `.vscode/launch.json`; it is ignored because it contains absolute path
 - Define observable acceptance criteria before implementing a feature.
 - Build with `scripts/Dev.ps1 build`; this includes the dependency-free
   `radialMenuTest` Java task for sector ordering, boundaries, the center dead zone,
-  and viewport sizing. The standard Gradle `test` task has no framework tests.
+  and viewport sizing. `skillTreeLayoutTest` also checks full-tree visibility,
+  tier ordering and separate node bounds across GUI sizes. The standard Gradle
+  `test` task has no framework tests.
 - Run `scripts/Dev.ps1 test` for the RPG lifecycle GameTests on a dedicated test
   server in ignored `runs/gametest`. It exits automatically with a failure code if
   a required test fails. This is separate from `build`; test sources and fixtures
   are excluded from the production JAR and normal client/server runs. See
   `docs/RPG_DATA.md` and `docs/RPG_STATS.md` for coverage and manual lifecycle boundaries.
-- Run the Prism smoke check for changed resources, registration, or client behavior.
+- For changed resources, registration, or client behavior, hand the relevant Prism
+  smoke checks to the user; manual client testing follows the policy above.
 - For common gameplay changes, check dedicated-server startup and the relevant
   multiplayer/save lifecycle. Do not import client classes into common code.
 - NeoForge's development server can bypass the production EULA gate. For a

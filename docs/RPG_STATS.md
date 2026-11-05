@@ -4,6 +4,27 @@ Stats use Minecraft's attribute registry and native equipment modifiers.
 `RpgStats` centralizes the initial attributes and skill scaling helper. There is
 no parallel stat cache, equipment attachment, or global tick scan.
 
+## Stats page
+
+Hold G, hover radial slot 2 (**Stats**), then release G or left-click. The page
+stays open after releasing G and does not pause the world. Escape or Done closes it.
+The class appears at the top. Uninitialized characters can click Stalker, Reaver,
+or Weaver to select once; hover a choice for its description. The page explains
+that selection is permanent. Buttons send the existing `/covenant class select <id>`
+command, which requires no operator permission and rejects unknown/repeated choices
+on the server. The owner-synced profile updates the header and removes the choices.
+Unknown saved class IDs display verbatim and cannot be overwritten by the chooser.
+
+The scrollable text list shows every supported stat below, including inactive-class
+resource multipliers. Each entry lists its effective value, native base and active
+native modifiers (ID, signed amount and flat/base-percent/total-percent operation).
+Dodge totals use percent; skill/resource coefficients use `x`; the other values
+use the table's native units. Flat modifier amounts retain raw attribute units.
+Mouse wheel/scrollbar and focused arrow keys scroll; long lines wrap to fit.
+The page refreshes from existing synced native attributes while open, including
+equipment, effects, and debug adjustments. No new packets, permissions, saved fields,
+or effective-stat cache are introduced.
+
 | Stat | Modifier `stat` ID | Unequipped player base | Meaning |
 | --- | --- | --- | --- |
 | Health | `minecraft:max_health` | 20 | Health points; two points per heart |
@@ -16,6 +37,11 @@ no parallel stat cache, equipment attachment, or global tick scan.
 | Cooldown | `covenant:cooldown` | 1 | Skill cooldown multiplier |
 | Cast Time | `covenant:cast_time` | 1 | Skill cast-time multiplier |
 | Skill Duration | `covenant:skill_duration` | 1 | Skill effect duration multiplier |
+| Focus Regeneration | `covenant:focus_regeneration` | 1 | Configured recovery multiplier, bounded to [0, 1.25] |
+| Rage Capacity | `covenant:rage_capacity` | 1 | Configured maximum multiplier, bounded to [0, 1024] |
+| Rage Generation | `covenant:rage_generation` | 1 | Configured in-combat generation multiplier, bounded to [0, 1024] |
+| Mana Capacity | `covenant:mana_capacity` | 1 | Configured maximum multiplier, bounded to [0, 1024] |
+| Mana Regeneration | `covenant:mana_regeneration` | 1 | Configured recovery multiplier, bounded to [0, 1024] |
 
 Vanilla attributes keep vanilla bounds. Skill multipliers use [0, 1024]: 0.8 means
 20% less, 1.2 means 20% more. Cost/cooldown/cast-time reductions get beneficial
@@ -26,6 +52,12 @@ attack recharge, not projectile fire rate or skill cooldowns. Armor retains vani
 toughness, enchantments, nonlinear mitigation, and damage-source bypass rules.
 
 ## Calculation
+
+Resource attributes use the same native equipment/page pipeline; see
+[RPG_SKILLS.md](RPG_SKILLS.md) for base configuration and resource rules.
+Focus has no maximum-capacity attribute and always caps at 100. The three initial
+skills consume the existing cost, cooldown and cast-time coefficients; they have
+no timed effects using the duration coefficient.
 
 Existing saved operations map directly to Minecraft's operations:
 
@@ -79,6 +111,39 @@ This preserves, for example, 26/26 health across reload instead of losing the si
 points above the unequipped maximum. It adds no saved health field or permanent
 equipment modifier. The first native equipment update replaces the same IDs.
 
+## Debug commands
+
+Player operators (vanilla gamemaster permission, normally level 2) can use:
+
+- `/covenant stats`: list all fifteen supported stats and effective values.
+- `/covenant stats get <stat>`: show the normal base, temporary testing base if
+  present, every active modifier's ID/operation/amount, and final clamped value.
+- `/covenant stats set <stat> <value>`: substitute a temporary testing base while
+  retaining equipment, Affix Pages, and other native modifiers. For example,
+  `set covenant:dodge 0.2` with a +0.1 page produces 0.3 effective dodge.
+- `/covenant stats reset`: remove every debug adjustment immediately.
+
+`<stat>` uses the full registry IDs in the table above; `get` and `set` provide tab
+completion. Unsupported IDs, malformed numbers, non-finite values, and values
+outside the attribute's inclusive native range are rejected without changing state.
+Commands target the executing player; console execution is rejected. Existing
+class commands retain their separate permissions and behavior.
+
+The debug layer is a single transient `covenant:debug/base_override` flat modifier
+per affected attribute, calculated as requested base minus the current normal base
+at command execution. Repeated `set` replaces that adjustment. It does not edit
+native saved bases, permanent modifiers, profiles, or pages. Equipment changes
+continue through the normal pipeline; reset removes only the debug ID and uses the
+current equipment. A later external base change also affects the calculation;
+rerun `set` to substitute a new testing base in that case. No tick polling is added.
+
+Native synchronization delivers changes on the next normal attribute packet;
+server calculations update immediately. Overrides disappear on player reload,
+reconnect, or player replacement (death/End return), and are never serialized.
+Increasing maximum health does not heal. Current health and other ordinary gameplay
+consequences of testing still follow vanilla behavior; reset restores stat
+calculations, not a prior gameplay snapshot. No saved format changes or migration.
+
 ## Combat and integration boundaries
 
 Dodge rolls on the logical server in `LivingIncomingDamageEvent`, before shield,
@@ -99,17 +164,18 @@ attributes through `EntityAttributeModificationEvent`. Native page modifiers can
 also affect equipped mobs with the corresponding attribute; Covenant's new
 attributes and dodge behavior are player-only.
 
-There are no acquisition commands, rolling, stat screen, skills/resources,
-attribute points, talents, or class stat bonuses. Author pages through server APIs
-or operator item components during development.
+There are no gameplay acquisition mechanics, rolling, stat screen,
+attribute points, talents, or class stat bonuses. Author pages through server APIs,
+operator item components, or the privileged [Affix Page debug commands](RPG_DATA.md#debug-commands).
 
 ## Validation
 
-`scripts/Dev.ps1 test` adds four dedicated GameTests to the existing data checks:
+`scripts/Dev.ps1 test` includes dedicated stat GameTests alongside the data/class checks:
 base values/operation order; native equipment activation/removal, independence,
 transfer, breakage, and in-place updates; skill scaling/external sources; actual
 player-file reload and clone reconstruction; deterministic 0%/100% dodge and
-environmental exclusions. Real-client delivery/reconnect, actual dimension
+environmental exclusions; debug commands/completion/validation and unsaved override
+isolation across actual player-file reload and cloning. Real-client delivery/reconnect, actual dimension
 travel/death, full server restart with players, tooltips, and other mods remain
 manual checks. APIs were checked against resolved Minecraft 26.1.2 / NeoForge
 26.1.2.125 sources and [official 26.1 attribute documentation](https://docs.neoforged.net/docs/entities/attributes/).

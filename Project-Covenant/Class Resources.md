@@ -1,14 +1,43 @@
 # Class Resources
 
-Generic resource infrastructure supports current/max values, spending, generation, and bounds. Classes may define different mechanics.
+Implemented resource infrastructure shares bounded spending, persistence and owner synchronization,
+with independently preserved balances for Stalker, Reaver and Weaver. Only the selected class
+recovers or depletes. See [the implementation contract](../docs/RPG_SKILLS.md).
+
+The resource HUD shows only the current class's resource: red Rage for
+Reaver, blue Mana for Weaver, or yellow Focus for Stalker. Inactive class resources
+are hidden. The bar sits directly above the vanilla hunger bar and displays
+centered current/maximum values, such as `75 / 100`. Its color identifies the
+resource. It stays visible while a known class is selected, including at full or
+empty resource and outside combat, and follows the normal F1 HUD visibility.
+Air bubbles and mount health stack above it. Rendered behavior awaits playtesting.
 
 ## Rage
-Warrior example; generation and decay TBD.
+Reaver: starts empty, base maximum 100. Builds 10/second during combat. Confirmed
+actor damage refreshes a seven-second grace timer; afterward Rage depletes 10/second.
+Generation is time-based, without per-hit bonuses. Capacity, generation and depletion are tunable.
+
+Planned exception: assigning Raging Aura to a skill slot reduces out-of-combat
+Rage decay after the existing grace period. It does not extend the grace period.
+Its activated buff stops passive Rage decay while skills continue to spend Rage
+normally. This is agreed design in [[Skill Trees Brainstorm]] and is not
+implemented yet.
 
 ## Mana
-Mage example; regeneration and expenditure TBD.
+Weaver: starts full, base maximum 100, recovers 5/second. Capacity and recovery scale
+through progression/native attributes and equipment modifiers, without a fixed 100-unit cap.
+
+Planned exception: Mana regeneration pauses while channeling Arcane Barrage or
+Scorching Ray and resumes when the channel ends. This is agreed design in
+[[Skill Trees Brainstorm]] and is not implemented yet.
 
 ## Focus
-Hunter example; generation and expenditure TBD.
+Stalker: starts full, hard maximum 100, recovers 25/second. Equipment cannot raise
+capacity. Regeneration modifiers cap at 25% above the configured base; this foundation
+adds no common regeneration-affix acquisition source.
+
+Planned exception: Focus regeneration pauses while channeling Barrage and resumes
+when the channel ends. This is agreed design in [[Skill Trees Brainstorm]] and is
+not implemented yet.
 
 Related: [[Classes and Specializations]], [[Abilities]].

@@ -20,11 +20,17 @@ fail, inspect the local config and instance metadata before changing anything.
 
 Check APIs against the pinned sources and official NeoForge 26.1 documentation.
 Use focused tests where behavior warrants them. For common gameplay, verify
-dedicated-server loading and applicable persistence/network lifecycles; for client
-changes, verify the actual rendered behavior. No gameplay or GameTests exist in
-the starting scaffold, so do not present empty Gradle test tasks as test coverage.
+dedicated-server loading and applicable persistence/network lifecycles through
+automated checks. Do not present empty Gradle test tasks as test coverage.
+
+The user handles manual client playtesting. For routine feature work, complete
+implementation and appropriate automated checks, then provide a short list of
+relevant in-game checks for the user. Do not launch or automate the client, capture
+screenshots, or create test worlds for validation unless the user requests client
+testing. Unverified rendered behavior does not block delivery or require approval.
 
 Record important decisions in `CONTEXT.md` and durable workflow changes in
-`docs/DEVELOPMENT.md`. Report the build result, in-game observations, and validation
-limits distinctly. Do not publish, push, upgrade the target, or add ATM11-specific
+`docs/DEVELOPMENT.md`. Report automated results and pending user playtesting
+distinctly; compilation does not establish in-game behavior. Do not publish, push,
+upgrade the target, or add ATM11-specific
 dependencies unless the user asks.

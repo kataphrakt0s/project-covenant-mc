@@ -1,6 +1,7 @@
 package dev.covenant.rpg;
 
 import dev.covenant.rpg.classes.PlayerClass;
+import dev.covenant.rpg.skills.ClassResources;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -8,7 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
-/** Server mutation boundary. No client-to-server progression packets are registered. */
+/** Server mutation boundary for class/profile data; skill requests use their own validated boundary. */
 public final class PlayerProfiles {
     private PlayerProfiles() {}
 
@@ -27,10 +28,29 @@ public final class PlayerProfiles {
 
     /**
      * One-time selection of a defined class. Creates the existing profile at level 1, XP 0,
-     * without a specialization or resource. Rejects already-created characters.
+     * without a specialization, and initializes the separate built-in resource balances.
+     * Legacy profile resource fields stay empty. Rejects already-created characters.
      */
     public static void selectClass(ServerPlayer player, PlayerClass selectedClass) {
         initialize(player, selectedClass.id(), Optional.empty(), 0);
+        initializeResources(player);
+    }
+
+    /** Trusted/operator testing switch; preserves progression and every class balance, cancels a pending cast. */
+    public static void switchClass(ServerPlayer player, PlayerClass selectedClass) {
+        requireServerThread(player);
+        if (!get(player).created()) { selectClass(player, selectedClass); return; }
+        initializeResources(player);
+        update(player, p -> new CharacterProfile(true, p.level(), p.experience(), Optional.of(selectedClass.id()),
+                p.specialization(), p.resourceType(), p.currentResource(), p.maximumResource()));
+    }
+
+    private static void initializeResources(ServerPlayer player) {
+        for (var type : PlayerClass.all()) {
+            if (!player.getData(RpgData.SKILLS).balances().containsKey(type.id())) {
+                ClassResources.set(player, type, ClassResources.current(player, type));
+            }
+        }
     }
 
     /** Trusted storage API for server integrations, including IDs not in the built-in class catalog. */
@@ -55,6 +75,10 @@ public final class PlayerProfiles {
             throw new IllegalArgumentException("Progression updates cannot erase character creation");
         }
         if (!previous.equals(next)) {
+            if (!previous.selectedClass().equals(next.selectedClass())) {
+                initializeResources(player);
+                player.getData(RpgData.SKILL_RUNTIME).cancelCast();
+            }
             player.setData(RpgData.PROFILE, next);
         }
     }

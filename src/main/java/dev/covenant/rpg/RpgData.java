@@ -2,9 +2,13 @@ package dev.covenant.rpg;
 
 import dev.covenant.Covenant;
 import dev.covenant.rpg.equipment.AffixPage;
+import dev.covenant.rpg.skills.SkillState;
+import dev.covenant.rpg.skills.SkillLoadout;
+import dev.covenant.rpg.skills.SkillRuntime;
 import java.util.function.Supplier;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.common.NeoForge;
@@ -28,6 +32,22 @@ public final class RpgData {
     public static final Supplier<DataComponentType<AffixPage>> AFFIX_PAGE = COMPONENTS.registerComponentType(
             "affix_page", builder -> builder.persistent(AffixPage.CODEC)
                     .networkSynchronized(AffixPage.STREAM_CODEC));
+    public static final Supplier<AttachmentType<SkillState>> SKILLS = ATTACHMENTS.register(
+            "skill_state", () -> AttachmentType.builder(() -> SkillState.EMPTY)
+                    .serialize(SkillState.CODEC.fieldOf("skills")).copyOnDeath()
+                    .sync((holder, recipient) -> holder == recipient, SkillState.STREAM_CODEC).build());
+    public static final Supplier<AttachmentType<SkillRuntime>> SKILL_RUNTIME = ATTACHMENTS.register(
+            "skill_runtime", () -> AttachmentType.builder(SkillRuntime::new).build());
+    /** Transient, tracking-synced arrow visual marker; never serialized or copied to player saves. */
+    public static final Supplier<AttachmentType<Boolean>> SKILL_SHOT = ATTACHMENTS.register(
+            "skill_shot", () -> AttachmentType.builder(() -> false).sync(ByteBufCodecs.BOOL).build());
+    /** Cosmetic bow-draw deadline in level ticks, tracking-synced but never saved. */
+    public static final Supplier<AttachmentType<Long>> BOW_DRAW_UNTIL = ATTACHMENTS.register(
+            "bow_draw_until", () -> AttachmentType.builder(() -> 0L).sync(ByteBufCodecs.VAR_LONG).build());
+    public static final Supplier<AttachmentType<SkillLoadout>> SKILL_LOADOUT = ATTACHMENTS.register(
+            "skill_loadout", () -> AttachmentType.builder(() -> SkillLoadout.EMPTY)
+                    .serialize(SkillLoadout.CODEC.fieldOf("loadout")).copyOnDeath()
+                    .sync((holder, recipient) -> holder == recipient, SkillLoadout.STREAM_CODEC).build());
 
     private RpgData() {}
 
