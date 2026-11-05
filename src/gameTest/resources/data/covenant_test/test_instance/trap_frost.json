@@ -1,0 +1,7 @@
+{
+  "function": "covenant_test:trap_frost",
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "max_ticks": 150,
+  "structure": "covenant_test:empty"
+}

@@ -29,6 +29,16 @@ from the loadout ends it. Specific effects are being designed in
 
 Related: [[Classes and Specializations]], [[Class Resources]], [[Combat]].
 
+Rend and its shared bleed foundation are now implemented alongside Aimed Shot and
+the original three skills. Rend is an instant native-reach melee strike costing
+20 Rage with a two-second cooldown. A damaging hit adds one five-second stack,
+dealing 10% of captured attack damage per second, up to three stacks shared across
+attackers. Reapplication refreshes all durations and replaces the oldest stack at
+the cap. Bleeding persists with paused timers while targets are inactive and clears
+on death. See [[Skill Trees Brainstorm]] and the implementation contract for the
+full targeting, defense, ownership, and persistence rules. Other bleed-dependent
+skills remain planned.
+
 Skill visuals use vanilla-style hand/weapon movements and skill-specific particles
 for the existing three skills. Custom character animation rigs are outside this
 pass. Rendered behavior awaits playtesting; see

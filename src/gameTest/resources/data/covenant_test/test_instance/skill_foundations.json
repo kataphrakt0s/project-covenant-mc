@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:skill_foundations",
+  "environment": "minecraft:default",
+  "structure": "covenant_test:empty",
+  "max_ticks": 120
+}

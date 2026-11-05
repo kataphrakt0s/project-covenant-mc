@@ -9,6 +9,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
@@ -22,6 +23,38 @@ public final class SkillVisuals {
 
     private SkillVisuals() {}
 
+    /** Tracked entity state drives local particles for every viewer, without recurring server packets. */
+    static void trap(TrapEntity trap) {
+        if (trap.tickCount % 5 != 0 || trap.phase() == TrapEntity.Phase.REMOVED) { return; }
+        var dust = new DustParticleOptions(trap.kind().color,
+                trap.phase() == TrapEntity.Phase.ARMED ? 1.0f : 0.6f);
+        boolean patch = trap.phase() == TrapEntity.Phase.TRIGGERED;
+        double radius = patch ? trap.kind().radius : TrapEntity.CONTACT_RADIUS;
+        int count = patch ? 40 : 12;
+        var center = trap.position().add(0, 0.1, 0);
+        for (int i = 0; i < count; i++) {
+            double angle = Math.PI * 2 * i / count;
+            var point = center.add(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+            if (!patch || trap.clearLine(center, point)) {
+                trap.level().addParticle(dust, point.x, point.y, point.z, 0, 0, 0);
+            }
+        }
+        if (trap.phase() == TrapEntity.Phase.ARMED) {
+            trap.level().addParticle(ParticleTypes.END_ROD, trap.getX(), trap.getY() + 0.2, trap.getZ(), 0, 0.005, 0);
+        }
+    }
+
+    static void trapSnap(ServerLevel level, TrapEntity trap) {
+        level.sendParticles(trap.kind() == TrapKind.BLAST ? ParticleTypes.EXPLOSION : ParticleTypes.CRIT,
+                trap.getX(), trap.getY() + 0.2, trap.getZ(), trap.kind() == TrapKind.BLAST ? 1 : 8,
+                0.15, 0.1, 0.15, 0.01);
+    }
+
+    static void bowDraw(ServerPlayer player, long ticks) {
+        player.setData(RpgData.BOW_DRAW_DURATION, ticks);
+        player.setData(RpgData.BOW_DRAW_UNTIL, player.level().getGameTime() + ticks);
+    }
+
     static void charge(ServerPlayer player) {
         if (player.tickCount % 2 != 0) { return; }
         var hand = player.getEyePosition().add(player.getLookAngle().scale(0.6)).add(0, -0.25, 0);
@@ -32,7 +65,8 @@ public final class SkillVisuals {
     static void cleave(ServerPlayer player, double range) {
         var level = player.level();
         for (int i = 0; i < 24; i++) {
-            double angle = i * Math.TAU / 24;
+            double angle = Math.toRadians(player.getYRot() + 90 - Skills.CLEAVE_HALF_ANGLE_DEGREES
+                    + i * (2 * Skills.CLEAVE_HALF_ANGLE_DEGREES) / 23.0);
             double x = player.getX() + Math.cos(angle) * range;
             double z = player.getZ() + Math.sin(angle) * range;
             level.sendParticles(RED, x, player.getY() + 0.7, z, 1, 0, 0, 0, 0);
@@ -46,6 +80,10 @@ public final class SkillVisuals {
 
     static void cleaveHit(ServerLevel level, LivingEntity target) {
         level.sendParticles(RED, target.getX(), target.getY(0.5), target.getZ(), 7, 0.2, 0.25, 0.2, 0);
+    }
+
+    static void bleedTick(ServerLevel level, LivingEntity target) {
+        level.sendParticles(RED, target.getX(), target.getY(0.5), target.getZ(), 2, 0.15, 0.2, 0.15, 0);
     }
 
     static void boltImpact(ServerLevel level, Vec3 position) {
@@ -73,12 +111,14 @@ public final class SkillVisuals {
     /** Run after other impact handlers so canceled collisions do not play an impact effect. */
     public static void arrowImpact(ProjectileImpactEvent event) {
         var arrow = event.getProjectile();
-        if (!(arrow instanceof AbstractArrow) || !(arrow.level() instanceof ServerLevel level)
+        if (!(arrow instanceof AbstractArrow nativeArrow) || !(arrow.level() instanceof ServerLevel level)
                 || !arrow.hasData(RpgData.SKILL_SHOT) || !arrow.getData(RpgData.SKILL_SHOT)) { return; }
         var hit = event.getRayTraceResult().getLocation();
         level.sendParticles(YELLOW, hit.x, hit.y, hit.z, 5, 0.06, 0.06, 0.06, 0);
         level.sendParticles(ParticleTypes.END_ROD, hit.x, hit.y, hit.z, 2, 0.02, 0.02, 0.02, 0.01);
-        arrow.removeData(RpgData.SKILL_SHOT);
+        if (event.getRayTraceResult().getType() == HitResult.Type.BLOCK || nativeArrow.getPierceLevel() == 0) {
+            arrow.removeData(RpgData.SKILL_SHOT);
+        }
     }
 
     private static void trail(Entity projectile, DustParticleOptions particle, int count) {

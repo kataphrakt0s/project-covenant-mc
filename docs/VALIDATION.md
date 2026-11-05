@@ -2,6 +2,129 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Damage-driven Reaver Rage (2026-11-05)
+
+- `scripts/Dev.ps1 build` passed, including radial/skill-tree geometry checks.
+  `scripts/Dev.ps1 test` passed all **34 required dedicated GameTests**.
+  Evidence: ignored `.local/rage-tests-final.log`. Production JAR inspection
+  found no GameTest classes or fixtures; `git diff --check` passed.
+- The new `rage_damage` Survival fixture verifies outgoing/incoming damage
+  coefficients, armor reductions, absorption, fractions, ordinary versus skill
+  arrows, environmental/self/zero/immune/dodged exclusions, incoming attributed
+  magic, the existing generation attribute on both gains, Cleave/Rend/bleed
+  outgoing exclusions, capacity clamping, and inactive-class preservation.
+  The updated recovery fixture verifies no passive combat generation, refreshed
+  seven-second grace, zero damage not refreshing grace, and 10/second decay.
+- Both damage coefficients are server-configurable. The old time-based
+  `rageGeneration` config key is retired; saved balances and the existing
+  `covenant:rage_generation` attribute ID remain compatible.
+- Manual client handoff: fight with normal attacks and check immediate Rage
+  gains; cast Cleave/Rend and confirm they do not refund Rage; stand idle during
+  grace and confirm no growth, then decay after seven seconds. Cast frequency
+  and gamefeel still need user playtesting. No client was launched or deployed.
+
+## Stalker traps (2026-11-05)
+
+- Range tuning: all traps now use a 1.5 × 1.5-block contact footprint (0.75-block
+  half-width, still 0.25 blocks high); Frost/Blast use 3.5-block effect radii.
+  Flame retains its three-block effect radius. Build and all 33 required dedicated
+  GameTests passed with expanded contact checks for every trap, Frost outer-area
+  entry/exit, Blast outer-area damage/knockback and falloff, and Flame's retained
+  range. Tooltips, particles, and design notes use the new values. Test evidence:
+  ignored `.local/trap-range-tests-final.log`. Rendered boundaries/gamefeel remain
+  for user playtesting.
+- All four traps are implemented through existing command and saved-slot activation.
+  `scripts/Dev.ps1 test` passed **33 required dedicated GameTests**, saved all
+  dimensions, and shut down cleanly. Eleven new trap fixtures cover spending,
+  cooldowns, rejected entity addition, pending replacement, exact arming/armed
+  expiry, walls (including point-blank release), ledges, slab/stair support,
+  flooding/support removal, shallow hitbox contact, passive targets, pet/spectator/
+  owner/PvP exclusions, saved assignments, dependent unlearning, and owner cleanup.
+- Bear checks cover fixed damage, armor, absorption, shields, guaranteed Dodge,
+  invulnerability, an eligible Wither, root refresh, input/jump suppression,
+  preserved external velocity, and duration snapshots. Native mob serialization
+  and an actual player-file save/load preserve root; inactive timers pause, loaded
+  mobs count down, and native death/player death replacement clear it.
+- Frost checks cover nonstacking multiplayer sources, removal of one source,
+  final exit/re-entry, root interaction, armed/active slot separation, triggered
+  replacement, prerequisite cleanup, wall/floor cover, expiry, and no saved slow.
+  Flame checks cover immediate entry, retained re-entry deadlines, exact six-hit
+  lifetimes, two independent owners/credit, ordinary hurt-immunity interference,
+  fire immunity/Fire Resistance, shield/Dodge bypass, invulnerability, cover,
+  replacement, and class cleanup. Blast checks cover one attributed explosion,
+  center/edge/outside damage, armor/Blast Protection, both knockback resistances,
+  solid cover, shield/Dodge bypass, invulnerability, root-preserving displacement,
+  and retained blocks.
+- Native entity saving excludes deployed traps/patches. The fixture invokes the
+  native `UNLOADED_TO_CHUNK` removal reason and verifies immediate Frost cleanup;
+  it does not perform a full chunk unload/reload or retained-world process restart.
+  Dimension cleanup is exercised through its event; live client dimension travel,
+  reconnect delivery, and real-client multiplayer remain manual checks.
+- The Aimed Shot fixture's firing lane now has explicit temporary test-only chunk
+  tickets; its prior failures showed an unticked arrow outside the tiny structure's
+  ticking chunks, depending on random grid alignment. Its tickets are released on
+  completion. Trap gameplay never creates chunk tickets.
+- Evidence: ignored `.local/traps-tests.log` and `.local/traps-build.log`.
+  Builds include both geometry checks; standard Gradle `test` remains `NO-SOURCE`.
+  No client launch or Prism deployment was performed. Root uses a vanilla Slowness
+  sprite alias for its inventory presentation; trap models/particles and movement
+  feel remain unobserved. Profiles, Affix Pages, and resource/loadout saved formats
+  retain their existing IDs and meanings.
+- User playtest: throw while retreating and against obstacles/ledges/slabs/stairs;
+  distinguish four models and armed cues; walk/jump/aim/attack/cast while rooted
+  and receive knockback; cross/overlap patch boundaries and solid cover; tune Blast's
+  low shove (roughly three blocks is a target, not a measured guarantee). Check
+  owner death/logout/dimension changes and actual chunk unload/restart with a second
+  client. See `TRAPS_IMPLEMENTATION_PLAN.md` for concrete values.
+
+## Rend and shared bleeding (2026-11-05)
+
+- `scripts/Dev.ps1 test` passed all 22 required dedicated GameTests and completed
+  native dimension saves and clean shutdown. New fixtures `rend`, `bleed_pulses`,
+  and `bleed_persistence` verify native default/custom held-item reach and wall
+  clipping; 100% initial damage, 20 Rage, two-second cooldown; application-time
+  10% power capture; five-second duration and native cost/cooldown/duration scaling;
+  absorption-only hits; actual shield blocking, Dodge, invulnerability and canceled
+  damage; shared cap, oldest replacement, duration refresh and attacker credit;
+  independent hurt cooldown and native differential damage; armor bypass,
+  Resistance/absorption/invulnerability, exact expiry and shared consumption.
+- Native mob and player save/load preserve captured damage, UUID ownership and both
+  relative timers. Death replacement excludes wounds; non-death replacement retains
+  them. An unregistered restored target remains paused while server time advances,
+  then resumes without catch-up with its attacker offline. After registration, real
+  loaded-entity ticks deliver the remaining pulses and expiry. Native death clears
+  the state. These fixtures do not establish live network reconnect delivery or a
+  retained-world process restart.
+- `scripts/Dev.ps1 build` passed, including radial/skill-tree geometry checks.
+  Evidence: ignored `.local/rend-tests.log` and `.local/rend-build.log`. The new
+  server-only `covenant:bleed` attachment and data-driven damage type are additive;
+  existing saved IDs/formats are retained. Dependent bleed skills remain placeholders.
+- No client launch or Prism deployment was performed. Manually check the native
+  swing/red bleed particles, normal melee reach, three-stack damage pacing,
+  refresh/five-second expiry, weapon swaps, continued melee between pulses,
+  shared ownership with another Reaver, and actual reconnect/chunk-unload/restart.
+
+## Foundational attack skills (2026-11-05)
+
+- `scripts/Dev.ps1 test` passed all 19 required dedicated GameTests; the server
+  saved all dimensions and shut down successfully. The new `skill_foundations`
+  fixture verifies actual three-target piercing with a fourth target unharmed,
+  block stopping/trail cleanup, Cleave's forward arc and edge/range/line-of-sight
+  exclusions, Aimed Shot's delayed damage from changed position/aim, snapshotted
+  costs, single ammunition/durability use, movement slowdown/restoration, and
+  cancellation through prerequisite removal, lost equipment, class changes, and
+  insufficient completion resources. Existing persistence/loadout tests passed.
+- `scripts/Dev.ps1 build` passed, including radial and skill-tree geometry checks.
+  `git diff --check` passed. The packaged JAR includes the narrow native arrow
+  piercing invoker and excludes GameTest classes/resources. No saved format or
+  existing ID changed; the new bow-pose duration attachment is transient.
+- Evidence: ignored `.local/skill-foundations-tests.log` and
+  `.local/skill-foundations-build.log`. No client launch or Prism deployment was
+  performed. Manually check Aimed Shot's bow pose, movement feel, ordinary bow-use
+  interaction, interruption/death/logout/dimension travel, and zero/scaled cast
+  times; also check Cleave's arc readability and Piercing Shot's successive impacts.
+  Client rendering and live multiplayer lifecycle delivery remain unverified.
+
 ## Whole-tree page layout (2026-11-04)
 
 - `scripts/Dev.ps1 build` passed, including `radialMenuTest` and the new

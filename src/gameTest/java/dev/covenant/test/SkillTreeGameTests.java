@@ -35,8 +35,8 @@ final class SkillTreeGameTests {
         try {
             check(SkillTree.ALL.size() == 62 && SkillTree.ALL.stream().map(SkillTree.Node::id).distinct().count() == 62,
                     "All 62 brainstorm nodes have unique stable IDs");
-            check(SkillDefinition.ALL.size() == 3 && SkillTree.ALL.stream().filter(SkillTree.Node::implemented).count() == 3,
-                    "Only the original three skills have gameplay implementations");
+            check(SkillDefinition.ALL.size() == 9 && SkillTree.ALL.stream().filter(SkillTree.Node::implemented).count() == 9,
+                    "Nine executable skills, including all four traps");
             var expectedLinks = Set.of("piercing_shot>aimed_shot", "bear_trap>frost_trap", "poison_shot>snaring_shot",
                     "flame_trap>blast_trap", "arcane_arrow>meteor_arrow", "cleave>rage_storm", "battle_cry>enduring_cry",
                     "lunging_combo>rip_and_rush", "arcane_bolt>arcane_barrage", "icy_veins>freezing_aura", "flame_cloak>immolation_aura");

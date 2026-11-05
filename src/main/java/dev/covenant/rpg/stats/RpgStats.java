@@ -54,7 +54,7 @@ public final class RpgStats {
     public static final DeferredHolder<Attribute, Attribute> FOCUS_REGENERATION = register("focus_regeneration", 1, 1.25, Attribute.Sentiment.POSITIVE);
     /** Rage capacity coefficient applied to server config; default 1, range [0, 1024]. */
     public static final DeferredHolder<Attribute, Attribute> RAGE_CAPACITY = register("rage_capacity", 1, 1024, Attribute.Sentiment.POSITIVE);
-    /** In-combat Rage generation coefficient; default 1, range [0, 1024]. */
+    /** Damage-driven outgoing/incoming Rage gain multiplier; default 1, range [0, 1024]. */
     public static final DeferredHolder<Attribute, Attribute> RAGE_GENERATION = register("rage_generation", 1, 1024, Attribute.Sentiment.POSITIVE);
     /** Mana capacity coefficient applied to server config; default 1, range [0, 1024]. */
     public static final DeferredHolder<Attribute, Attribute> MANA_CAPACITY = register("mana_capacity", 1, 1024, Attribute.Sentiment.POSITIVE);
@@ -118,7 +118,8 @@ public final class RpgStats {
             return;
         }
         var direct = event.getSource().getDirectEntity();
-        if ((direct instanceof LivingEntity || direct instanceof Projectile)
+        if ((direct instanceof LivingEntity || direct instanceof Projectile
+                || (direct instanceof dev.covenant.rpg.skills.TrapEntity && event.getSource().is(dev.covenant.rpg.skills.TrapKind.BEAR.damageType)))
                 && direct != player && player.getRandom().nextDouble() < player.getAttributeValue(DODGE)) {
             // Cancel before armor/shield processing: a dodged hit consumes neither health nor durability.
             event.setCanceled(true);

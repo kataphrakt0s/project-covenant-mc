@@ -7,7 +7,7 @@ import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-/** Brainstorm roster and allocation rules, separate from the three executable skill definitions. */
+/** Brainstorm roster and allocation rules, separate from executable skill definitions. */
 public final class SkillTree {
     private SkillTree() {}
 

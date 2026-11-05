@@ -30,7 +30,7 @@ public final class SkillLoadouts {
         if (!learn) {
             for (var definition : SkillDefinition.ALL) {
                 if (previous.learned().contains(definition.id()) && !next.learned().contains(definition.id())) {
-                    player.getData(RpgData.SKILL_RUNTIME).cancelSkill(definition);
+                    player.getData(RpgData.SKILL_RUNTIME).cancelSkill(player, definition);
                 }
             }
         }

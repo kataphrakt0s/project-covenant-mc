@@ -1,7 +1,7 @@
 ![[Pasted image 20261104154316.png]]
 
-The image is the proposed skill roster and level layout. Only Piercing Shot,
-Cleave, and Arcane Bolt are currently implemented; the remaining entries are
+The image is the proposed skill roster and level layout. Piercing Shot,
+Aimed Shot, Cleave, Rend, Arcane Bolt, and all four Stalker traps are implemented; the remaining entries are
 planned skills. The breakdowns record agreed gameplay direction. Levels below
 are transcribed from the image and are informational rather than level gates.
 The first tree pass now displays only the current class's roster, with free
@@ -29,14 +29,114 @@ pool that gains one point per character level. XP progression, the point economy
 and rank scaling are deferred from this brainstorm pass. The existing prototype's
 free learning remains unchanged while skill behavior is implemented separately.
 
-## Planned trap rules
+## Trap rules
 
-Bear Trap, Frost Trap, Flame Trap, and Blast Trap share a short forward throw,
-landing slightly in front of the player. Exact throw distance is deferred.
+The agreed design below has an
+[ordered implementation checklist](../docs/TRAPS_IMPLEMENTATION_PLAN.md).
+All four trap skills are implemented; visuals, gamefeel, and live multiplayer checks remain for user playtesting.
+
+Bear Trap, Frost Trap, Flame Trap, and Blast Trap share a fixed short forward
+toss, approximately three blocks along the player's horizontal facing direction.
+Looking up or down does not change the intended throw distance or direction.
+This keeps placement predictable while retreating. These traps share the transient native deployment in `TrapEntity`.
+
+Thrown traps collide with terrain and settle onto supporting ground. A wall
+stops forward travel and the trap drops at its base; a ledge lets it fall to
+the surface below. Solid supporting surfaces include slabs and stairs. Traps
+cannot attach to walls or remain suspended in midair. Obstructed throws can
+therefore land short of the intended distance.
+
+Landed traps and active patches require dry, solid support at their placement
+point throughout their lifetime. A thrown trap entering water or lava fizzles.
+Flooding the placement point or removing its support ends the landed trap or
+patch. A toss over a ledge may still fall normally before its first landing.
+These removals do not refund the spent Focus or cooldown.
+
+Traps arm 0.5 seconds after landing, with a visible cue when ready. They cannot
+trigger during the toss or arming delay. An eligible enemy already standing on
+the trap triggers it once it becomes armed.
+
+Traps are visible to all players, including opponents. Each type has a
+distinct appearance and a clear armed cue so players can identify and avoid
+them and owners can track their placements. Traps are not concealed in this pass.
+
+Deployed traps cannot be destroyed by attacks, disarmed, or picked up in this
+prototype. Players can avoid them, trigger them, or wait for expiry. There is
+no trap health, disarming action, or recoverable trap item in this pass.
+
+An untriggered trap expires harmlessly 30 seconds after arming unless triggered
+or replaced sooner. Triggered effects have their own separate durations.
+
+Trigger eligibility follows the existing skill targeting rules: living,
+non-spectator targets other than the owner, excluding the owner's pets and
+allies, and respecting PvP restrictions. Passive animals and modded living
+creatures can trigger traps; eligibility is not limited to hostile mobs.
+
+Triggering requires the creature's hitbox to intersect a shallow contact region
+above the trap's 1.5-block-wide footprint. Mere proximity does not trigger it,
+and creatures passing clear overhead do not set it off. Frost, Flame, and Blast
+can affect a larger area after triggering; their effect areas are separate from
+this shared contact footprint.
 
 Each player may have one armed trap of each type. Throwing another trap of the
 same type replaces that player's previous armed trap of that type. Different
 trap types can coexist.
+
+Each player may also have one active Frost patch and one active Flame patch.
+Throwing or arming the next trap does not remove an existing active patch.
+When the next trap of that type triggers, its new patch replaces that player's
+previous active patch of the same type. Frost and Flame patches can coexist;
+these limits are per owner, not shared across players.
+
+Deployed traps and active patches disappear when their owner dies, logs out,
+changes dimension, or switches class. Unlearning a trap skill removes only
+that skill's deployed traps and patches belonging to that player.
+
+Traps and active patches also disappear when their containing chunk unloads.
+They do not keep chunks loaded or return when the chunk loads again; unloading
+can therefore remove an unused trap before its 30-second armed lifetime ends.
+
+Focus is spent and the cooldown starts when a trap is successfully thrown,
+regardless of whether it later triggers. Expiry, replacement, and cleanup give
+no refund. Rejected activations, including insufficient Focus or an active
+cooldown, spend nothing and do not start a new cooldown.
+
+Traps are learned skills paid for with Focus. They require no consumable trap
+item, ammunition, or particular held weapon, and can be thrown with a bow,
+another weapon, or an empty hand.
+
+For the first implementation, Bear Trap, Flame Trap, and Blast Trap each use
+their own base damage values, independent of the held weapon's native melee
+Damage stat. Switching between a bow and a sword does not change trap damage;
+weapon damage upgrades do not scale it in this prototype.
+
+The existing skill-duration multiplier scales Bear Trap's root duration and
+the active Frost and Flame patch durations. It does not scale the fixed
+0.5-second arming delay or the fixed 30-second untriggered lifetime. A 20%
+duration bonus gives a 3.6-second Bear root, 9.6-second Frost patch, and
+7.2-second Flame patch at the agreed base tuning.
+
+Capture the owner's effective duration bonus when the trap is thrown. Later
+equipment or stat changes do not alter that deployment's root or patch duration;
+triggering does not recalculate the captured duration.
+
+Shields cannot block trap damage or prevent trap effects. This shared rule
+applies to all four traps, including triggered areas and explosions.
+
+Solid walls and floors block Frost, Flame, and Blast effects. Radius alone
+does not allow a trap effect to reach enemies through a solid barrier, including
+an enemy on the floor above. Cover therefore protects against these area effects.
+
+Patches are temporary skill effects and leave terrain unchanged. Frost does
+not freeze water or place snow or ice; Flame does not place fire, ignite
+vegetation, or melt blocks. Their visuals show the affected area without
+changing blocks, consistent with Blast's no-block-destruction rule.
+
+There is no blanket boss immunity to Bear Trap's root or Frost Trap's slow in
+this prototype. Eligible bosses receive the same control effects as other
+creatures, subject to the agreed defenses and invulnerability rules. Native
+knockback resistance still applies to Blast. Flying creatures must still
+contact the shallow ground-level trigger region to set a trap off.
 
 ## Planned aura model
 
@@ -46,13 +146,64 @@ Pressing its assigned keybind activates a different, stronger temporary buff. Ea
 aura's passive and active effects will be defined individually. This model applies
 to auras across the classes and is not implemented yet.
 
-## Planned bleed stacking
+## Bleed stacking
 
 Repeated bleed applications add separate stacks, up to 3 stacks per enemy. Each
 stack counts as one bleed instance for Consume and Guillotine's flat consumption
 damage. Blood Fever counts bleeding enemies, not the number of stacks on them.
 Reapplying bleed refreshes the duration of all existing stacks, including when
-already at the 3-stack cap. Bleed stacking is not implemented yet.
+already at the 3-stack cap. Rend and the shared bleed foundation are implemented;
+the dependent bleed skills below remain planned.
+
+At the cap, a new application replaces the oldest stack and refreshes all stack
+durations. The replacement carries the new application's damage and attacker;
+a weaker application can therefore replace a stronger stack.
+
+The three-stack limit is shared across attackers. Each stack retains its applying
+attacker for damage attribution and future healing from that stack's bleed damage.
+Consume and Guillotine remove all bleed stacks on affected enemies, including
+stacks applied by other players. This allows shared setup and finishers; consuming
+another player's stacks also removes that player's ongoing bleed damage.
+
+Rend creates each stack with base bleed damage scaled from the attacker's effective
+native attack damage at application time. Later weapon/equipment changes do not
+recalculate existing stacks. Refreshing a retained stack's duration preserves its
+base damage; a replacement stack captures the new application's attack damage.
+Rend's prototype bleed damage is 10% of captured attack damage per stack per
+one-second pulse, with a five-second base duration. Three equal-power stacks deal
+30% of that attack damage per second before the remaining applicable defenses.
+
+Rend's initial strike uses normal melee defenses. Bleed ticks bypass armor,
+shield blocking, and Dodge, but respect general damage reduction (such as
+Resistance), absorption, and invulnerability. Bleed is not damage that ignores
+every defense.
+
+Bleed ticks operate independently of the brief hurt-immunity window between normal
+hits: normal hits cannot suppress scheduled bleed damage, and bleed ticks cannot
+suppress normal hits or other stacks' ticks. Actual invulnerability, such as
+Creative mode, remains respected.
+
+Each bleeding enemy uses one shared tick schedule at one-second intervals (20
+game ticks). The first tick occurs one second after bleeding starts. Each pulse
+applies every active stack's damage separately with its own attacker attribution.
+Adding, refreshing, or replacing stacks does not reset the schedule; a newly
+applied stack participates in the next pulse even if it is less than a second old.
+
+Bleeding persists across save/load, target disconnects, and entity unloading. Save
+each stack's attacker ownership, captured base damage, and remaining duration,
+plus the target's time until its next bleed pulse. Duration and pulse timers pause
+while the target is not ticking and resume without offline damage or catch-up
+bursts. An attacker disconnecting does not remove their existing bleeds. Death
+clears bleeding; stacks do not carry into a replacement player after death.
+
+Rend applies or refreshes bleeding only when its initial strike deals positive
+damage to health or absorption. Dodged, fully blocked, and immune hits do not add
+stacks, replace stacks, or refresh their durations. Damage absorbed by absorption
+hearts still qualifies as a damaging hit.
+
+All otherwise-valid living targets can bleed, including undead, golems, bosses,
+and modded living creatures. This implementation adds no creature-type bleed
+immunities; ordinary targeting rules and actual invulnerability still apply.
 
 # Skill Details
 ## Stalker
@@ -64,9 +215,9 @@ Planned behavior: fire one arrow that can hit up to three enemies in a line,
 stopping at blocks. This gives the skill a role in damaging lined-up enemies.
 Damage tuning is deferred.
 
-Current implementation: fire one bow arrow at full speed with base damage
-coefficient 3 instead of vanilla 2 (+50%). It only hits one target; the planned
-multi-target piercing is not implemented yet.
+Current implementation: fire one bow arrow at full speed through up to three
+targets, stopping at blocks, with base damage coefficient 3 instead of vanilla 2
+(+50%). This uses native arrow piercing and collision handling.
 
 #### Disengage
 Diagram level: 3.
@@ -78,10 +229,38 @@ while creating distance. Leap distance and other numerical tuning are deferred.
 #### Bear Trap
 Diagram level: 3.
 
-Planned behavior: throw a single-use trap a short distance in front of the player.
-It damages and briefly roots the first enemy to step on it. The root prevents
-movement but still allows attacks. This creates an opportunity to gain distance
-and prepare a shot. Damage and root duration are deferred.
+Current implementation: throw a single-use trap a short distance in front of the player.
+It damages and briefly roots the first enemy to step on it. The root blocks
+self-directed walking and jumping, while allowing turning, attacks, and casting.
+Gravity and knockback still apply: Blast Trap can push a rooted enemy away,
+but that enemy cannot resume walking until the root expires. This creates an
+opportunity to gain distance and prepare a shot.
+
+Implemented prototype tuning: 20 Focus, eight-second cooldown,
+four damage points (two hearts before defenses), three-second root, and an
+instant throw with no cast wind-up. The shared post-landing arming delay still
+applies. These are base values for initial playtesting.
+
+Taking damage does not break the root; it lasts its full duration. The target
+can still retaliate with attacks or casting while rooted.
+
+Repeated successful Bear Trap roots keep the longer of the existing remaining
+duration and the new root's duration; durations are not added. A normal
+three-second root hitting with one second remaining resets the duration to
+three seconds, without shortening an existing longer root.
+
+Once applied, a Bear root belongs to its target and finishes independently of
+owner death, logout, dimension change, or unlearning. Save its remaining duration
+with the target and pause it while the target is not ticking; target death clears
+it, matching bleed's lifecycle. This does not keep any trap or patch deployed.
+
+The snap applies its root only after dealing positive damage to health or
+absorption hearts. A fully prevented hit consumes the single-use trap without
+rooting the target, matching Rend's damaging-hit requirement for bleed.
+
+The snap respects armor, Dodge, general mitigation, and invulnerability, but
+bypasses shield blocking under the shared trap rule. Any positive health or
+absorption damage that gets through qualifies for the full root.
 
 #### Aimed Shot
 Diagram level: 5.
@@ -93,6 +272,11 @@ The player can adjust their aim throughout the wind-up. This trades firing speed
 for concentrated damage, distinct from Piercing Shot's line attack. Movement is
 allowed at the normal bow-draw slowdown and does not cancel the wind-up. Exact
 wind-up duration and damage tuning are deferred.
+
+Current prototype: 40 Focus, 4-second cooldown, 1-second wind-up, base arrow damage
+coefficient 4 (double vanilla). Aim and movement remain available during wind-up;
+movement speed is 20%. Removing the bow/ammunition, unlearning, or lifecycle
+interruption cancels without spending. Cost and cooldown begin when the arrow fires.
 
 #### Hunter's Pet
 Diagram level: 5.
@@ -145,10 +329,19 @@ Diagram level: 10.
 
 Requires: Bear Trap.
 
-Planned behavior: when triggered, create a temporary frost patch that slows enemies
+Current implementation: when triggered, create a temporary frost patch that slows enemies
 only while they are inside it. The slow does not linger after leaving the patch.
-This controls groups, complementing Bear Trap's single-target root. Area size,
-slow strength, and patch duration are deferred.
+This controls groups, complementing Bear Trap's single-target root. It deals
+no damage.
+
+Implemented prototype base values: 30 Focus, 12-second cooldown,
+3.5-block patch radius, eight-second patch duration, 50% movement slow, and
+an instant throw. The shared post-landing arming delay still applies.
+
+Overlapping Frost patches do not stack their slows; only the strongest Frost
+slow applies. Two normal patches still slow by 50%. Leaving one patch does
+not remove the slow if the target remains inside another eligible patch;
+leaving all eligible patches ends it immediately.
 
 #### Arcane Arrow
 Diagram level: 15.
@@ -179,9 +372,29 @@ spread angle, and damage are deferred.
 #### Flame Trap
 Diagram level: 20.
 
-Planned behavior: when triggered, create a temporary burning area that repeatedly
-damages enemies inside it. This provides sustained area damage. Area size, damage,
-damage interval, and patch duration are deferred.
+Current implementation: when triggered, create a temporary burning area that repeatedly
+damages enemies only while they are inside it. Leaving the patch ends its damage;
+it does not ignite targets or apply a lingering burn. This rewards keeping enemies
+inside with Bear and Frost traps.
+
+Implemented prototype base values: 35 Focus, 12-second cooldown,
+three-block patch radius, six-second patch duration, three damage points per
+enemy every second, and an instant throw. The shared post-landing arming delay
+still applies.
+
+Overlapping Flame patches from different players each deal their own damage
+with independent per-enemy intervals and owner credit. Two normal patches deal
+six damage points per second before defenses to an enemy inside both. A player's
+own active Flame patch is still replaced when that player's next Flame Trap triggers.
+
+An eligible enemy takes its first Flame hit immediately on entry, including
+when the patch forms around it, then at most one hit per second from that
+patch. Each patch retains the per-enemy interval across leaving and re-entering;
+crossing the boundary does not grant additional hits within that interval.
+
+Flame patch damage is fire damage and bypasses Dodge and shields. Fire Resistance
+and natural fire immunity prevent it. General mitigation and invulnerability
+still apply.
 
 #### Swiftness Aura
 Diagram level: 25.
@@ -209,11 +422,28 @@ Diagram level: 25.
 
 Requires: Flame Trap.
 
-Planned behavior: when triggered, produce one TNT-like explosion that damages
+Current implementation: when triggered, produce one TNT-like explosion that damages
 nearby enemies and knocks them away without destroying blocks. This provides
 immediate area burst damage and creates space, though knockback can push enemies
-out of Frost or Flame patches. Explosion damage, radius, and knockback strength
-are deferred.
+out of Frost or Flame patches.
+
+Damage and knockback are strongest at the explosion's center and fall toward
+zero at its outer edge. Placement close to the enemy therefore improves both
+burst damage and displacement.
+
+Implemented prototype base values: 40 Focus, 15-second cooldown,
+3.5-block explosion radius, maximum center damage of ten points (five hearts
+before defenses), and an instant throw. Damage falls off with distance as above;
+the shared post-landing arming delay still applies.
+
+Blast primarily shoves enemies outward with a small upward bump, rather than
+launching them high. The initial playtest target is roughly three blocks of
+displacement near the center on flat ground before knockback resistance.
+Resistance reduces the knockback, and strength falls off with distance.
+Terrain affects actual travel; this is a tuning target, not a guaranteed distance.
+
+Blast deals explosion damage and bypasses Dodge and shields. Armor and Blast
+Protection reduce its damage; general mitigation and invulnerability still apply.
 
 #### Meteor Arrow
 Diagram level: 30.
@@ -261,16 +491,24 @@ Diagram level: 1.
 Planned behavior: a wide forward-facing melee sweep, rewarding facing and
 positioning. Sweep angle and damage tuning are deferred.
 
-Current implementation: deal effective native attack damage to nearby non-allied
-living targets in every direction within 3 blocks and line of sight. The planned
-frontal restriction is not implemented yet.
+Current prototype: deal effective native attack damage to non-allied living targets
+within 3 blocks, line of sight, and a 120-degree horizontal forward arc. Vertical
+aim does not rotate the arc. Cost remains 20 Rage and cooldown 3 seconds.
 
 #### Rend
 Diagram level: 3.
 
 Planned behavior: a single-target melee strike that deals an initial hit and
-applies bleeding damage over time. Initial damage, bleed damage, tick interval,
-and bleed duration are deferred.
+applies bleeding damage over time using the shared bleed rules above.
+
+Current prototype: instant attack against the enemy under the crosshair, using
+the held item's native attack range and block-clipped targeting (normally 3 blocks
+in Survival). The initial strike deals 100% of effective native attack damage.
+A damaging hit applies one five-second stack at 10% of captured attack damage per
+second. Cost: 20 Rage; cooldown: 2 seconds. Existing cost, cooldown, and duration
+multipliers apply. No valid target spends nothing and starts no cooldown. Once a
+strike is attempted, its cost and cooldown remain spent even if defenses stop the
+damage and prevent bleed application. No weapon-category restriction is added.
 
 #### Battle Cry
 Diagram level: 3.

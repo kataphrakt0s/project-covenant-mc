@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "environment": "minecraft:default",
+  "function": "covenant_test:trap_root_persistence",
+  "type": "minecraft:function",
+  "max_ticks": 150
+}

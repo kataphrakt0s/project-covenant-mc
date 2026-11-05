@@ -120,8 +120,8 @@ final class SkillGameTests {
             dispatcher.execute("covenant class switch covenant:stalker", operator);
             dispatcher.execute("covenant resource set 999", operator);
             near(ClassResources.current(player, PlayerClass.STALKER), 100, "Debug edit is clamped");
-            check(dispatcher.getCompletionSuggestions(dispatcher.parse("covenant skill use ", ordinary)).join().getList().size() == 3,
-                    "Three skill suggestions");
+            check(dispatcher.getCompletionSuggestions(dispatcher.parse("covenant skill use ", ordinary)).join().getList().size() == SkillDefinition.ALL.size(),
+                    "All executable skill suggestions");
             // Legacy active-resource values are imported only until the new balance exists.
             var legacy = helper.makeMockServerPlayerInLevel();
             players.add(legacy);
@@ -144,13 +144,14 @@ final class SkillGameTests {
         var dummy = helper.spawn(EntityType.HUSK, 2, 2, 2);
         dummy.setNoAi(true);
         dummy.setInvulnerable(false);
+        dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(0);
         player.setPos(dummy.getX() + 1, dummy.getY(), dummy.getZ());
         check(dummy.hurtServer(helper.getLevel(), player.damageSources().playerAttack(player), 1), "Real damage starts combat");
         helper.onEachTick(player::doTick);
         helper.runAtTickTime(40, () -> {
             near(ClassResources.current(player, PlayerClass.STALKER), 11, "Inactive Focus does not regenerate");
             near(ClassResources.current(player, PlayerClass.WEAVER), 13, "Inactive Mana does not regenerate");
-            check(ClassResources.current(player, PlayerClass.REAVER) >= 17.5, "Rage builds with time");
+            near(ClassResources.current(player, PlayerClass.REAVER), 1, "One damage grants one Rage with no passive growth");
             ClassResources.set(player, PlayerClass.REAVER, 60);
         });
         helper.runAtTickTime(100, () -> {
@@ -159,7 +160,7 @@ final class SkillGameTests {
         });
         helper.runAtTickTime(200, () -> {
             check(ClassResources.inCombat(player), "Still in refreshed combat grace");
-            nearPulse(ClassResources.current(player, PlayerClass.REAVER), 70, 2.5, "Predictable combat generation");
+            near(ClassResources.current(player, PlayerClass.REAVER), 20, "Combat grace preserves Rage without generating it");
             dummy.hurtServer(helper.getLevel(), player.damageSources().playerAttack(player), 0);
         });
         helper.runAtTickTime(241, () -> {
@@ -233,7 +234,7 @@ final class SkillGameTests {
         helper.onEachTick(player::doTick);
         helper.runAtTickTime(8, () -> {
             check(bowTarget.getHealth() <= 14, "Enhanced bow projectile damages a single target");
-            check(!shot.hasData(RpgData.SKILL_SHOT), "Native impact clears the trail marker");
+            check(shot.getData(RpgData.SKILL_SHOT), "Piercing arrow retains its trail after an entity impact");
             bowTarget.discard();
             PlayerProfiles.switchClass(player, PlayerClass.REAVER);
             SkillLoadouts.learn(player, SkillDefinition.CLEAVE.id(), true);

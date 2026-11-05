@@ -66,8 +66,24 @@ public final class RpgGameTests {
         FUNCTIONS.register("affix_restart", () -> AffixCommandGameTests::restart);
         FUNCTIONS.register("skill_lifecycle", () -> SkillGameTests::lifecycle);
         FUNCTIONS.register("skill_recovery", () -> SkillGameTests::recovery);
+        FUNCTIONS.register("rage_damage", () -> RageGameTests::run);
         FUNCTIONS.register("skill_effects", () -> SkillGameTests::effects);
+        FUNCTIONS.register("skill_foundations", () -> SkillFoundationGameTests::run);
+        FUNCTIONS.register("rend", () -> BleedGameTests::rend);
+        FUNCTIONS.register("bleed_pulses", () -> BleedGameTests::pulses);
+        FUNCTIONS.register("bleed_persistence", () -> BleedGameTests::persistence);
         FUNCTIONS.register("skill_loadout", () -> SkillLoadoutGameTests::run);
+        FUNCTIONS.register("trap_deployment", () -> TrapGameTests::deployment);
+        FUNCTIONS.register("trap_terrain", () -> TrapGameTests::terrain);
+        FUNCTIONS.register("trap_bear", () -> TrapGameTests::bear);
+        FUNCTIONS.register("trap_root_persistence", () -> TrapGameTests::rootPersistence);
+        FUNCTIONS.register("trap_frost", () -> TrapGameTests::frost);
+        FUNCTIONS.register("trap_flame", () -> TrapGameTests::flame);
+        FUNCTIONS.register("trap_flame_defenses", () -> TrapGameTests::flameDefenses);
+        FUNCTIONS.register("trap_blast", () -> TrapGameTests::blast);
+        FUNCTIONS.register("trap_lifecycle", () -> TrapGameTests::lifecycle);
+        FUNCTIONS.register("trap_targeting", () -> TrapGameTests::targeting);
+        FUNCTIONS.register("trap_activation", () -> TrapGameTests::activation);
         FUNCTIONS.register("skill_tree", () -> SkillTreeGameTests::run);
     }
 

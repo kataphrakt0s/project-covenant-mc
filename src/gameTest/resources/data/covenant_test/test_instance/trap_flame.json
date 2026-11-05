@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "type": "minecraft:function",
+  "function": "covenant_test:trap_flame",
+  "max_ticks": 160,
+  "environment": "minecraft:default"
+}

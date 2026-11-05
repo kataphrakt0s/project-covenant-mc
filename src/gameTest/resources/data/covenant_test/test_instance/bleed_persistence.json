@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:bleed_persistence",
+  "environment": "minecraft:default",
+  "structure": "covenant_test:empty",
+  "max_ticks": 140
+}

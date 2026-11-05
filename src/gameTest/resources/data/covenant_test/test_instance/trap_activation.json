@@ -1,0 +1,7 @@
+{
+  "function": "covenant_test:trap_activation",
+  "structure": "covenant_test:empty",
+  "max_ticks": 160,
+  "environment": "minecraft:default",
+  "type": "minecraft:function"
+}

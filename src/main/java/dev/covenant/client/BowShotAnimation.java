@@ -1,7 +1,6 @@
 package dev.covenant.client;
 
 import dev.covenant.rpg.RpgData;
-import dev.covenant.rpg.skills.SkillVisuals;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BowItem;
 
@@ -19,7 +18,7 @@ public final class BowShotAnimation {
                 ? entity.getData(RpgData.BOW_DRAW_UNTIL) - entity.level().getGameTime() : 0;
         boolean draw = entity.level().isClientSide() && entity.isAlive() && !entity.isUsingItem()
                 && entity.getMainHandItem().getItem() instanceof BowItem
-                && remaining > 0 && remaining <= SkillVisuals.BOW_DRAW_TICKS;
+                && remaining > 0;
         RENDERING.set(draw ? entity : null);
         return previous;
     }
@@ -35,6 +34,7 @@ public final class BowShotAnimation {
 
     public static int drawTicks(LivingEntity entity) {
         long remaining = entity.getData(RpgData.BOW_DRAW_UNTIL) - entity.level().getGameTime();
-        return (int) Math.clamp((SkillVisuals.BOW_DRAW_TICKS - remaining) * 4, 0, 20);
+        long duration = Math.max(1, entity.getData(RpgData.BOW_DRAW_DURATION));
+        return (int) Math.clamp((duration - remaining) * 24.0 / duration, 0, 20);
     }
 }

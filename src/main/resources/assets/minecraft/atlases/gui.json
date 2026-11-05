@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "type": "minecraft:single",
+      "resource": "minecraft:mob_effect/slowness",
+      "sprite": "covenant:mob_effect/rooted"
+    }
+  ]
+}

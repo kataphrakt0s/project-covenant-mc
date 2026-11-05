@@ -5,6 +5,7 @@ import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
 import dev.covenant.rpg.stats.RpgStats;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 
@@ -38,7 +39,7 @@ public final class ClassResources {
     public static double regeneration(Player player, PlayerClass type) {
         return switch (type) {
             case STALKER -> SkillConfig.FOCUS_REGEN.get() * Math.min(1.25, player.getAttributeValue(RpgStats.FOCUS_REGENERATION));
-            case REAVER -> SkillConfig.RAGE_GENERATION.get() * player.getAttributeValue(RpgStats.RAGE_GENERATION);
+            case REAVER -> 0;
             case WEAVER -> SkillConfig.MANA_REGEN.get() * player.getAttributeValue(RpgStats.MANA_REGENERATION);
         };
     }
@@ -84,7 +85,7 @@ public final class ClassResources {
         return now(player) < player.getData(RpgData.SKILL_RUNTIME).combatUntil;
     }
 
-    /** Four pulses/second. Timed generation avoids event-count/area-hit exploits and bounds sync traffic. */
+    /** Four pulses/second for recovery, decay, and capacity clamping; Rage gains are damage-driven. */
     static void tick(ServerPlayer player, PlayerClass type) {
         // After native equipment updates: initialize missing balances and discard excess capacity,
         // including on inactive classes, without recovering or depleting their resources.
@@ -106,8 +107,29 @@ public final class ClassResources {
     public static void damaged(LivingDamageEvent.Post event) {
         if (!(event.getInflictedDamage() > 0) || !(event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker)
                 || attacker == event.getEntity() || attacker.isAlliedTo(event.getEntity())) { return; }
-        if (attacker instanceof ServerPlayer player) { markCombat(player); }
-        if (event.getEntity() instanceof ServerPlayer player) { markCombat(player); }
+        var source = event.getSource();
+        if (attacker instanceof ServerPlayer player) {
+            markCombat(player);
+            // Native basic melee/arrow/trident attacks only. Skills retain their native damage pipeline,
+            // but their exact melee source or projectile marker excludes outgoing Rage refunds.
+            boolean basic = source.is(DamageTypes.PLAYER_ATTACK) || source.is(DamageTypes.ARROW) || source.is(DamageTypes.TRIDENT);
+            var direct = source.getDirectEntity();
+            if (basic && source != player.getData(RpgData.SKILL_RUNTIME).skillDamageSource
+                    && direct != null && !(direct.hasData(RpgData.SKILL_SHOT) && direct.getData(RpgData.SKILL_SHOT))) {
+                gain(player, event.getInflictedDamage() * SkillConfig.RAGE_DAMAGE_DEALT.get());
+            }
+        }
+        if (event.getEntity() instanceof ServerPlayer player) {
+            markCombat(player);
+            gain(player, event.getInflictedDamage() * SkillConfig.RAGE_DAMAGE_TAKEN.get());
+        }
+    }
+
+    private static void gain(ServerPlayer player, double amount) {
+        if (PlayerProfiles.getSelectedClass(player).orElse(null) == PlayerClass.REAVER && player.isAlive()) {
+            set(player, PlayerClass.REAVER, current(player, PlayerClass.REAVER)
+                    + amount * player.getAttributeValue(RpgStats.RAGE_GENERATION));
+        }
     }
 
     private static void markCombat(ServerPlayer player) {

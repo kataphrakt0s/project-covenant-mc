@@ -13,9 +13,14 @@ empty resource and outside combat, and follows the normal F1 HUD visibility.
 Air bubbles and mount health stack above it. Rendered behavior awaits playtesting.
 
 ## Rage
-Reaver: starts empty, base maximum 100. Builds 10/second during combat. Confirmed
-actor damage refreshes a seven-second grace timer; afterward Rage depletes 10/second.
-Generation is time-based, without per-hit bonuses. Capacity, generation and depletion are tunable.
+Reaver: starts empty, base maximum 100. Normal melee, arrow, and trident attacks
+generate 1 Rage per damage point dealt; combat damage taken generates 2 Rage per
+damage point. Both use confirmed damage after defenses, including absorption, and
+the existing `covenant:rage_generation` multiplier. Skills (including Cleave, Rend,
+and bleed) grant no outgoing Rage. Self, allied, and environmental damage are excluded.
+Combat grants no passive generation. Confirmed actor damage, including skill damage,
+refreshes a seven-second grace timer that prevents decay; afterward Rage depletes
+10/second. Capacity, both damage coefficients, and depletion are server-configurable.
 
 Planned exception: assigning Raging Aura to a skill slot reduces out-of-combat
 Rage decay after the existing grace period. It does not extend the grace period.

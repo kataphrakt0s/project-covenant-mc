@@ -40,8 +40,11 @@ The initial class identities are **Stalker** (bow/ranged precision and distance)
 once with `/covenant class select covenant:stalker` (or `reaver` / `weaver` in that
 namespace). Selection initializes the existing profile and class resource balances.
 Its saved class ID retains the profile's persistence and owner sync guarantees.
-Classes each have one playable basic skill plus the brainstorm's allocatable tree
-placeholders, without passive stat bonuses or global equipment restrictions.
+Classes each have a playable basic skill, and Stalker also has Aimed Shot and all
+four traps (Bear, Frost, Flame, Blast). The
+Reaver also has Rend and a shared bleed foundation. The remaining brainstorm nodes
+are allocatable placeholders, without passive stat
+bonuses or global equipment restrictions.
 `PlayerProfiles.getSelectedClass` resolves built-in definitions;
 unknown saved IDs are preserved without fallback. See `docs/RPG_DATA.md`.
 
@@ -74,20 +77,35 @@ limit, so it cannot be reconstructed safely. No new saved fields are introduced.
 The basic skill foundation uses a persistent, death-copied, owner-synced
 `covenant:skill_state` attachment for independent class resource balances and skill
 cooldowns. Stalker Focus has a hard 100 capacity and fast recovery; Reaver Rage
-builds with time in confirmed combat and depletes after seven seconds without
+gains 1 Rage per normal-attack damage dealt and 2 per combat damage taken, after
+defenses including absorption. Skill damage grants no outgoing Rage; combat grace
+only prevents decay, with no passive generation. Rage depletes after seven seconds without
 combat damage; Weaver Mana capacity/recovery scale through native attributes and
 Affix Pages. Only the selected class recovers/depletes. Server configuration controls
 base rates and Rage/Mana capacities; Focus recovery bonuses cap at 25%. Changed
-resource snapshots sync at most four times per second, plus explicit spending/edits.
+resource snapshots sync at most four times per second, plus explicit damage gains/spending/edits.
 
 `/covenant skill` lists definitions; `/covenant skill use <id>` activates Piercing
-Shot (bow arrow), Cleave (nearby melee damage), or Arcane Bolt (single-hit magic
-projectile). Costs and timers use existing skill multipliers. Server validation
+Shot (up to three enemies in a line), Aimed Shot (one stronger arrow after a wind-up),
+Cleave (120-degree frontal melee sweep), Rend (native-reach melee strike and bleed),
+or Arcane Bolt (single-hit magic
+projectile), or throws Bear/Frost/Flame/Blast Trap. Costs and timers use existing skill multipliers. Server validation
 and cast completion own all spending/effects. Cooldowns persist on the saved
 overworld game clock; pending casts cancel on logout, death, class/dimension change.
 `/covenant resource` inspects balances. Operator-only `resource set <amount>` and
 `class switch <id>` support testing; ordinary selection remains one-time.
 See `docs/RPG_SKILLS.md` for defaults, APIs, persistence, and test steps.
+
+Rend hits the crosshair target using native held-item melee reach (normally three
+blocks in Survival), costs 20 Rage, and has a two-second cooldown. Positive health
+or absorption damage applies one five-second bleed at 10% of captured attack
+damage per second. Targets share a three-stack cap across attackers; reapplication
+refreshes all durations and replaces the oldest stack at the cap. The server-only
+`covenant:bleed` attachment saves per-stack ownership/power and relative timers,
+pauses while the target is not ticking, and clears on death. One shared pulse per
+second applies each stack independently of native hurt cooldown, bypassing armor,
+blocking, and Dodge while retaining general mitigation and absorption. Other
+bleed-dependent skills remain placeholders. See `docs/RPG_SKILLS.md`.
 
 The Skills window displays only the current class's tree from
 `Project-Covenant/Skill Trees Brainstorm.md` (62 total nodes across the three classes).
@@ -95,8 +113,8 @@ Left-click allocates/selects for free; right-click removes that node and its lea
 dependents, clearing their assignments. The server enforces all 11 prerequisite
 links and the Ripping/Fortitude Aura exclusion. Diagram levels are informational;
 there are no skill points, level gates, or ranks yet. Planned nodes can be allocated
-and bound but have no effects, costs, cooldowns, or passive bonuses. The original
-three skills retain their gameplay. The entire current-class tree fits on one page:
+and bound but have no effects, costs, cooldowns, or passive bonuses. Nine skills
+have gameplay. The entire current-class tree fits on one page:
 compact square nodes resize to the available space, with temporary initials and
 full hover/focus tooltips. All eight tiers and dependency/exclusion links stay
 visible; empty diagram lanes are compressed while preserving the branch flow.
@@ -112,6 +130,26 @@ cancels that skill's pending cast without erasing cooldowns. Class switching ret
 inactive learning/assignments, but class checks prevent their use. Existing saves
 start with no learned skills; resource/cooldown/profile formats are unchanged.
 The existing loadout format and stable IDs are retained; no migration is needed.
+Skill behavior is being added in dependency order, starting with basic attacks,
+then targeting/defense and movement, statuses, buffs/auras, persistent areas/traps,
+and channels/companions/compound mechanics. See `docs/RPG_SKILLS.md` for the order
+and prototype tuning. The four Stalker traps share a transient native entity,
+three-block horizontal toss, terrain collision, a 1.5-block-square contact trigger,
+ten-tick landed arming, and
+600-tick armed expiry. Each owner has one pending/armed trap per type plus separate
+Frost/Flame active-patch slots. Death, logout, dimension/class change, dependent
+unlearning, fluid/support loss, and chunk removal clean deployments without refunds.
+Bear's saved/synced native root blocks movement input/jumps without freezing external
+velocity; positive snap health/absorption damage is required. Frost applies one
+source-aware transient 50% slow; Flame has independent per-owner twenty-tick damage
+deadlines; Blast uses attributed native explosion damage tags and a custom impulse
+with distance falloff, without block destruction. Frost/Blast have a 3.5-block
+effect radius; Flame has a three-block radius. Solid cover blocks areas; all trap damage bypasses
+shields, only Bear participates in Dodge. Root/patch duration snapshots on throw.
+Profiles, Affix Pages, saved resource/loadout formats, and stable skill IDs are retained.
+See `docs/TRAPS_IMPLEMENTATION_PLAN.md` for concrete tuning and the acceptance guide.
+Aimed Shot reuses existing casts, slowing movement to 20%
+during its wind-up with transient native state cleared on completion/cancellation.
 Client config
 `config/covenant-client.toml` defaults `unbindDropItem` to true: startup clears vanilla
 Drop Item if it uses Q, retains other drop keys, and saves Controls. Set false to
@@ -124,7 +162,7 @@ empty resource and outside combat: red Rage, blue Mana, yellow Focus, with cente
 current/maximum values. It follows normal F1 visibility, reads existing synced state,
 and reserves space for air/mount indicators above it. Existing skills have native
 hand swings and bounded particle effects: blue-white Arcane Bolt charge/trail/impact,
-circular Cleave sweep with red hit sparks, and a subtle yellow-white Piercing Shot
+forward Cleave sweep with red hit sparks, and a subtle yellow-white Piercing Shot
 trail/impact. A transient, tracking-synced arrow marker owns only the shot's visuals.
 Piercing Shot uses a six-tick cosmetic vanilla bow charge in first/third person,
 with a transient synced deadline and client render hooks rather than actual item use.

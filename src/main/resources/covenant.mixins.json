@@ -4,7 +4,11 @@
   "package": "dev.covenant.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "PlayerHealthLoadMixin"
+    "PlayerHealthLoadMixin",
+    "ArrowPiercingAccessor",
+    "BleedHurtCooldownMixin",
+    "RootMovementMixin",
+    "RootJumpMixin"
   ],
   "client": [
     "client.BowUsePoseMixin",

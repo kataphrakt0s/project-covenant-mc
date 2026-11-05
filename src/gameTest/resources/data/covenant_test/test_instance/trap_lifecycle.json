@@ -1,0 +1,7 @@
+{
+  "function": "covenant_test:trap_lifecycle",
+  "max_ticks": 160,
+  "structure": "covenant_test:empty",
+  "environment": "minecraft:default",
+  "type": "minecraft:function"
+}

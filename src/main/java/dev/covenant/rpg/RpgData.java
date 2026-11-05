@@ -5,6 +5,8 @@ import dev.covenant.rpg.equipment.AffixPage;
 import dev.covenant.rpg.skills.SkillState;
 import dev.covenant.rpg.skills.SkillLoadout;
 import dev.covenant.rpg.skills.SkillRuntime;
+import dev.covenant.rpg.skills.BleedState;
+import dev.covenant.rpg.skills.FrostSlows;
 import java.util.function.Supplier;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -38,12 +40,22 @@ public final class RpgData {
                     .sync((holder, recipient) -> holder == recipient, SkillState.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<SkillRuntime>> SKILL_RUNTIME = ATTACHMENTS.register(
             "skill_runtime", () -> AttachmentType.builder(SkillRuntime::new).build());
+    /** Active Frost patch references; never saved, synced, or copied to a replacement entity. */
+    public static final Supplier<AttachmentType<FrostSlows.Sources>> FROST_SOURCES = ATTACHMENTS.register(
+            "frost_sources", () -> AttachmentType.builder(FrostSlows.Sources::new).build());
+    /** Target-owned saved wounds; relative timers pause offline, and death never copies them. */
+    public static final Supplier<AttachmentType<BleedState>> BLEED = ATTACHMENTS.register(
+            "bleed", () -> AttachmentType.builder(BleedState::new)
+                    .serialize(BleedState.CODEC.fieldOf("bleed")).build());
     /** Transient, tracking-synced arrow visual marker; never serialized or copied to player saves. */
     public static final Supplier<AttachmentType<Boolean>> SKILL_SHOT = ATTACHMENTS.register(
             "skill_shot", () -> AttachmentType.builder(() -> false).sync(ByteBufCodecs.BOOL).build());
     /** Cosmetic bow-draw deadline in level ticks, tracking-synced but never saved. */
     public static final Supplier<AttachmentType<Long>> BOW_DRAW_UNTIL = ATTACHMENTS.register(
             "bow_draw_until", () -> AttachmentType.builder(() -> 0L).sync(ByteBufCodecs.VAR_LONG).build());
+    /** Cosmetic draw length in ticks; transient and tracking-synced, including scaled Aimed Shot casts. */
+    public static final Supplier<AttachmentType<Long>> BOW_DRAW_DURATION = ATTACHMENTS.register(
+            "bow_draw_duration", () -> AttachmentType.builder(() -> 6L).sync(ByteBufCodecs.VAR_LONG).build());
     public static final Supplier<AttachmentType<SkillLoadout>> SKILL_LOADOUT = ATTACHMENTS.register(
             "skill_loadout", () -> AttachmentType.builder(() -> SkillLoadout.EMPTY)
                     .serialize(SkillLoadout.CODEC.fieldOf("loadout")).copyOnDeath()

@@ -39,7 +39,7 @@ or effective-stat cache are introduced.
 | Skill Duration | `covenant:skill_duration` | 1 | Skill effect duration multiplier |
 | Focus Regeneration | `covenant:focus_regeneration` | 1 | Configured recovery multiplier, bounded to [0, 1.25] |
 | Rage Capacity | `covenant:rage_capacity` | 1 | Configured maximum multiplier, bounded to [0, 1024] |
-| Rage Generation | `covenant:rage_generation` | 1 | Configured in-combat generation multiplier, bounded to [0, 1024] |
+| Rage Generation | `covenant:rage_generation` | 1 | Multiplies outgoing and incoming damage-driven Rage gains, bounded to [0, 1024] |
 | Mana Capacity | `covenant:mana_capacity` | 1 | Configured maximum multiplier, bounded to [0, 1024] |
 | Mana Regeneration | `covenant:mana_regeneration` | 1 | Configured recovery multiplier, bounded to [0, 1024] |
 
