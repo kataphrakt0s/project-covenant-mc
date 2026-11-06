@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 abstract class ComboMovementMixin {
     @Inject(method = "move", at = @At("HEAD"), cancellable = true)
     private void covenant$ownMovement(MoverType type, Vec3 delta, CallbackInfo ci) {
-        if ((Object) this instanceof ServerPlayer player && Combos.blocksMove(player)) { ci.cancel(); }
+        if ((Object) this instanceof ServerPlayer player && Combos.blocksExternalMovement(player)) { ci.cancel(); }
     }
 
     @WrapOperation(method = "saveWithoutId", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;isNoGravity()Z"))

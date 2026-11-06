@@ -21,7 +21,7 @@ abstract class AuraProjectileMixin {
             net.minecraft.world.InteractionHand hand, ItemStack weapon, java.util.List<ItemStack> ammo,
             float power, float uncertainty, boolean crit, LivingEntity target,
             org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
-        if (dev.covenant.rpg.skills.Auras.frozen(shooter)) { ci.cancel(); }
+        if (!dev.covenant.rpg.skills.SkillControls.canAct(shooter)) { ci.cancel(); }
     }
 
     @WrapOperation(method = "shoot", at = @At(value = "INVOKE", target =

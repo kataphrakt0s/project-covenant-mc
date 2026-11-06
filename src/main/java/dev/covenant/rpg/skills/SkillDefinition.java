@@ -7,7 +7,11 @@ import java.util.Set;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-/** Small code-backed catalog. Times are ticks, costs are resource units, damage is health points. */
+/**
+ * Small code-backed catalog. Times are ticks and costs are resource units.
+ * Power/range are interpreted by the effect family; unused fields are zero.
+ * TrapKind owns trap damage, radius, and duration instead of duplicating them here.
+ */
 public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, double cost,
         int cooldownTicks, int castTicks, Effect effect, double power, double range) {
     public enum Effect { BOW_SHOT, CLEAVE, REND, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, TRAP, AURA, COMBO }
@@ -28,13 +32,13 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     /** Hits the first enemy or solid block within 24 blocks; no lightning status or native lightning entity. */
     public static final SkillDefinition LIGHTNING_BOLT = define("lightning_bolt", PlayerClass.WEAVER, 20, 40, 10, Effect.LIGHTNING_BOLT, 6, 24);
     /** Instant throw; root duration and contact behavior live in TrapKind/TrapEntity. */
-    public static final SkillDefinition BEAR_TRAP = define("bear_trap", PlayerClass.STALKER, 20, 160, 0, Effect.TRAP, 4, 3);
-    /** Eight-second, three-block patch; one shared 50% slow regardless of overlapping owners. */
-    public static final SkillDefinition FROST_TRAP = define("frost_trap", PlayerClass.STALKER, 30, 240, 0, Effect.TRAP, 0, 3);
+    public static final SkillDefinition BEAR_TRAP = define("bear_trap", PlayerClass.STALKER, 20, 160, 0, Effect.TRAP, 0, 0);
+    /** Eight-second, 3.5-block patch; one shared 50% slow regardless of overlapping owners. */
+    public static final SkillDefinition FROST_TRAP = define("frost_trap", PlayerClass.STALKER, 30, 240, 0, Effect.TRAP, 0, 0);
     /** Six-second patch: three fire damage on entry, then at most once per twenty ticks per target. */
-    public static final SkillDefinition FLAME_TRAP = define("flame_trap", PlayerClass.STALKER, 35, 240, 0, Effect.TRAP, 3, 3);
-    /** One explosion, up to ten damage with three-block falloff and a low outward shove. */
-    public static final SkillDefinition BLAST_TRAP = define("blast_trap", PlayerClass.STALKER, 40, 300, 0, Effect.TRAP, 10, 3);
+    public static final SkillDefinition FLAME_TRAP = define("flame_trap", PlayerClass.STALKER, 35, 240, 0, Effect.TRAP, 0, 0);
+    /** One explosion, up to ten damage with 3.5-block falloff and a low outward shove. */
+    public static final SkillDefinition BLAST_TRAP = define("blast_trap", PlayerClass.STALKER, 40, 300, 0, Effect.TRAP, 0, 0);
     public static final SkillDefinition DODGE_AURA = define("dodge_aura", PlayerClass.STALKER, 25, 400, 0, Effect.AURA, 0, 6);
     public static final SkillDefinition SWIFTNESS_AURA = define("swiftness_aura", PlayerClass.STALKER, 25, 400, 0, Effect.AURA, 0, 6);
     public static final SkillDefinition RIPPING_AURA = define("ripping_aura", PlayerClass.REAVER, 40, 400, 0, Effect.AURA, 0, 6);

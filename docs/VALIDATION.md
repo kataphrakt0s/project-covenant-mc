@@ -2,6 +2,33 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Skills architecture hardening (2026-11-06)
+
+- Added shared server control and lifecycle boundaries, family execution helpers,
+  a pending-cast snapshot, saved native-projectile combat metadata, a separate
+  request ingress budget, Frost membership reconciliation and endpoint-based
+  lightning visuals. Existing player save IDs and gameplay tuning are retained.
+- `scripts/Dev.ps1 verify` builds the production JAR and runs dedicated GameTests.
+  Final run: **all 71 required tests passed**, including eight new fixtures.
+  Native packet/connection tests cover controlled movement, delayed corrections,
+  external impulses, teleport handoff, invalid movement, instant item use and
+  spear attacks. Other new coverage exercises registered request handlers,
+  actual arrow save/load/impact, late death cancellation, accepted death before
+  player copying, lifecycle cancellation, and lightning payload encoding.
+- Build geometry checks passed. The production JAR contains the new runtime and
+  client mixins and excludes GameTest classes/resources. `git diff --check` passed.
+  An earlier run exposed the existing arrow fixture's dependence on randomized
+  chunk placement; all arrow lanes now receive fixture-only ticking tickets.
+  Production skills still do not force chunks.
+- No client was launched or deployed. Live two-client latency, observer visuals,
+  native teleport during dash prediction and control feel remain manual checks.
+  The new client teleport hook was checked against pinned sources and compiled;
+  dedicated tests exercise its shared prediction model, not rendered client code.
+  Broader modpack compatibility and retained-world process restart remain manual.
+- Both sides require the same build (skill payload protocol 2). Existing arrows
+  without the newly saved metadata cannot recover their old provenance/snapshots.
+  Mounted vehicle steering and mining retain their existing policies.
+
 ## Dash direction on wall contact (2026-11-05)
 
 - Fixed both dashes converting blocked forward motion into full-speed sideways

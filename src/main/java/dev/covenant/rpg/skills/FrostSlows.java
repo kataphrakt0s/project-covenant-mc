@@ -26,15 +26,15 @@ public final class FrostSlows {
     }
 
     static void add(LivingEntity target, TrapEntity patch) {
-        target.getData(RpgData.FROST_SOURCES).patches.add(patch);
-        CovenantSlows.update(target);
+        var sources = target.getData(RpgData.FROST_SOURCES).patches;
+        if (sources.add(patch) && sources.size() == 1) { CovenantSlows.update(target); }
     }
 
     static void remove(LivingEntity target, TrapEntity patch) {
         if (!target.hasData(RpgData.FROST_SOURCES)) { return; }
         var sources = target.getData(RpgData.FROST_SOURCES).patches;
         sources.remove(patch);
-        if (sources.isEmpty()) { clear(target); } else { CovenantSlows.update(target); }
+        if (sources.isEmpty()) { clear(target); }
     }
 
     public static void cleanse(LivingEntity target) { clear(target); }
@@ -52,7 +52,8 @@ public final class FrostSlows {
         // Recheck after target movement as well as patch ticking, so final exits have no lingering slow.
         var sources = target.getData(RpgData.FROST_SOURCES).patches;
         sources.removeIf(patch -> !patch.covers(target));
-        if (sources.isEmpty()) { clear(target); } else { CovenantSlows.update(target); }
+        // Existing membership already contributes the same 50% slow, irrespective of source count.
+        if (sources.isEmpty()) { clear(target); }
     }
 
     private static void left(EntityLeaveLevelEvent event) {

@@ -108,11 +108,11 @@ public final class Combos {
         float damage = (float) (player.getAttributeValue(RpgStats.DAMAGE) * AuraDamage.multiplier(player, false));
         int shredDuration = duration(player, ArmorShred.DURATION_TICKS);
         if (progress.kind == Kind.LUNGING && progress.stage == 1) {
-            var target = Skills.rendTarget(player);
-            if (target != null) { Skills.hurtMeleeSkill(player, target, damage * 1.25f); }
+            var target = MeleeSkills.rendTarget(player);
+            if (target != null) { MeleeSkills.hurtMeleeSkill(player, target, damage * 1.25f); }
             return;
         }
-        var targets = progress.kind == Kind.LUNGING ? Skills.targets(player, SkillDefinition.CLEAVE) : circularTargets(player);
+        var targets = progress.kind == Kind.LUNGING ? MeleeSkills.targets(player, SkillDefinition.CLEAVE) : circularTargets(player);
         float bleed = AuraDamage.bleedPower(player);
         int bleedDuration = duration(player, Bleeding.REND_DURATION_TICKS);
         int speedDuration = duration(player, 80);
@@ -122,12 +122,12 @@ public final class Combos {
             if (player.getData(RpgData.SKILL_RUNTIME).combos.get(progress.kind) != progress) { break; }
             if (!Skills.canHit(player, target)) { continue; }
             if (progress.kind == Kind.RUSH && progress.stage == 0) {
-                Skills.applyRend(player, target, damage, bleed, bleedDuration);
+                MeleeSkills.applyRend(player, target, damage, bleed, bleedDuration);
                 continue;
             }
             boolean bleeding = Bleeding.count(target) > 0;
             var before = AuraDamage.before(target);
-            Skills.hurtMeleeSkill(player, target, damage);
+            MeleeSkills.hurtMeleeSkill(player, target, damage);
             if (!before.landed(target)) { continue; }
             SkillVisuals.cleaveHit(player.level(), target);
             if (progress.kind == Kind.LUNGING) {
@@ -176,6 +176,24 @@ public final class Combos {
         return movement != null ? !movement.stepping : runtime.awaitingDashSequence != 0;
     }
 
+    /** Incoming reports stay held after travel; authoritative external movement must remain possible. */
+    public static boolean awaitingMovement(ServerPlayer player) {
+        var runtime = player.getData(RpgData.SKILL_RUNTIME);
+        return runtime.movement == null && runtime.awaitingDashSequence != 0;
+    }
+
+    /** Only the executing dash owns Entity.move. The acknowledgement phase owns packets, not physics. */
+    public static boolean blocksExternalMovement(ServerPlayer player) {
+        var movement = player.getData(RpgData.SKILL_RUNTIME).movement;
+        return movement != null && !movement.stepping;
+    }
+
+    /** Native teleports end owned travel and supersede its endpoint acknowledgement. */
+    public static void teleported(ServerPlayer player) {
+        interruptMovement(player, true);
+        player.getData(RpgData.SKILL_RUNTIME).awaitingDashSequence = 0;
+    }
+
     private static void sendMotion(ServerPlayer player, DashMotion motion) {
         if (player.connection.hasChannel(DashMotion.TYPE)) { PacketDistributor.sendToPlayer(player, motion); }
     }
@@ -187,8 +205,7 @@ public final class Combos {
         if (runtime.movement != null || sequence == 0 || sequence != runtime.awaitingDashSequence) { return; }
         runtime.awaitingDashSequence = 0;
         if (!DashMotion.finite(reportedPosition) || player.position().distanceToSqr(reportedPosition) > .01) {
-            player.connection.teleport(new net.minecraft.world.entity.PositionMoveRotation(player.position(),
-                    player.getDeltaMovement(), player.getYRot(), player.getXRot()), Set.of());
+            SkillControls.correctPosition(player, player.getYRot(), player.getXRot());
         } else { player.connection.resetPosition(); }
     }
 
@@ -241,7 +258,7 @@ public final class Combos {
                 if (!sweptContact(body, travelled, target.getBoundingBox()) || !player.hasLineOfSight(target)) { continue; }
                 movement.attempted.add(target.getUUID());
                 var before = AuraDamage.before(target);
-                Skills.hurtMeleeSkill(player, target, movement.damage);
+                MeleeSkills.hurtMeleeSkill(player, target, movement.damage);
                 if (before.landed(target)) {
                     ArmorShred.apply(target, player, movement.shredDuration);
                     SkillVisuals.cleaveHit(player.level(), target);

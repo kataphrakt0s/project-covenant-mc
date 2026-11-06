@@ -37,4 +37,10 @@ public final class DashPrediction {
     }
     public boolean readyToAcknowledge() { return acknowledgement && remaining == 0; }
     public long acknowledge() { acknowledgement = false; return sequence; }
+
+    /** A native teleport supersedes the trajectory. Keep its sequence so stale starts cannot revive it. */
+    public void cancel() {
+        active = false; acknowledgement = false; remaining = 0;
+        step = Vec3.ZERO; destination = Vec3.ZERO;
+    }
 }

@@ -10,9 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /** Server-owned, bounded bleed stacks on targets. No world scans, chunk loading, or offline catch-up. */
@@ -28,7 +26,6 @@ public final class Bleeding {
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(Bleeding::tick);
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Bleeding::died);
     }
 
     /** Positive damage confirmation belongs to the applying skill; this trusted hook owns stack mutation. */
@@ -94,7 +91,4 @@ public final class Bleeding {
         }
     }
 
-    private static void died(LivingDeathEvent event) {
-        if (!event.getEntity().level().isClientSide()) { event.getEntity().removeData(RpgData.BLEED); }
-    }
 }

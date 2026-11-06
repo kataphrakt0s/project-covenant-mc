@@ -48,7 +48,8 @@ public final class TrapEntity extends Entity implements ItemSupplier {
     private int phaseTicks;
     private int flightTicks;
     private ItemStack visual;
-    private final Set<LivingEntity> frosted = new HashSet<>();
+    private Set<LivingEntity> frosted = new HashSet<>();
+    private Set<LivingEntity> nextFrosted = new HashSet<>();
     private final Map<UUID, Long> nextFlameHit = new HashMap<>();
 
     public TrapEntity(EntityType<? extends TrapEntity> type, Level level) { super(type, level); }
@@ -194,12 +195,14 @@ public final class TrapEntity extends Entity implements ItemSupplier {
     private void patch() {
         var targets = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(kind().radius), this::covers);
         if (kind() == TrapKind.FROST) {
-            var iterator = frosted.iterator();
-            while (iterator.hasNext()) {
-                var target = iterator.next();
-                if (!targets.contains(target)) { FrostSlows.remove(target, this); iterator.remove(); }
+            // Reuse membership sets: each existing/new recipient is visited once, without list scans.
+            nextFrosted.addAll(targets);
+            for (var target : frosted) {
+                if (!nextFrosted.contains(target)) { FrostSlows.remove(target, this); }
             }
-            for (var target : targets) { frosted.add(target); FrostSlows.add(target, this); }
+            // Re-add cleansed memberships even when the recipient never left this patch.
+            for (var target : nextFrosted) { FrostSlows.add(target, this); }
+            var old = frosted; frosted = nextFrosted; nextFrosted = old; nextFrosted.clear();
         } else {
             long now = level().getGameTime();
             for (var target : targets) {
@@ -244,7 +247,7 @@ public final class TrapEntity extends Entity implements ItemSupplier {
         super.onRemoval(reason);
         if (!level().isClientSide()) {
             for (var target : frosted) { FrostSlows.remove(target, this); }
-            frosted.clear(); nextFlameHit.clear();
+            frosted.clear(); nextFrosted.clear(); nextFlameHit.clear();
             if (owner != null) {
                 var runtime = owner.getData(RpgData.SKILL_RUNTIME);
                 runtime.traps.remove(kind(), this); runtime.patches.remove(kind(), this);

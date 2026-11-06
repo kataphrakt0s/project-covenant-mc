@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:control_movement",
+  "environment": "minecraft:default",
+  "structure": "covenant_test:empty",
+  "max_ticks": 180
+}

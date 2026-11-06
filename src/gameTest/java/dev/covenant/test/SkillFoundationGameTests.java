@@ -82,10 +82,10 @@ final class SkillFoundationGameTests {
         double speed = aimed.getAttributeValue(Attributes.MOVEMENT_SPEED);
         var oldAim = target(helper, targets, aimed, 0, 4);
         var newAim = target(helper, targets, aimed, 5, 0);
-        // This lane extends beyond the tiny GameTest structure's ticking chunks. Explicit fixture
-        // tickets keep the real arrow ticking regardless of the randomly chosen test-grid alignment.
+        // All arrow lanes extend beyond the tiny structure. Keep their endpoints ticking even when
+        // the randomized test grid straddles chunk boundaries; mock players provide no client tickets.
         var forced = new java.util.HashSet<net.minecraft.world.level.ChunkPos>();
-        for (var entity : List.of(aimed, oldAim, newAim)) {
+        for (var entity : List.of(piercing, line.getFirst(), line.getLast(), blocked, behindWall, aimed, oldAim, newAim)) {
             var chunk = entity.chunkPosition();
             if (helper.getLevel().setChunkForced(chunk.x(), chunk.z(), true)) { forced.add(chunk); }
         }
@@ -97,7 +97,9 @@ final class SkillFoundationGameTests {
         helper.runAtTickTime(9, () -> {
             check(line.subList(0, 3).stream().allMatch(t -> t.getHealth() < 20) && line.getLast().getHealth() == 20,
                     "Real arrow damages exactly three aligned enemies");
-            check(behindWall.getHealth() == 20 && wallArrow.getPierceLevel() == 0, "Native block collision stops Piercing Shot");
+            check(behindWall.getHealth() == 20 && wallArrow.getPierceLevel() == 0,
+                    "Native block collision stops Piercing Shot: health=" + behindWall.getHealth()
+                    + ", pierce=" + wallArrow.getPierceLevel() + ", position=" + wallArrow.position() + ", wall=" + wall);
             check(!wallArrow.hasData(RpgData.SKILL_SHOT), "Block impact ends the visual trail");
             check(arrows(aimed).isEmpty(), "Aimed Shot waits through the wind-up");
             // Moving is permitted and aim is read at completion. New aim points across the original line.

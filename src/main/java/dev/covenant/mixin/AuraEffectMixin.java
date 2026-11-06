@@ -1,12 +1,13 @@
 package dev.covenant.mixin;
 
-import dev.covenant.rpg.skills.Auras;
+import dev.covenant.rpg.skills.SkillControls;
 import dev.covenant.rpg.skills.CovenantSlows;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,11 +25,17 @@ abstract class AuraEffectMixin {
 
     @Inject(method = "startUsingItem", at = @At("HEAD"), cancellable = true)
     private void covenant$freezeUse(InteractionHand hand, CallbackInfo ci) {
-        if (Auras.frozen((LivingEntity) (Object) this)) { ci.cancel(); }
+        if (!SkillControls.canAct((LivingEntity) (Object) this)) { ci.cancel(); }
     }
 
     @Inject(method = "doHurtTarget", at = @At("HEAD"), cancellable = true)
     private void covenant$freezeMelee(ServerLevel level, Entity target, CallbackInfoReturnable<Boolean> ci) {
-        if (Auras.frozen((LivingEntity) (Object) this)) { ci.setReturnValue(false); }
+        if (!SkillControls.canAct((LivingEntity) (Object) this)) { ci.setReturnValue(false); }
+    }
+
+    @Inject(method = "stabAttack", at = @At("HEAD"), cancellable = true)
+    private void covenant$freezeStab(EquipmentSlot slot, Entity target, float damage, boolean dealsDamage,
+            boolean dealsKnockback, boolean dismounts, CallbackInfoReturnable<Boolean> ci) {
+        if (!SkillControls.canAct((LivingEntity) (Object) this)) { ci.setReturnValue(false); }
     }
 }

@@ -7,6 +7,7 @@ import dev.covenant.rpg.skills.SkillLoadout;
 import dev.covenant.rpg.skills.SkillRuntime;
 import dev.covenant.rpg.skills.BleedState;
 import dev.covenant.rpg.skills.FrostSlows;
+import dev.covenant.rpg.skills.ProjectileCombat;
 import java.util.function.Supplier;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -80,10 +81,18 @@ public final class RpgData {
     public static final Supplier<AttachmentType<Float>> FORTITUDE_CAPACITY = ATTACHMENTS.register(
             "fortitude_capacity", () -> AttachmentType.builder(() -> 0f)
                     .sync((holder, recipient) -> holder == recipient, ByteBufCodecs.FLOAT).build());
+    /** Additive save support at the existing ID; loaded native arrow damage must not be multiplied again. */
     public static final Supplier<AttachmentType<Double>> AURA_PROJECTILE_POWER = ATTACHMENTS.register(
-            "aura_projectile_power", () -> AttachmentType.builder(() -> 1d).build());
+            "aura_projectile_power", () -> AttachmentType.builder(() -> 1d)
+                    .serialize(ProjectileCombat.POWER_CODEC.fieldOf("power")).build());
+    /** Captured Enchanting damage survives projectile unload/reload; never synced to clients. */
     public static final Supplier<AttachmentType<Float>> ENCHANTED_SHOT = ATTACHMENTS.register(
-            "enchanted_shot", () -> AttachmentType.builder(() -> 0f).build());
+            "enchanted_shot", () -> AttachmentType.builder(() -> 0f)
+                    .serialize(ProjectileCombat.ENCHANTMENT_CODEC.fieldOf("damage")).build());
+    /** New optional saved projectile metadata; missing legacy data has ordinary-shot defaults. */
+    public static final Supplier<AttachmentType<ProjectileCombat>> PROJECTILE_COMBAT = ATTACHMENTS.register(
+            "projectile_combat", () -> AttachmentType.builder(ProjectileCombat::new)
+                    .serialize(ProjectileCombat.CODEC.fieldOf("combat")).build());
 
     private RpgData() {}
 

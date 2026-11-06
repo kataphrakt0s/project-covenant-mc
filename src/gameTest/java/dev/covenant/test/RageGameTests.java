@@ -100,7 +100,7 @@ final class RageGameTests {
             target.invulnerableTime = 0;
             target.hurtServer(helper.getLevel(), player.damageSources().arrow(arrow, player), 3);
             near(player, 3, "Normal arrows grant outgoing Rage");
-            arrow.setData(RpgData.SKILL_SHOT, true);
+            dev.covenant.rpg.skills.ProjectileCombat.markSkill(arrow);
             target.invulnerableTime = 0;
             target.hurtServer(helper.getLevel(), player.damageSources().arrow(arrow, player), 3);
             near(player, 3, "Marked skill arrows grant no outgoing Rage");

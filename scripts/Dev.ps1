@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('doctor', 'build', 'test', 'deploy', 'prism', 'client', 'server', 'data')]
+    [ValidateSet('doctor', 'build', 'test', 'verify', 'deploy', 'prism', 'client', 'server', 'data')]
     [string]$Task = 'build'
 )
 . "$PSScriptRoot/Environment.ps1"
@@ -35,6 +35,7 @@ switch ($Task) {
     }
     build { Invoke-ProjectGradle -Tasks @('build') }
     test { Invoke-ProjectGradle -Tasks @('runGameTestServer') }
+    verify { Invoke-ProjectGradle -Tasks @('build', 'runGameTestServer') }
     deploy { Publish-DevMod }
     prism {
         Publish-DevMod

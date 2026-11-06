@@ -329,6 +329,16 @@ endpoint or a 40-tick acknowledgement timeout causes a native correction, retain
 current velocity. Stale/early acknowledgements cannot advance a stage or move the
 server. Native knockback is applied immediately at interruption; player/dimension
 cleanup discards client prediction. See `COMBOS_IMPLEMENTATION_PLAN.md` for details.
+Waiting for a dash acknowledgement holds incoming position reports while native
+server gravity, fluids, knockback and piston displacement continue. Root/freeze
+use the same server-physics boundary for unmounted players. Divergent reports
+receive bounded native corrections; outstanding teleport IDs retain vanilla
+acknowledgement/retry handling. Acknowledging a control correction cannot rewind
+external motion that occurred after it was sent. Unrelated native teleports retain
+their normal destination semantics and supersede dash movement.
+Freeze also gates native instant item use, entity/block interaction, melee and
+spear stab attacks; root continues permitting actions. Mounted vehicle steering
+is unchanged: controlling the rider does not apply a status to the mount.
 Rendered movement and latency remain manual client checks.
 
 ## Aura implementation boundaries
@@ -362,12 +372,12 @@ Damage and external velocity remain. This covers native action paths; third-part
 AI that performs attacks or movement outside those hooks may require a specific
 integration. No universal modded boss/AI compatibility is claimed.
 
-Auras, Fortitude, freeze state, pair deadlines, and shot bonuses are transient and
-never copied or saved. Saved profile, loadout, cooldown, and bleed registry IDs
-are unchanged. Reconnect restores assigned passives through normal server ticks;
+Auras, Fortitude, freeze state, and pair deadlines are transient and never copied
+or saved. Reconnect restores assigned passives through normal server ticks;
 active buffs and shields must be activated again. Existing Chilled saves retain
-their effect ID and duration. Committed in-flight bonuses survive source cleanup
-for the lifetime of the shot, without adding projectile persistence guarantees.
+their effect ID and duration. Committed projectile power and Enchanting bonuses
+survive source cleanup and native projectile save/load; see Persistence and APIs.
+Profile, loadout, cooldown, and bleed registry IDs remain unchanged.
 
 ## Aura contract
 
@@ -828,6 +838,10 @@ Flame, and Blast are separate from this shared contact footprint.
 Its native entity type is unsaved and cannot be summoned. `SkillRuntime` retains
 only bounded per-owner deployment/patch references; `onRemoval` clears them and
 all affected Frost memberships, including the chunk-unload removal path.
+Frost patch updates reuse membership sets for linear recipient reconciliation;
+the derived slow changes only when its first source arrives or last source leaves.
+Patch and recipient ticks still check coverage and cover, preserving immediate
+exit/obstruction removal and reapplication after cleansing while inside a patch.
 Successful entity addition precedes spending, protected against reentrant activation;
 only accepted throws replace an old deployment. Triggering replaces an active patch.
 Deallocating prerequisites cleans every actually removed trap skill, without clearing
@@ -1078,12 +1092,17 @@ particle trail. Charge particles follow the pending server cast and stop when it
 ends or is canceled. Impact bursts occur on projectile collisions; Cleave's hit
 sparks require an accepted damage call. Trails are generated locally on clients
 from tracked projectile movement, without per-tick trail packets or world scans.
+Lightning sends one dimension-scoped endpoint payload per beam segment to nearby
+players; clients generate the bounded spark samples. Protocol version `2` registers
+this cosmetic payload alongside the existing skill/dash messages. Damage and target
+selection remain server-owned; the visual message cannot activate a skill.
 
 `covenant:skill_shot` is an unsaved, tracking-synced boolean attachment marking
-Piercing Shot arrows. Ordinary arrows are unaffected. Its trail stops on impact
-or after five seconds; the native arrow itself retains its normal lifecycle.
-Unloading/reloading an arrow does not retain this cosmetic marker. No existing
-saved IDs or fields change, and no player progression migration is needed.
+skill arrows for visuals only. Ordinary arrows are unaffected. Its trail stops
+on a terminal/block impact or after five seconds; the native arrow itself retains
+its normal lifecycle. Unloading/reloading an arrow does not retain this cosmetic
+marker. Removing it never changes skill damage classification, outgoing Rage
+eligibility, or committed Enchanting behavior.
 
 `covenant:bow_draw_until` is an unsaved, tracking-synced cosmetic player deadline
 in level game ticks. Client-only Mixins scope the native bow-use pose/model reads
@@ -1194,7 +1213,7 @@ combat grace and grants incoming Rage to an eligible Reaver victim. Fractional
 gains are retained and capacity clamps every gain. The existing
 `covenant:rage_generation` attribute multiplies both coefficients. Direct melee
 skills temporarily mark their exact native DamageSource (restored in `finally`);
-skill arrows use their existing marker. No saved fields or IDs change.
+skill arrows use saved `ProjectileCombat` provenance, independently of their visual trail.
 Combat grace prevents decay and grants no passive generation.
 After exactly seven seconds without qualifying damage, the next resource
 pulse depletes Rage. Switching away stops Rage changes; combat grace itself expires
@@ -1259,8 +1278,8 @@ uses vanilla burn damage, extinguishing, burning-time modifiers, persistence, an
 combat credit; it is one shared fire timer, without per-caster stacks or custom DoT
 ownership. Chilled is a native saved/synced harmful effect with a relative timer,
 normal immunity/removal rules, and no offline catch-up. Reapplication retains the
-longer duration without stacking. Its movement modifier is independent of vanilla
-Slowness and Frost Trap, so those different effects multiply. Neither freezing nor
+longer duration without stacking. Chilled, Frost Trap, and Freezing Aura contribute
+only their strongest Covenant slow; vanilla Slowness remains independent. Neither freezing nor
 Shock is implemented by these bolts. Learning, class restrictions, casting
 cancellation, spending, and cooldown persistence reuse the existing skill boundary.
 | `covenant:bear_trap` | Stalker | 20 Focus | 8 s | Instant | Toss a single-use trap: 4 physical damage and a 3-second root on a damaging snap. |
@@ -1294,12 +1313,26 @@ effect. Active bolts are deliberately not saved across chunk/world unload. It us
 magic damage, with no elemental resistance/status framework.
 
 `SkillDefinition` owns stable ID, translated name/description, allowed class set,
-base cost, cooldown/cast ticks, effect kind, power and range. Add a definition,
-translations, and an explicit effect branch for future simple skills. There is no
+base cost, cooldown/cast ticks, effect kind, and family-specific power/range.
+Trap power/range fields are unused zeroes: `TrapKind` owns damage, effect radius,
+and duration, while `Traps`/`TrapEntity` own deployment/contact behavior.
+Add a definition, translations, and an explicit effect-family branch for future simple skills. There is no
 datapack registry or generic effect graph. Existing `resource_cost`, `cooldown`, and
 `cast_time` native multipliers scale their respective bases; `skill_duration` scales
 Rend's bleed, Bear's root, and Frost/Flame patch duration. Fractional timers round up to whole ticks, with a minimum
 one-tick bleed duration.
+
+`Skills` owns activation validation and resource/cooldown commitment; `BowSkills`,
+`MeleeSkills`, and `SpellSkills` implement their existing execution families.
+`PendingCast` owns one unsaved start-time snapshot and idempotent cast presentation
+cleanup, including Aimed Shot's movement modifier and bow pose. Family helpers do
+not introduce a second activation or resource-spending path.
+
+`SkillLifecycle` centralizes class/logout/dimension cancellation and validated
+loadout edits. Confirmed-death cleanup runs only after the native death hook has
+finished and accepted the death, so another mod's canceled death does not delete
+active skills or target statuses. Persistent target wounds remain independent of
+their caster's departure; saved resource/cooldown/loadout ownership is unchanged.
 
 Aimed Shot's wind-up applies a native transient movement-speed multiplier of 0.2
 and a tracking-synced cosmetic bow pose. It does not start actual bow use, so cast
@@ -1330,6 +1363,14 @@ use, pending casts, restrictions, missing equipment/targets, resources, and cool
 produce chat feedback. `/covenant skill` shows effective costs/times and remaining
 cooldowns; `/covenant resource` shows every balance, maximum, recovery and active class.
 
+Learn/bind/use packets pass a separate unsaved per-player ingress budget before
+validation or feedback: sixteen distinct requests may burst, one token recovers
+per server game tick, and identical requests in the same tick are ignored.
+Excess traffic is silently dropped. Invalid requests consume the budget too;
+rejected requests cannot create an unbounded feedback/synchronization loop.
+Dash acknowledgements remain outside this budget so a GUI/input burst cannot
+starve movement cleanup. Direct server commands retain their usual validation.
+
 ## Persistence and APIs
 
 `covenant:skill_state` stores immutable maps `balances` (class ID -> units) and
@@ -1347,6 +1388,20 @@ Combat/cast state is transient and does not resume after loading or player repla
 `ClassResources.consume/set` require the logical server thread, validate amounts,
 and clamp to the effective maximum. A capacity loss clamps all saved class balances
 after the native equipment update; this avoids early Mana truncation on load.
+
+Native projectiles save captured `covenant:aura_projectile_power` and
+`covenant:enchanted_shot` values at their existing IDs. The optional server-only
+`covenant:projectile_combat` attachment saves skill provenance and UUIDs of targets
+that already received that projectile's Enchanting bonus. A reloaded native arrow
+keeps its saved base damage without applying the captured multiplier twice;
+skill arrows remain excluded from ordinary-shot bonuses and outgoing Rage even
+after their cosmetic trail disappears. This does not make unsaved skill bolts
+or traps persistent.
+
+These projectile fields are additive. Existing player/item IDs and formats remain
+unchanged. Old projectiles without metadata retain their native damage and the
+ordinary-shot fallback; previously discarded skill identity, captured bonuses,
+and target history cannot be reconstructed. No migration guesses that missing state.
 
 This is an additive saved-format change. Existing profile/page IDs and fields remain
 unchanged. The older profile `resource_type/current_resource/maximum_resource` fields

@@ -7,8 +7,6 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -21,7 +19,6 @@ public final class Rooted extends MobEffect {
 
     public static void register(IEventBus modBus) {
         EFFECTS.register(modBus);
-        NeoForge.EVENT_BUS.addListener(Rooted::died);
     }
 
     public static boolean contains(LivingEntity target) { return target.hasEffect(EFFECT); }
@@ -37,7 +34,4 @@ public final class Rooted extends MobEffect {
         if (contains(target) && target instanceof net.minecraft.server.level.ServerPlayer player) { Combos.interruptMovement(player, false); }
     }
 
-    private static void died(LivingDeathEvent event) {
-        if (!event.getEntity().level().isClientSide()) { event.getEntity().removeEffect(EFFECT); }
-    }
 }

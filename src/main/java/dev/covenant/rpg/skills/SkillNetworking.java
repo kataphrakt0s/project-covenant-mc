@@ -15,26 +15,32 @@ public final class SkillNetworking {
     private SkillNetworking() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1");
+        var registrar = event.registrar("2");
         registrar.playToClient(DashMotion.TYPE, DashMotion.STREAM_CODEC);
+        registrar.playToClient(LightningVisual.TYPE, LightningVisual.STREAM_CODEC);
         registrar.playToServer(DashFinished.TYPE, DashFinished.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player) { Combos.acknowledgeMovement(player, request.sequence(), request.position()); }
         });
         registrar.playToServer(Learn.TYPE, Learn.STREAM_CODEC, (request, context) -> {
-            if (context.player() instanceof ServerPlayer player) {
+            if (context.player() instanceof ServerPlayer player && accept(player, request)) {
                 player.sendSystemMessage(SkillLoadouts.learn(player, request.skill(), request.learn()));
             }
         });
         registrar.playToServer(Bind.TYPE, Bind.STREAM_CODEC, (request, context) -> {
-            if (context.player() instanceof ServerPlayer player) {
+            if (context.player() instanceof ServerPlayer player && accept(player, request)) {
                 player.sendSystemMessage(SkillLoadouts.bind(player, request.slot(), request.skill().orElse(null)));
             }
         });
         registrar.playToServer(Use.TYPE, Use.STREAM_CODEC, (request, context) -> {
-            if (context.player() instanceof ServerPlayer player) {
+            if (context.player() instanceof ServerPlayer player && accept(player, request)) {
                 player.sendSystemMessage(SkillLoadouts.activateSlot(player, request.slot()));
             }
         });
+    }
+
+    private static boolean accept(ServerPlayer player, CustomPacketPayload request) {
+        ClassResources.requireServer(player);
+        return player.getData(dev.covenant.rpg.RpgData.SKILL_RUNTIME).requests.accept(ClassResources.now(player), request);
     }
 
     public record Learn(Identifier skill, boolean learn) implements CustomPacketPayload {

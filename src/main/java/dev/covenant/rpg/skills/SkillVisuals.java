@@ -35,10 +35,12 @@ public final class SkillVisuals {
 
     static void lightning(ServerLevel level, Vec3 start, Vec3 end) {
         var delta = end.subtract(start);
-        int count = Math.min(96, Math.max(1, (int) Math.ceil(delta.length() * 4)));
-        for (int i = 0; i <= count; i++) {
-            var pos = start.add(delta.scale((double) i / count));
-            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, pos.x, pos.y, pos.z, 1, 0.025, 0.025, 0.025, 0);
+        var visual = new LightningVisual(level.dimension().identifier(), start, end);
+        for (var player : level.players()) {
+            double t = delta.lengthSqr() == 0 ? 0 : Math.clamp(player.position().subtract(start).dot(delta) / delta.lengthSqr(), 0, 1);
+            if (player.position().distanceToSqr(start.add(delta.scale(t))) <= 32 * 32 && player.connection.hasChannel(LightningVisual.TYPE)) {
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, visual);
+            }
         }
     }
 

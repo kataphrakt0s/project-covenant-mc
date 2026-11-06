@@ -65,6 +65,14 @@ public final class RpgGameTests {
         FUNCTIONS.register("affix_commands", () -> AffixCommandGameTests::run);
         FUNCTIONS.register("affix_restart", () -> AffixCommandGameTests::restart);
         FUNCTIONS.register("skill_lifecycle", () -> SkillGameTests::lifecycle);
+        FUNCTIONS.register("lifecycle_death_decision", () -> LifecycleHardeningGameTests::deathDecision);
+        FUNCTIONS.register("lifecycle_cancellation_routes", () -> LifecycleHardeningGameTests::cancellationRoutes);
+        FUNCTIONS.register("control_movement", () -> ControlGameTests::movement);
+        FUNCTIONS.register("control_actions", () -> ControlGameTests::actions);
+        FUNCTIONS.register("control_dash_handoff", () -> ControlGameTests::dashHandoff);
+        FUNCTIONS.register("projectile_persistence", () -> ProjectilePersistenceGameTests::run);
+        FUNCTIONS.register("skill_network_ingress", () -> SkillNetworkingGameTests::ingress);
+        FUNCTIONS.register("lightning_visual_codec", () -> SkillNetworkingGameTests::lightningCodec);
         FUNCTIONS.register("infinite_resource", () -> SkillGameTests::infiniteResource);
         FUNCTIONS.register("ignore_cooldowns", () -> SkillGameTests::ignoreCooldowns);
         FUNCTIONS.register("skill_recovery", () -> SkillGameTests::recovery);

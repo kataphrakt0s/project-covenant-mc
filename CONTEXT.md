@@ -257,6 +257,14 @@ behavior remains subject to user playtesting.
 
 ## Ownership and boundaries
 
+- Skills retain one server activation coordinator, with bow/melee/spell helpers,
+  one pending-cast snapshot, and shared control/lifecycle boundaries. Learn/bind/use
+  payloads have a transient per-player ingress budget; gameplay validation and
+  cooldowns remain independent. Death cleanup follows the final native death-hook
+  decision so another mod's revival does not erase active skill state.
+- Native arrows now save skill provenance, captured aura bonuses and Enchanting
+  hit history independently of cosmetic trails. Existing saved IDs are retained;
+  metadata absent from older arrows cannot be recovered. See `docs/RPG_SKILLS.md`.
 - `src/main/java`: common mod entry point, with input/screens isolated in
   `dev.covenant.client` behind a physical-client-only mod entry point.
 - `src/geometryTest/java`: dependency-free wheel and skill-tree geometry checks,

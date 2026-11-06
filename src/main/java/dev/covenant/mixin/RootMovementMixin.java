@@ -1,6 +1,6 @@
 package dev.covenant.mixin;
 
-import dev.covenant.rpg.skills.Rooted;
+import dev.covenant.rpg.skills.SkillControls;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -14,6 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 abstract class RootMovementMixin {
     @Inject(method = "moveRelative", at = @At("HEAD"), cancellable = true)
     private void covenant$rootInput(float speed, Vec3 input, CallbackInfo ci) {
-        if ((Object) this instanceof LivingEntity living && (Rooted.contains(living) || dev.covenant.rpg.skills.Auras.frozen(living))) { ci.cancel(); }
+        if ((Object) this instanceof LivingEntity living && SkillControls.blocksMovement(living)) { ci.cancel(); }
     }
 }

@@ -131,7 +131,7 @@ public final class ClassResources {
             boolean basic = source.is(DamageTypes.PLAYER_ATTACK) || source.is(DamageTypes.ARROW) || source.is(DamageTypes.TRIDENT);
             var direct = source.getDirectEntity();
             if (basic && source != player.getData(RpgData.SKILL_RUNTIME).skillDamageSource
-                    && direct != null && !(direct.hasData(RpgData.SKILL_SHOT) && direct.getData(RpgData.SKILL_SHOT))) {
+                    && direct != null && !ProjectileCombat.isSkill(direct)) {
                 gain(player, AuraDamage.landedDamage(event) * SkillConfig.RAGE_DAMAGE_DEALT.get());
             }
         }

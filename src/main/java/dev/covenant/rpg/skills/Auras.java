@@ -18,8 +18,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.effect.MobEffects;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /** Transient source-owned coverage. Only assigned sources query space; recipients age their own grants. */
@@ -66,9 +64,6 @@ public final class Auras {
     public static void register() {
         NeoForge.EVENT_BUS.addListener(Auras::tick);
         NeoForge.EVENT_BUS.addListener(Auras::left);
-        NeoForge.EVENT_BUS.addListener(Auras::died);
-        NeoForge.EVENT_BUS.addListener(Auras::logout);
-        NeoForge.EVENT_BUS.addListener(Auras::dimension);
         AuraDamage.register();
     }
 
@@ -327,7 +322,4 @@ public final class Auras {
     }
 
     private static void left(EntityLeaveLevelEvent event) { if (event.getEntity() instanceof LivingEntity target && !target.level().isClientSide()) { clear(target); } }
-    private static void died(LivingDeathEvent event) { if (!event.getEntity().level().isClientSide()) { clear(event.getEntity()); } }
-    private static void logout(PlayerEvent.PlayerLoggedOutEvent event) { clear(event.getEntity()); }
-    private static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { clear(event.getEntity()); }
 }

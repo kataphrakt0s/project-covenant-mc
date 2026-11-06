@@ -40,10 +40,9 @@ public final class AuraDamage {
                     ? (int) Math.clamp(Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.SKILL_DURATION, 80)), 1, Integer.MAX_VALUE) : 80;
         }
     }
-    /** Per-recipient pair deadlines and per-projectile enemy membership are transient, bounded by activity. */
+    /** Transient per-recipient hit accounting; committed projectile history lives in ProjectileCombat. */
     public static final class Combat {
         final Map<UUID, Long> ripping = new HashMap<>();
-        final Set<UUID> enchantedTargets = new HashSet<>();
         double shieldSpent;
     }
     public record Before(float health, float absorption, double shieldSpent) {
@@ -120,7 +119,7 @@ public final class AuraDamage {
     }
     private static boolean skill(ServerPlayer player, DamageSource source) {
         return player.getData(RpgData.SKILL_RUNTIME).skillDamageSource == source
-                || (source.getDirectEntity() != null && source.getDirectEntity().getData(RpgData.SKILL_SHOT));
+                || ProjectileCombat.isSkill(source.getDirectEntity());
     }
 
     private static void landed(LivingDamageEvent.Post event) {
@@ -151,7 +150,8 @@ public final class AuraDamage {
             bonus = (float) ((attacker instanceof Player player ? 2 * player.getAttackStrengthScale(.5f) : 2) * multiplier(attacker, false));
         } else if (source.getDirectEntity() instanceof Projectile projectile
                 && projectile.hasData(RpgData.ENCHANTED_SHOT)
-                && projectile.getData(RpgData.AURA_COMBAT).enchantedTargets.add(target.getUUID())) {
+                && projectile.getData(RpgData.ENCHANTED_SHOT) > 0
+                && ProjectileCombat.claimEnchantment(projectile, target)) {
             bonus = projectile.getData(RpgData.ENCHANTED_SHOT);
         }
         if (bonus > 0 && target.isAlive()) {

@@ -10,8 +10,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -30,7 +28,6 @@ public final class ArmorShred extends MobEffect {
 
     public static void register(IEventBus bus) {
         EFFECTS.register(bus);
-        NeoForge.EVENT_BUS.addListener(ArmorShred::died);
     }
 
     /** Native application respects immunity, keeps a longer same-strength effect, and allows milk removal. */
@@ -39,7 +36,4 @@ public final class ArmorShred extends MobEffect {
         target.addEffect(new MobEffectInstance(EFFECT, ticks, 0, false, true, true), owner);
     }
 
-    private static void died(LivingDeathEvent event) {
-        if (!event.getEntity().level().isClientSide()) { event.getEntity().removeEffect(EFFECT); }
-    }
 }

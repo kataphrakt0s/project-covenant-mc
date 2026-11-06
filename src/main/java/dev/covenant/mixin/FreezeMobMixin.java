@@ -1,6 +1,6 @@
 package dev.covenant.mixin;
 
-import dev.covenant.rpg.skills.Auras;
+import dev.covenant.rpg.skills.SkillControls;
 import net.minecraft.world.entity.Mob;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,11 +13,11 @@ abstract class FreezeMobMixin {
     @Inject(method = "doHurtTarget", at = @At("HEAD"), cancellable = true)
     private void covenant$freezeMelee(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.Entity target,
             org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> ci) {
-        if (Auras.frozen((Mob) (Object) this)) { ci.setReturnValue(false); }
+        if (!SkillControls.canAct((Mob) (Object) this)) { ci.setReturnValue(false); }
     }
 
     @Inject(method = "serverAiStep", at = @At("HEAD"), cancellable = true)
     private void covenant$freezeAi(CallbackInfo ci) {
-        if (Auras.frozen((Mob) (Object) this)) { ci.cancel(); }
+        if (!SkillControls.canAct((Mob) (Object) this)) { ci.cancel(); }
     }
 }

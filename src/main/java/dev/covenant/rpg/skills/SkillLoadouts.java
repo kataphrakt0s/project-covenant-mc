@@ -26,15 +26,9 @@ public final class SkillLoadouts {
             if (blocked.isPresent()) { return blocked.orElseThrow(); }
         }
         var next = learn ? previous.withLearned(id, true) : SkillTree.deallocate(previous, id);
-        if (!previous.equals(next)) { player.setData(RpgData.SKILL_LOADOUT, next); }
-        if (!learn) {
-            for (var definition : SkillDefinition.ALL) {
-                if (previous.learned().contains(definition.id()) && !next.learned().contains(definition.id())) {
-                    player.getData(RpgData.SKILL_RUNTIME).cancelSkill(player, definition);
-                }
-            }
-        }
-        Auras.reconcile(player);
+        if (previous.equals(next)) { return message(learn ? "learned" : "unlearned", skill.displayName()); }
+        player.setData(RpgData.SKILL_LOADOUT, next);
+        SkillLifecycle.loadoutChanged(player, previous, next);
         return message(learn ? "learned" : "unlearned", skill.displayName());
     }
 
@@ -56,11 +50,9 @@ public final class SkillLoadouts {
             if (blocked.isPresent()) { return blocked.orElseThrow(); }
         }
         var next = previous.withBinding(slot, id);
-        if (!previous.equals(next)) {
-            Combos.bindingChanged(player, previous.bindings().get(slot));
-            player.setData(RpgData.SKILL_LOADOUT, next);
-        }
-        Auras.reconcile(player);
+        if (previous.equals(next)) { return message(id == null ? "cleared" : "assigned", slot + 1); }
+        player.setData(RpgData.SKILL_LOADOUT, next);
+        SkillLifecycle.loadoutChanged(player, previous, next);
         return message(id == null ? "cleared" : "assigned", slot + 1);
     }
 

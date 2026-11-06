@@ -57,4 +57,10 @@ public final class ClientDash {
             ClientPacketDistributor.sendToServer(new SkillNetworking.DashFinished(prediction.acknowledge(), player.position()));
         }
     }
+
+    /** Native teleports own their destination and velocity; only release our temporary travel/gravity ownership. */
+    public void teleported(LocalPlayer player) {
+        if (prediction.ownsTravel()) { player.setNoGravity(originalNoGravity); }
+        prediction.cancel(); dimension = null;
+    }
 }

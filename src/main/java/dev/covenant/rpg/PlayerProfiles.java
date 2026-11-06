@@ -2,6 +2,7 @@ package dev.covenant.rpg;
 
 import dev.covenant.rpg.classes.PlayerClass;
 import dev.covenant.rpg.skills.ClassResources;
+import dev.covenant.rpg.skills.SkillLifecycle;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -76,11 +77,8 @@ public final class PlayerProfiles {
         }
         if (!previous.equals(next)) {
             if (!previous.selectedClass().equals(next.selectedClass())) {
-                dev.covenant.rpg.skills.Combos.clear(player);
+                SkillLifecycle.cancelPlayer(player, SkillLifecycle.Reason.CLASS_CHANGE);
                 initializeResources(player);
-                player.getData(RpgData.SKILL_RUNTIME).cancelCast(player);
-                dev.covenant.rpg.skills.Traps.clear(player, null);
-                dev.covenant.rpg.skills.Auras.clear(player);
             }
             player.setData(RpgData.PROFILE, next);
         }

@@ -1,9 +1,7 @@
 package dev.covenant.rpg.skills;
 
-import dev.covenant.rpg.classes.PlayerClass;
 import dev.covenant.rpg.RpgData;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /** Entity-local, server-only ephemeral state. Casts/combat never copy across replacement or logout. */
 public final class SkillRuntime {
@@ -24,25 +22,19 @@ public final class SkillRuntime {
     long combatUntil;
     long lastTick = Long.MIN_VALUE;
     long nextActivation;
-    boolean deploying;
     net.minecraft.world.damagesource.DamageSource skillDamageSource;
-    SkillDefinition casting;
-    PlayerClass castClass;
-    long castEnds;
-    double castCost;
-    long castCooldown;
+    PendingCast cast;
+    final SkillControls.MovementState controlMovement = new SkillControls.MovementState();
+    final SkillRequestBudget requests = new SkillRequestBudget();
 
     public void cancelCast(ServerPlayer player) {
-        if (casting == SkillDefinition.AIMED_SHOT) {
-            player.getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(Skills.AIMED_SHOT_SLOW);
-            player.setData(RpgData.BOW_DRAW_UNTIL, 0L);
-        }
-        casting = null;
-        castClass = null;
+        var previous = cast;
+        cast = null;
+        if (previous != null) { previous.finish(player); }
     }
 
     public void cancelSkill(ServerPlayer player, SkillDefinition skill) {
-        if (casting == skill) { cancelCast(player); }
+        if (cast != null && cast.skill() == skill) { cancelCast(player); }
         Combos.cancel(player, skill);
         Traps.clear(player, skill.id());
     }

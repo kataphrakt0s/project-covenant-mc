@@ -7,6 +7,7 @@ and isolate Gradle's cache, avoiding the default Java 24 installation.
 .\scripts\Dev.ps1 doctor   # Java, Gradle, Prism, instance pins
 .\scripts\Dev.ps1 build    # Compile/check and package build/libs/covenant-0.1.0-dev.jar
 .\scripts\Dev.ps1 test     # Dedicated GameTests for RPG data/stats (separate from build)
+.\scripts\Dev.ps1 verify   # Build plus dedicated GameTests; recommended before handing off gameplay
 .\scripts\Dev.ps1 deploy   # Build and copy the JAR to the isolated Prism instance
 .\scripts\Dev.ps1 prism    # Build, deploy, and launch through Prism
 .\scripts\Dev.ps1 client   # Launch the source-based Gradle development client
@@ -152,6 +153,15 @@ generates `.vscode/launch.json`; it is ignored because it contains absolute path
 
 ## Validation protocol
 
+- `scripts/Dev.ps1 verify` runs both the production build/checks and dedicated
+  GameTests in one command. Require the final server log's explicit required-test
+  pass line; compilation or a successful task with no test sources is insufficient.
+- Packet regressions use NeoForge's registered handlers and native connection
+  methods with embedded server players. They cover authority and state transitions,
+  but do not substitute for two real clients with latency. For skill hardening,
+  manually check root/freeze with falling and knockback, delayed dash handoff,
+  instant item use and spear attacks while frozen, plus lightning seen by a nearby
+  observer. Both clients and server must use the same build (skill protocol 2).
 - For server-driven player movement, exercise the full native connection tick,
   not only `ServerPlayer.doTick()` or posted player-tick events. The pinned
   connection wrapper restores cached `firstGood` coordinates after `doTick()`;
