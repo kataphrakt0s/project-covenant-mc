@@ -18,14 +18,16 @@ abstract class BleedHurtCooldownMixin {
     @WrapMethod(method = "hurtServer")
     private boolean covenant$preserveHurtCooldown(ServerLevel level, DamageSource source, float damage,
             Operation<Boolean> original) {
-        if (!source.is(Bleeding.DAMAGE_TYPE) && !source.is(TrapKind.FLAME.damageType)) { return original.call(level, source, damage); }
         var target = (LivingEntity) (Object) this;
+        var hit = dev.covenant.rpg.skills.AuraDamage.begin(target, source);
+        boolean preserve = source.is(Bleeding.DAMAGE_TYPE) || source.is(TrapKind.FLAME.damageType)
+                || source.is(dev.covenant.rpg.skills.AuraDamage.IMMOLATION) || source.is(dev.covenant.rpg.skills.AuraDamage.ENCHANTING);
         int cooldown = target.invulnerableTime;
         float previousHit = lastHurt;
         try { return original.call(level, source, damage); }
         finally {
-            target.invulnerableTime = cooldown;
-            lastHurt = previousHit;
+            if (preserve) { target.invulnerableTime = cooldown; lastHurt = previousHit; }
+            dev.covenant.rpg.skills.AuraDamage.end(hit);
         }
     }
 }

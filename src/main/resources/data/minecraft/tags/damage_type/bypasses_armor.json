@@ -1,4 +1,11 @@
 {
   "replace": false,
-  "values": ["covenant:bleed"]
+  "values": [
+    "covenant:bleed",
+    "covenant:fire_bolt",
+    "covenant:ice_bolt",
+    "covenant:lightning_bolt",
+    "covenant:immolation",
+    "covenant:enchanting"
+  ]
 }

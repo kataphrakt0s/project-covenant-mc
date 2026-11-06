@@ -4,6 +4,11 @@
     "covenant:bleed",
     "covenant:bear_trap",
     "covenant:flame_trap",
-    "covenant:blast_trap"
+    "covenant:blast_trap",
+    "covenant:fire_bolt",
+    "covenant:ice_bolt",
+    "covenant:lightning_bolt",
+    "covenant:immolation",
+    "covenant:enchanting"
   ]
 }

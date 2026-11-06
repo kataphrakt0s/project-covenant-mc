@@ -70,6 +70,9 @@ public final class RpgGameTests {
         FUNCTIONS.register("skill_effects", () -> SkillGameTests::effects);
         FUNCTIONS.register("skill_foundations", () -> SkillFoundationGameTests::run);
         FUNCTIONS.register("rend", () -> BleedGameTests::rend);
+        FUNCTIONS.register("elemental_statuses", () -> ElementalBoltGameTests::statuses);
+        FUNCTIONS.register("elemental_collision", () -> ElementalBoltGameTests::collision);
+        FUNCTIONS.register("elemental_lightning", () -> ElementalBoltGameTests::lightning);
         FUNCTIONS.register("bleed_pulses", () -> BleedGameTests::pulses);
         FUNCTIONS.register("bleed_persistence", () -> BleedGameTests::persistence);
         FUNCTIONS.register("skill_loadout", () -> SkillLoadoutGameTests::run);
@@ -84,6 +87,20 @@ public final class RpgGameTests {
         FUNCTIONS.register("trap_lifecycle", () -> TrapGameTests::lifecycle);
         FUNCTIONS.register("trap_targeting", () -> TrapGameTests::targeting);
         FUNCTIONS.register("trap_activation", () -> TrapGameTests::activation);
+        FUNCTIONS.register("aura_ownership", () -> AuraGameTests::ownership);
+        FUNCTIONS.register("aura_coverage", () -> AuraGameTests::coverage);
+        FUNCTIONS.register("aura_dodge", () -> AuraGameTests::dodge);
+        FUNCTIONS.register("aura_fortitude", () -> AuraGameTests::fortitude);
+        FUNCTIONS.register("aura_ripping", () -> AuraGameTests::ripping);
+        FUNCTIONS.register("aura_slows", () -> AuraGameTests::slows);
+        FUNCTIONS.register("aura_casting", () -> AuraGameTests::casting);
+        FUNCTIONS.register("aura_fireandshock", () -> AuraGameTests::fireAndShock);
+        FUNCTIONS.register("aura_chain", () -> AuraGameTests::chain);
+        FUNCTIONS.register("aura_enchanting", () -> AuraGameTests::enchanting);
+        FUNCTIONS.register("aura_lifecycle", () -> AuraGameTests::lifecycle);
+        FUNCTIONS.register("aura_rage", () -> AuraGameTests::rage);
+        FUNCTIONS.register("aura_projectiles", () -> AuraGameTests::projectiles);
+        FUNCTIONS.register("aura_expiries", () -> AuraGameTests::expiries);
         FUNCTIONS.register("skill_tree", () -> SkillTreeGameTests::run);
     }
 
@@ -459,13 +476,16 @@ public final class RpgGameTests {
                 List.of(stat(RpgStats.DODGE, RpgModifier.Operation.ADD, 2)), List.of());
         player.setItemSlot(EquipmentSlot.CHEST, gear);
         player.tick();
-        near(player.getAttributeValue(RpgStats.DODGE), 1, "Dodge capped at 100%");
+        near(player.getAttributeValue(RpgStats.DODGE), 1, "Native attribute retains its bound");
+        near(RpgStats.dodgeChance(player), .85, "Effective ordinary Dodge is capped at 85 percent");
+        player.getRandom().setSeed(0);
         float health = player.getHealth();
-        check(!player.hurtServer(level, level.damageSources().playerAttack(attacker), 4), "100% dodge rejects melee hit");
+        check(!player.hurtServer(level, level.damageSources().playerAttack(attacker), 4), "Seeded capped Dodge rejects melee hit");
         near(player.getHealth(), health, "Dodge preserves health");
         check(gear.getDamageValue() == 0 && player.invulnerableTime == 0, "Dodged hit must not damage armor or add immunity");
         var arrow = EntityType.ARROW.create(level, EntitySpawnReason.COMMAND);
-        check(!player.hurtServer(level, level.damageSources().arrow(arrow, attacker), 4), "100% dodge rejects projectile");
+        player.getRandom().setSeed(0);
+        check(!player.hurtServer(level, level.damageSources().arrow(arrow, attacker), 4), "Seeded capped Dodge rejects projectile");
         check(player.hurtServer(level, level.damageSources().fall(), 3), "Dodge must not prevent falling damage");
         check(player.getHealth() < health, "Environmental damage still hurts");
         player.invulnerableTime = 0;

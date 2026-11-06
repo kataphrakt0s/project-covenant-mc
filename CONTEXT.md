@@ -41,7 +41,13 @@ once with `/covenant class select covenant:stalker` (or `reaver` / `weaver` in t
 namespace). Selection initializes the existing profile and class resource balances.
 Its saved class ID retains the profile's persistence and owner sync guarantees.
 Classes each have a playable basic skill, and Stalker also has Aimed Shot and all
-four traps (Bear, Frost, Flame, Blast). The
+four traps (Bear, Frost, Flame, Blast). Weaver also has Fire Bolt, Ice Bolt, and
+Lightning Bolt. Fire ignites through native burning; Ice applies one saved/synced
+30% Chilled slow; Lightning is an instant aimed hit after its cast, with no status.
+All three prototype bolts cost 20 Mana, cast in 0.5 seconds, have independent
+two-second cooldowns, and deal six damage. Fire's four-second burn and Ice's
+three-second chill scale with skill duration. Lightning stops at the first eligible
+enemy or solid block within 24 blocks. The
 Reaver also has Rend and a shared bleed foundation. The remaining brainstorm nodes
 are allocatable placeholders, without passive stat
 bonuses or global equipment restrictions.
@@ -113,8 +119,15 @@ Left-click allocates/selects for free; right-click removes that node and its lea
 dependents, clearing their assignments. The server enforces all 11 prerequisite
 links and the Ripping/Fortitude Aura exclusion. Diagram levels are informational;
 there are no skill points, level gates, or ranks yet. Planned nodes can be allocated
-and bound but have no effects, costs, cooldowns, or passive bonuses. Nine skills
-have gameplay. The entire current-class tree fits on one page:
+and bound but have no effects, costs, cooldowns, or passive bonuses. Twenty-three
+skills have gameplay, including all eleven auras. Assigned auras grant free
+passives; instant activations commit a resource cost and cooldown. Source-aware
+transient grants handle allies/pets, overlap, expiry, and loadout/lifecycle cleanup.
+Fortitude is a separate six-point shield with an owner HUD row; ordinary Dodge
+caps at 85%, and Covenant slows use only their strongest active value. Freeze
+suppresses native movement/actions and interrupts Covenant casts. No temporary
+aura state is saved. See `docs/AURAS_IMPLEMENTATION_PLAN.md` and `docs/RPG_SKILLS.md`.
+The entire current-class tree fits on one page:
 compact square nodes resize to the available space, with temporary initials and
 full hover/focus tooltips. All eight tiers and dependency/exclusion links stay
 visible; empty diagram lanes are compressed while preserving the branch flow.

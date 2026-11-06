@@ -8,7 +8,11 @@
     "ArrowPiercingAccessor",
     "BleedHurtCooldownMixin",
     "RootMovementMixin",
-    "RootJumpMixin"
+    "RootJumpMixin",
+    "AuraEffectMixin",
+    "FreezeMobMixin",
+    "FreezePlayerMixin",
+    "AuraProjectileMixin"
   ],
   "client": [
     "client.BowUsePoseMixin",

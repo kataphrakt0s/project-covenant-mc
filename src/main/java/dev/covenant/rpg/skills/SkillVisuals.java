@@ -20,8 +20,27 @@ public final class SkillVisuals {
     private static final DustParticleOptions BLUE = new DustParticleOptions(0x80CAFF, 0.8f);
     private static final DustParticleOptions YELLOW = new DustParticleOptions(0xFFF0A0, 0.6f);
     private static final DustParticleOptions RED = new DustParticleOptions(0xE34336, 0.8f);
+    private static final DustParticleOptions FIRE = new DustParticleOptions(0xFF762B, 0.8f);
 
     private SkillVisuals() {}
+
+    static void elementalTrail(ElementalBolt bolt) {
+        trail(bolt, bolt.skill() == SkillDefinition.FIRE_BOLT ? FIRE : BLUE, 3);
+    }
+
+    static void elementalImpact(ServerLevel level, Vec3 pos, SkillDefinition skill) {
+        level.sendParticles(skill == SkillDefinition.FIRE_BOLT ? FIRE : BLUE,
+                pos.x, pos.y, pos.z, 10, 0.12, 0.12, 0.12, 0);
+    }
+
+    static void lightning(ServerLevel level, Vec3 start, Vec3 end) {
+        var delta = end.subtract(start);
+        int count = Math.min(96, Math.max(1, (int) Math.ceil(delta.length() * 4)));
+        for (int i = 0; i <= count; i++) {
+            var pos = start.add(delta.scale((double) i / count));
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, pos.x, pos.y, pos.z, 1, 0.025, 0.025, 0.025, 0);
+        }
+    }
 
     /** Tracked entity state drives local particles for every viewer, without recurring server packets. */
     static void trap(TrapEntity trap) {

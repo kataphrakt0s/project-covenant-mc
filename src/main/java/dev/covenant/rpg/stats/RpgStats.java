@@ -111,8 +111,18 @@ public final class RpgStats {
         }
     }
 
+    /** Ordinary Dodge never exceeds 85%; guarantees are resolved separately. */
+    public static double dodgeChance(LivingEntity entity) {
+        // Pets need no global attribute injection into unrelated entity types. Modded pets that
+        // already expose Dodge use their native value; other owned recipients use aura coverage.
+        return Math.min(.85, entity.getAttribute(DODGE) != null ? entity.getAttributeValue(DODGE)
+                : entity instanceof net.minecraft.world.entity.OwnableEntity
+                        && dev.covenant.rpg.skills.Auras.passive(entity, dev.covenant.rpg.skills.Auras.Kind.DODGE) ? .1 : 0);
+    }
+
     private static void dodge(LivingIncomingDamageEvent event) {
-        if (!(event.getEntity() instanceof Player player) || player.level().isClientSide()
+        var player = event.getEntity();
+        if (!(player instanceof Player || player instanceof net.minecraft.world.entity.OwnableEntity) || player.level().isClientSide()
                 || event.getAmount() <= 0 || event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)
                 || event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             return;
@@ -120,7 +130,7 @@ public final class RpgStats {
         var direct = event.getSource().getDirectEntity();
         if ((direct instanceof LivingEntity || direct instanceof Projectile
                 || (direct instanceof dev.covenant.rpg.skills.TrapEntity && event.getSource().is(dev.covenant.rpg.skills.TrapKind.BEAR.damageType)))
-                && direct != player && player.getRandom().nextDouble() < player.getAttributeValue(DODGE)) {
+                && direct != player && (dev.covenant.rpg.skills.Auras.consumeDodge(player) || player.getRandom().nextDouble() < dodgeChance(player))) {
             // Cancel before armor/shield processing: a dodged hit consumes neither health nor durability.
             event.setCanceled(true);
         }

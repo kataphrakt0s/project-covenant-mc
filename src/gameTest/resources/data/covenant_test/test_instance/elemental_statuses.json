@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "function": "covenant_test:elemental_statuses",
+  "environment": "minecraft:default",
+  "type": "minecraft:function",
+  "max_ticks": 80
+}

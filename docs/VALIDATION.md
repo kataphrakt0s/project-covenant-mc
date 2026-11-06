@@ -2,6 +2,71 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Eleven auras (2026-11-05)
+
+- All eleven aura skills are executable: Dodge, Swiftness, Ripping, Fortitude,
+  Raging, Icy Veins, Flame Cloak, Freezing, Shock, Immolation, and Enchanting.
+  Existing class, learning, prerequisite/exclusion, and saved-slot rules apply;
+  aura commands also require a slot assignment.
+- `scripts/Dev.ps1 build` passed with the project JDK 25, including both geometry
+  checks. `scripts/Dev.ps1 test` passed **51 required dedicated GameTests**,
+  including fourteen new aura fixtures and the existing bleed/trap/bolt/Rage suite.
+  Evidence: ignored `.local/aura-build-final.log` and `.local/aura-tests-final.log`.
+- Coverage includes source/teammate/pet/outsider membership, spherical edges and
+  ignored cover, free upkeep, duplicate assignments, lingering coverage, fixed
+  active recipients, independent source expiries, team changes, source class and
+  slot cleanup, exact native modifiers, ordinary Dodge's 85% cap, shared guaranteed
+  Dodge consumption, pets, and Swiftness's additive speed and slow cleanse.
+- Native damage fixtures cover separate Fortitude mitigation/overflow/replacement,
+  ordinary absorption coexistence, exact shield-only Rage accounting and Rend
+  bleed setup without outgoing skill Rage; Ripping pair limits and additive
+  Ripping/Raging bleed snapshots; one Rend stack; retained bleed power; Raging
+  decay, combat grace and spending; Icy Veins cooldowns and repeated instant spells;
+  freeze interruption/input/jump/native mob and player attack denial, damage and
+  external velocity, successive freeze and expiry; shared Immolation cadence and
+  source handoff; Flame Cloak fire reduction/retaliation; and exact Lightning chains
+  with cover and target limits. Covenant slow suppression/resumption preserves
+  Chilled's existing serialization/expiry regression coverage.
+- Enchanting covers charged and weak native player melee, partial native bow
+  firing, full crossbow multishot snapshots, committed-shot source cleanup,
+  per-projectile/per-target gates, piercing targets, inactive-class Mana, both
+  damage portions, and preserved initial hurt immunity. Aura lifecycle fixtures
+  exercise native save/load, death replacement, actual caster death, logout and
+  dimension lifecycle hooks, cooldown retention, shield expiry/display sync, and
+  absence of saved temporary modifiers or capacity.
+- Production JAR inspection found aura classes and damage definitions and no
+  GameTest classes/fixtures. `git diff --check` passed. No registry versions or
+  saved IDs changed. No client launch, Prism deployment, or performance benchmark
+  was performed.
+- Manual client checklist: cross fields quickly and check 0.5–1s exit grace and
+  10% slow feel; verify teammate/pet benefits through cover; watch Fortitude's
+  separate HUD row deplete, refresh and disappear; check freeze controls with
+  knockback and consecutive casters; inspect Lightning chain/activation feedback;
+  remove/change aura assignments and verify immediate cleanup. Check real-network
+  reconnect, death/dimension travel, multiplayer visuals, and representative
+  third-party AI. Native action hooks do not establish universal modded AI support.
+
+## Weaver elemental bolts (2026-11-05)
+
+- `scripts/Dev.ps1 build` passed, including both geometry checks.
+  `scripts/Dev.ps1 test` passed all **37 required dedicated GameTests** and the
+  server saved and exited normally. Evidence: ignored
+  `.local/elemental-build-final.log` and `.local/elemental-tests-diagnostic.log`.
+- Three new fixtures exercise Fire/Ice projectile collision and removal, first-hit
+  behavior, Mana/cooldowns, duration scaling, Chilled refresh/expiry/native
+  serialization, burning refresh, Fire Resistance, absorption, invulnerability,
+  Dodge and canceled-hit status gating. Lightning covers its wind-up, first-target
+  damage, absence of status, and solid-cover blocking. Existing skill-tree coverage
+  now expects twelve implemented skills. Bleed fixtures have separate heights to
+  avoid overlap between their wide test areas.
+- Production JAR inspection found the new classes and all three damage definitions,
+  with no GameTest classes/fixtures. `git diff --check` passed.
+- Manual client checks remain: learn/bind all three Weaver bolts; check Fire/Ice
+  travel, impacts, burning/extinguishing and Chilled movement; check Lightning's
+  cast, current aim, 24-block limit and wall blocking. Check Mana/cooldown feedback,
+  status removal/reconnect, and multiplayer visuals. Client rendering and feel
+  were not observed. No Prism deployment was requested or performed.
+
 ## Damage-driven Reaver Rage (2026-11-05)
 
 - `scripts/Dev.ps1 build` passed, including radial/skill-tree geometry checks.

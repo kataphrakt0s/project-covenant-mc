@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "function": "covenant_test:aura_lifecycle",
+  "environment": "minecraft:default",
+  "type": "minecraft:function",
+  "max_ticks": 240
+}

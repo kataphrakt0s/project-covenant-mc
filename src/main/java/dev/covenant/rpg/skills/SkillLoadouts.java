@@ -34,6 +34,7 @@ public final class SkillLoadouts {
                 }
             }
         }
+        Auras.reconcile(player);
         return message(learn ? "learned" : "unlearned", skill.displayName());
     }
 
@@ -56,6 +57,7 @@ public final class SkillLoadouts {
         }
         var next = previous.withBinding(slot, id);
         if (!previous.equals(next)) { player.setData(RpgData.SKILL_LOADOUT, next); }
+        Auras.reconcile(player);
         return message(id == null ? "cleared" : "assigned", slot + 1);
     }
 

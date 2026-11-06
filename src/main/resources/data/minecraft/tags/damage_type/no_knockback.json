@@ -4,6 +4,8 @@
     "covenant:bleed",
     "covenant:bear_trap",
     "covenant:flame_trap",
-    "covenant:blast_trap"
+    "covenant:blast_trap",
+    "covenant:immolation",
+    "covenant:enchanting"
   ]
 }

@@ -29,7 +29,7 @@ public final class ArcaneBolt extends ThrowableItemProjectile {
     @Override protected void onHitEntity(EntityHitResult hit) {
         if (level() instanceof ServerLevel level && getOwner() instanceof LivingEntity owner
                 && hit.getEntity() instanceof LivingEntity target && Skills.canHit(owner, target)) {
-            target.hurtServer(level, damageSources().indirectMagic(this, owner), (float) SkillDefinition.ARCANE_BOLT.power());
+            target.hurtServer(level, damageSources().indirectMagic(this, owner), (float) (SkillDefinition.ARCANE_BOLT.power() * getData(dev.covenant.rpg.RpgData.AURA_PROJECTILE_POWER)));
         }
     }
 

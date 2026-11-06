@@ -1,6 +1,8 @@
 {
   "values": [
-    "covenant:flame_trap"
+    "covenant:flame_trap",
+    "covenant:fire_bolt",
+    "covenant:immolation"
   ],
   "replace": false
 }

@@ -79,6 +79,7 @@ public final class PlayerProfiles {
                 initializeResources(player);
                 player.getData(RpgData.SKILL_RUNTIME).cancelCast(player);
                 dev.covenant.rpg.skills.Traps.clear(player, null);
+                dev.covenant.rpg.skills.Auras.clear(player);
             }
             player.setData(RpgData.PROFILE, next);
         }

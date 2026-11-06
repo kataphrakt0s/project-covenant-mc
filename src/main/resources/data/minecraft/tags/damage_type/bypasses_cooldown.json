@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "covenant:bleed",
-    "covenant:flame_trap"
+    "covenant:flame_trap",
+    "covenant:immolation",
+    "covenant:enchanting"
   ]
 }

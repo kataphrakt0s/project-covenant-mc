@@ -34,6 +34,14 @@ public final class Bleeding {
     /** Positive damage confirmation belongs to the applying skill; this trusted hook owns stack mutation. */
     public static void apply(LivingEntity target, ServerPlayer attacker, float damage, int durationTicks) {
         ClassResources.requireServer(attacker);
+        apply(target, (LivingEntity) attacker, damage, durationTicks);
+    }
+
+    /** Allied pets use the same target-owned stacks, with their own living-actor UUID attribution. */
+    public static void apply(LivingEntity target, LivingEntity attacker, float damage, int durationTicks) {
+        if (!(attacker.level() instanceof ServerLevel level) || !level.getServer().isSameThread()) {
+            throw new IllegalStateException("Bleed application requires the logical server thread");
+        }
         if (!(target.level() instanceof ServerLevel) || target.level() != attacker.level()) {
             throw new IllegalArgumentException("Bleed application requires a target in the attacker's server level");
         }
@@ -67,15 +75,15 @@ public final class Bleeding {
             for (var stack : pulse) {
                 if (!target.isAlive() || !target.hasData(RpgData.BLEED)
                         || target.getData(RpgData.BLEED) != state || !state.stacks().contains(stack)) { break; }
-                var attacker = level.getServer().getPlayerList().getPlayer(stack.attacker());
+                var entity = level.getEntity(stack.attacker());
+                LivingEntity attacker = entity instanceof LivingEntity living ? living : level.getServer().getPlayerList().getPlayer(stack.attacker());
                 // No direct strike/projectile: bleed cannot be dodged. The causing player still gets combat credit.
                 var source = new DamageSource(type, null, attacker);
-                float health = target.getHealth();
-                float absorption = target.getAbsorptionAmount();
+                var before = AuraDamage.before(target);
                 // Preserve UUID kill credit even when the applying player is offline.
-                target.setLastHurtByPlayer(stack.attacker(), 100);
+                if (attacker == null || attacker instanceof ServerPlayer) { target.setLastHurtByPlayer(stack.attacker(), 100); }
                 target.hurtServer(level, source, stack.damage());
-                if (target.getHealth() < health || target.getAbsorptionAmount() < absorption) {
+                if (before.landed(target)) {
                     SkillVisuals.bleedTick(level, target);
                 }
             }

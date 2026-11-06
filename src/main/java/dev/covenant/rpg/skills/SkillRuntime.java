@@ -7,6 +7,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /** Entity-local, server-only ephemeral state. Casts/combat never copy across replacement or logout. */
 public final class SkillRuntime {
+    boolean applyingRend;
     final java.util.EnumMap<TrapKind, TrapEntity> traps = new java.util.EnumMap<>(TrapKind.class);
     final java.util.EnumMap<TrapKind, TrapEntity> patches = new java.util.EnumMap<>(TrapKind.class);
     long combatUntil;

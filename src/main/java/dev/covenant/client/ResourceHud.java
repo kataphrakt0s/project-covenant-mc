@@ -15,6 +15,8 @@ public final class ResourceHud {
     private static long displayedCurrent = Long.MIN_VALUE;
     private static long displayedMaximum = Long.MIN_VALUE;
     private static String label = "";
+    private static float displayedShield = -1;
+    private static net.minecraft.network.chat.Component shieldLabel = net.minecraft.network.chat.Component.empty();
 
     private ResourceHud() {}
 
@@ -58,6 +60,19 @@ public final class ResourceHud {
             graphics.pose().scale(scale, scale);
             graphics.centeredText(minecraft.font, label, 0, 0, 0xFFFFFFFF);
             graphics.pose().popMatrix();
+            float shield = player.getData(dev.covenant.rpg.RpgData.FORTITUDE_CAPACITY);
+            if (shield > 0) {
+                if (shield != displayedShield) {
+                    displayedShield = shield;
+                    shieldLabel = net.minecraft.network.chat.Component.translatable("hud.covenant.fortitude",
+                            String.format(java.util.Locale.ROOT, "%.1f", shield));
+                }
+                int shieldY = y - HEIGHT - 3;
+                minecraft.gui.rightHeight += HEIGHT + 3;
+                graphics.fill(x, shieldY, x + WIDTH, shieldY + HEIGHT, 0xFF16181E);
+                graphics.fill(x + 1, shieldY + 1, x + 1 + (int) ((WIDTH - 2) * shield / 6), shieldY + HEIGHT - 1, 0xFF7E9DAB);
+                graphics.centeredText(minecraft.font, shieldLabel, x + WIDTH / 2, shieldY + 1, 0xFFFFFFFF);
+            }
         });
     }
 }

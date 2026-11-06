@@ -41,6 +41,8 @@ public final class CovenantClient {
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(Skills.ARCANE_BOLT.get(), ThrownItemRenderer::new);
+        event.registerEntityRenderer(Skills.FIRE_BOLT.get(), ThrownItemRenderer::new);
+        event.registerEntityRenderer(Skills.ICE_BOLT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(Skills.TRAP.get(), context -> new ThrownItemRenderer<>(context, 0.8f, true));
     }
 

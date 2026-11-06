@@ -178,9 +178,9 @@ public final class TrapEntity extends Entity implements ItemSupplier {
         Traps.triggered(owner, this);
         switch (kind()) {
             case BEAR -> {
-                float health = target.getHealth(), absorption = target.getAbsorptionAmount();
+                var before = AuraDamage.before(target);
                 hit(target, kind().damage);
-                if (target.getHealth() < health || target.getAbsorptionAmount() < absorption) { Rooted.apply(target, duration); }
+                if (before.landed(target)) { Rooted.apply(target, duration); }
                 SkillVisuals.trapSnap((ServerLevel) level(), this);
                 discard();
             }
@@ -212,7 +212,7 @@ public final class TrapEntity extends Entity implements ItemSupplier {
     }
 
     private void hit(LivingEntity target, float damage) {
-        target.hurtServer((ServerLevel) level(), damageSource(), damage);
+        target.hurtServer((ServerLevel) level(), damageSource(), (float) (damage * AuraDamage.multiplier(owner, kind() == TrapKind.FLAME)));
     }
 
     private DamageSource damageSource() {
@@ -226,7 +226,7 @@ public final class TrapEntity extends Entity implements ItemSupplier {
         var source = damageSource();
         for (var target : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(kind().radius), this::covers)) {
             double falloff = 1 - target.position().distanceTo(position()) / kind().radius;
-            target.hurtServer((ServerLevel) level(), source, (float) (kind().damage * falloff));
+            target.hurtServer((ServerLevel) level(), source, (float) (kind().damage * falloff * AuraDamage.multiplier(owner, false)));
             if (target.isInvulnerableTo((ServerLevel) level(), source) || !target.isAlive()) { continue; }
             double resistance = target.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
             double ordinary = target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);

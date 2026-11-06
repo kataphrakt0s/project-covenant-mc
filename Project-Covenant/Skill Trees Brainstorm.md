@@ -138,13 +138,134 @@ creatures, subject to the agreed defenses and invulnerability rules. Native
 knockback resistance still applies to Blast. Flying creatures must still
 contact the shallow ground-level trigger region to set a trap off.
 
-## Planned aura model
+## Aura model
 
 Auras provide an always-on passive effect while assigned to a skill slot. Learning
 an aura alone does not activate it; removing it from the loadout ends its passive.
-Pressing its assigned keybind activates a different, stronger temporary buff. Each
-aura's passive and active effects will be defined individually. This model applies
-to auras across the classes and is not implemented yet.
+Pressing its assigned keybind activates a different, stronger temporary effect.
+The individual breakdowns below define each aura's prototype tuning. This model applies
+to all eleven implemented auras across the classes.
+See [Auras implementation plan](../docs/AURAS_IMPLEMENTATION_PLAN.md) for the
+ordered engineering checklist and acceptance criteria.
+
+All distinct auras assigned to the current class's skill slots provide their
+passives simultaneously. There is no separate aura limit beyond the eight-slot
+loadout and existing learning exclusions. Assigning the same aura to multiple
+slots provides no additional passive benefit.
+
+For effects described as benefiting the player and nearby allies, eligible
+recipients are the caster, players on the caster's Minecraft scoreboard team,
+and pets owned by the caster or those teammates. An unteamed caster benefits
+only themselves and their own pets. This does not expand explicitly self-only
+aura effects to allies.
+
+Future compatibility must also recognize FTB chunk teams for aura allies.
+That integration is deferred; the initial implementation uses scoreboard teams
+and pet ownership without an FTB dependency. Keep aura ally resolution shared
+so future team support applies consistently across these effects.
+
+Team changes do not revoke existing aura buffs. Recipients who cease to be
+allies stop receiving passive refreshes and new allied activations; their existing
+passive coverage and timed active buffs expire naturally on their own timers.
+Previously agreed caster and recipient lifecycle cleanup rules still apply.
+
+Range-based passive benefits and debuffs are refreshed with a fixed one-second
+(20-game-tick) duration while eligible recipients are inside the aura's range.
+Leaving range stops refreshes rather than immediately removing the effect; the
+remaining duration provides a brief grace period, especially during fast movement.
+Refresh coverage every 0.5 seconds (10 game ticks), providing approximately
+0.5–1 second of remaining coverage after leaving range at normal game speed.
+This fixed coverage duration and refresh frequency are separate from damage-pulse
+intervals, defined per effect below. Explicit caster cleanup events below still
+remove that source's effects immediately. Allied activated buffs select
+eligible recipients in range when the activation takes effect. Those recipients
+retain the buff for its remaining duration after leaving range. Entering range
+afterward does not grant that activation's buff.
+
+Overlapping copies of the same aura passive do not stack; only the strongest
+applicable copy affects a recipient or enemy. Other eligible sources provide
+coverage when the strongest source no longer applies. Different aura passives
+can coexist. This extends Shock Aura's strongest-copy rule to all aura passives.
+
+Repeated copies of the same activated aura buff do not stack. Each cast retains
+its own expiry, and only the strongest unexpired applicable copy provides the
+effect. A later cast can therefore provide coverage after an earlier cast expires,
+without adding their strengths or extending the earlier cast's timer. Fortitude
+shield capacities from different casts do not add together. Dodge's shared
+guarantee consumption and Fortitude's replacement/refresh rule are explicit
+exceptions defined in their individual breakdowns.
+
+An assigned aura's passive remains in effect during its activated effect and
+throughout its activation cooldown, subject to the normal recipient and range
+rules. Activation adds its temporary effect without suspending the passive.
+
+Removing an aura's last slot assignment immediately ends that caster's passive
+and active aura effects, including active buffs supplied to allies, without
+resetting its cooldown. Removing a duplicate assignment has no effect while
+another current-class slot still holds that aura. This prevents retaining active
+aura buffs while replacing their slot commitments with other skills.
+
+Caster death, logout, dimension change, class change, or unlearning the aura
+clears that caster's supplied passive and active aura effects, including effects
+on allies, without resetting cooldowns. Passives resume when the caster becomes
+eligible again with the aura assigned; cleared active effects require a new
+activation. Effects from other eligible casters are unaffected.
+
+A recipient's death, logout, or dimension change clears aura buffs and Fortitude
+shield capacity on that recipient. These temporary effects do not survive
+respawn, reconnect, or dimension travel. Passive coverage can be received again
+normally when eligible and in range. This does not alter the separately saved
+bleed contract or committed projectile bonuses described below.
+
+Aura passives have no resource upkeep and continue working at zero class
+resource. The occupied skill slot is their ongoing commitment. Activating an
+aura spends a one-time cost in the caster's class resource (Focus, Rage, or Mana)
+and uses that aura's own cooldown. Individual costs and cooldowns are defined
+below; there is no recurring resource drain during the activated effect.
+
+All aura activations are instant, with no wind-up. A successful activation
+immediately spends its one-time resource cost and starts its cooldown. There is
+no aura cast window to interrupt. Rejected activations spend nothing and do not
+start a cooldown.
+
+Aura activation is rejected while the caster is already casting another skill,
+following the existing cast pipeline. It does not interrupt or bypass that cast.
+Aura passives continue to operate during other casts; activation must wait until
+the current cast finishes or is cancelled.
+
+Nearby aura effects use a sphere centered on the caster, with distance measured
+between entity positions. Range reaches equally horizontally and vertically.
+All nearby aura effects start with a six-block radius as shared prototype tuning;
+individual overrides can be agreed when defining each aura. Allied aura benefits ignore solid cover:
+walls and floors do not block passive coverage or selection for activated buffs.
+Range and ally eligibility still apply. This avoids line-of-sight checks for
+allied coverage and keeps buffs reliable around buildings; no performance
+benchmark is implied. Enemy-facing aura effects also ignore walls and floors,
+including Immolation damage and Freezing/Shock effects. They still require range
+and enemy eligibility. Auras can therefore affect enemies in adjacent rooms or
+on other floors within their spherical range. Aura coverage and area activation
+selection require no line-of-sight checks; this does not change cover rules for
+separate attacks such as Lightning Bolt or its future chain arcs.
+
+Offensive aura effects use normal skill enemy eligibility: living, non-spectator
+targets other than the caster, excluding aura allies and their pets and respecting
+PvP restrictions. Passive animals and modded living creatures can be affected;
+targets are not restricted to hostile mobs. Shared aura ally resolution applies
+to these exclusions, including future FTB chunk-team support. An assigned
+Immolation Aura can therefore damage eligible livestock within range through
+walls and floors.
+
+Raging and Immolation damage bonuses use each effect's normal damage-calculation
+point. Do not move existing calculations earlier or later solely for auras, or
+introduce a universal impact-time recalculation rule. Preserve the explicit bleed
+application snapshots and Enchanting projectile-at-firing snapshots below.
+
+Damage absorbed by Fortitude counts as landed combat damage for Rage gains,
+combat grace, and bleed application, like ordinary absorption. Preserve the
+existing restrictions on Rage generation: skill damage grants no outgoing Rage,
+and self/environmental damage does not become combat damage. Count damage
+absorbed by Fortitude only once; do not also count it as health damage. This is a
+planned extension to current health/absorption-based hit confirmation.
 
 ## Bleed stacking
 
@@ -315,14 +436,29 @@ Exact charge duration, distance scaling, and cap are deferred.
 Diagram level: 10.
 
 Planned recipients: the player and nearby allies, for both the always-on passive
-and the temporary activated buff. How allies are identified is deferred from this
-design pass.
+and the temporary activated buff, using the shared aura ally rules and six-block
+prototype radius.
 
-Passive: increase dodge chance while the aura is assigned to a skill slot.
+Passive: add 10 percentage points of Dodge while the aura is assigned to a skill
+slot. Ordinary Dodge chance has an agreed global cap of 85%, including equipment
+and aura bonuses. This cap is implemented in the shared Dodge handler. The active's guaranteed
+dodge bypasses this ordinary chance cap.
 
 Active: grant each recipient a brief window in which one dodge is guaranteed.
-The guarantee applies to one dodgeable incoming hit per recipient. Passive bonus,
-aura range, active window duration, resource cost, and cooldown are deferred.
+The guarantee applies to one dodgeable incoming hit per recipient, ensuring that
+hit is avoided regardless of ordinary Dodge chance and its 85% cap. Undodgeable
+damage remains undodgeable. The guarantee lasts three seconds (60 game ticks)
+at base, scaled by the caster's existing skill-duration multiplier, and expires
+unused if no dodgeable hit arrives. Its base cooldown is 20 seconds (400 game
+ticks), scaled by the existing cooldown multiplier. This exceeds Blast Trap's
+current 15-second base cooldown, satisfying the agreed minimum. Activation costs
+25 Focus at base, scaled by the existing resource-cost multiplier.
+
+On the next dodgeable incoming hit, resolve the guarantee before ordinary Dodge
+and consume all currently overlapping Dodge Aura guarantees on that recipient.
+Overlapping activations therefore protect against one hit, not a queue of hits.
+A new activation after consumption can supply another guarantee. Undodgeable
+damage neither triggers nor consumes the guarantees.
 
 #### Frost Trap
 Diagram level: 10.
@@ -401,11 +537,22 @@ Diagram level: 25.
 
 Planned recipients: the player and nearby allies.
 
-Passive: increase movement speed while the aura is assigned to a skill slot.
+Passive: grant +10% movement speed to the player and nearby allies while the aura
+is assigned to a skill slot, using a native movement-speed modifier and the
+shared six-block range, coverage refresh, and grace rules.
 
-Active: clear existing slows and grant a larger temporary movement-speed boost
-plus 0.5 blocks of additional step height. Speed bonuses, aura range, active buff
-duration, resource cost, and cooldown are deferred.
+Active: clear existing slows and grant an additional 20 percentage points of
+movement speed plus 0.5 blocks of additional step height. The passive and active
+speed bonuses add to +30% while both apply. After passive coverage expires on
+leaving range, recipients retain the active's +20% for its remaining duration.
+The active lasts four seconds (80 game ticks) at base, scaled by the caster's
+existing skill-duration multiplier. Slow cleansing happens once on activation;
+the buff grants no slow immunity. New hits and ongoing slowing fields can
+reapply slows afterward. The cleanse removes vanilla Slowness and Covenant
+movement slows, including Chilled and aura/trap slows, but leaves roots and full
+freezes intact. It does not remove arbitrary third-party movement modifiers.
+Activation costs 25 Focus at base and has a 20-second (400-game-tick) base
+cooldown, using the existing resource-cost and cooldown multipliers.
 
 #### Snaring Shot
 Diagram level: 25.
@@ -563,23 +710,68 @@ Mutually exclusive with: Fortitude Aura.
 
 Planned recipients: the player and nearby allies.
 
-Passive: increase bleed damage while the aura is assigned to a skill slot.
+Passive: grant +20% bleed damage to the player and nearby allies while the aura
+is assigned to a skill slot, using the shared six-block range and passive
+coverage rules. Direct-hit damage is unchanged. Capture the bonus in each bleed
+stack's damage when that stack is applied, matching the existing bleed snapshot
+model. Existing stacks do not gain a bonus when their attacker enters coverage,
+and boosted stacks retain their captured damage after coverage ends. Refreshing
+a retained stack preserves its captured damage; replacements capture the current
+bonus. Aura cleanup removes the source's coverage and active buff, not already
+applied bleed stacks or their captured damage.
 
-Active: temporarily make recipients' melee hits apply bleeding. Passive bonus,
-aura range, active duration, applied bleed damage and duration, resource cost, and
-cooldown are deferred.
+Active: temporarily make recipients' ordinary melee attacks and melee skills
+(including Cleave and Rend) apply bleeding when they deal positive damage to
+health, ordinary absorption, or Fortitude's shield. Projectiles and
+damage-over-time pulses do not trigger it.
+Rend retains its own bleed application and applies only one stack per target per
+hit; Ripping does not add a second stack to Rend. Other eligible hits apply a
+bleed matching Rend's prototype: 10% of the attacker's captured native attack
+damage per one-second pulse, with a five-second base duration. Use the existing
+shared three-stack cap, refresh/replacement rules, attribution, and defenses.
+Ripping's captured passive bonus raises the pulse to 12% when applicable.
+The active buff has a five-second (100-game-tick) base duration, scaled by the
+caster's existing skill-duration multiplier. Applied bleeds continue for their
+own remaining durations after the buff ends. Activation costs 40 Rage at base
+and has a 20-second (400-game-tick) base cooldown, using the existing
+resource-cost and cooldown multipliers.
+
+Each recipient can apply at most one aura-triggered bleed per target per second
+(20 game ticks). This limit is per attacker/target pair, shared across overlapping
+Ripping buffs on that attacker, and limits applications and refreshes rather than
+damage pulses. Different targets have independent limits. Rend's own bleed
+application remains unchanged and does not trigger an extra Ripping application.
 
 #### Fortitude Aura
 Diagram level: 10.
 
 Mutually exclusive with: Ripping Aura.
 
-Passive: increase armor and armor toughness while the aura is assigned to a skill
-slot.
+Passive: grant the player and nearby allies +4 Armor and +2 Armor Toughness
+while the aura is assigned to a skill slot. Use native flat attribute modifiers
+and the shared six-block range and passive coverage rules.
 
 Active: grant the player and nearby allies a temporary damage-absorbing shield.
-Passive bonuses, aura range, shield capacity and duration, resource cost, and
-cooldown are deferred.
+The shield absorbs damage after armor and other applicable damage reduction,
+before health is lost. A hit reduced from 10 damage to 6 consumes 6 shield points.
+Each recipient receives a flat six-point shield (three hearts), independent of
+maximum health. The shield lasts seven seconds (140 game ticks) at base, scaled
+by the caster's existing skill-duration multiplier, or ends sooner when depleted.
+Unused capacity expires with the shield. Track Fortitude capacity separately
+from ordinary absorption hearts and consume Fortitude first, before ordinary
+absorption or health. Expiry and source cleanup remove only Fortitude's own
+remaining capacity, preserving unrelated absorption.
+
+Fortitude is an exception to the shared independent-copy buff rule: select
+eligible recipients inside the six-block area only when the active is pressed.
+Each activation grants the normal six-point shield and restarts its full duration
+on those recipients, including recipients already carrying Fortitude. Replace
+the old Fortitude shield with the fresh cast's shield rather than adding capacity
+or retaining a backup copy; the fresh cast owns the replacement for cleanup.
+Capacity is restored to six points, never added on top of remaining points.
+Entering the area afterward does not grant or refresh a shield. Activation costs
+40 Rage at base and has a 20-second (400-game-tick) base cooldown, using the
+existing resource-cost and cooldown multipliers.
 
 #### Lunging Combo
 Diagram level: 15.
@@ -647,13 +839,26 @@ cooldown are deferred.
 #### Raging Aura
 Diagram level: 25.
 
-Passive: while assigned to a skill slot, reduce the player's out-of-combat Rage
-decay rate after the existing grace period. The passive does not extend that
-grace period.
+Passive: while assigned to a skill slot, set the player's out-of-combat Rage
+decay rate to 3 Rage per second after the existing seven-second grace period.
+This is a self-only passive and does not extend the grace period or generate Rage.
 
-Active: temporarily increase damage and stop passive Rage decay. Skills still
-spend Rage normally during the buff. Passive sustain tuning, damage bonus, active
-duration, resource cost, and cooldown are deferred.
+Active: temporarily grant +20% to all damage personally dealt by the player, including
+ordinary melee attacks, skills, and bleeding, and stop passive Rage decay.
+This is self-only and excludes pet damage. Skills still spend Rage normally
+during the buff. Bleed stacks capture Raging's damage bonus when applied, matching
+Ripping's snapshot rule. Existing stacks are unchanged when Raging activates;
+boosted stacks retain their damage after it ends. Refreshing retained stacks
+preserves captured damage, while replacement stacks capture the current bonus.
+Ripping's +20% bleed bonus and Raging's +20% damage bonus combine additively for
++40% bleed damage, captured once per new stack. A base pulse of 10% captured
+attack damage becomes 14% with both; do not multiply the bonuses or reapply
+Raging's bonus on subsequent pulses. The active lasts six seconds (120 game
+ticks) at base, scaled by the caster's existing skill-duration multiplier.
+Activation costs 40 Rage at base and has a 30-second (600-game-tick) base
+cooldown, using the existing resource-cost and cooldown multipliers. The longer
+cooldown makes this an occasional burst rather than an activation for every
+enemy encounter.
 
 #### War Banner
 Diagram level: 25.
@@ -714,9 +919,10 @@ Fire a straight amethyst-rendered projectile; one collision deals 6 attributed i
 #### Lightning Bolt
 Diagram level: 3.
 
-Planned behavior: once cast, strike instantly along the player's aim, stopping at
-the first enemy or solid block. Cast time, range, damage, Mana cost, and cooldown
-are deferred.
+Implemented prototype: after a 0.5-second cast, strike instantly along the player's
+aim, stopping at the first eligible enemy or solid block within 24 blocks. Deals
+6 lightning damage, costs 20 Mana, and has a two-second cooldown. Direct damage
+only; no status effect or native lightning entity. See `docs/RPG_SKILLS.md`.
 
 #### Mage Armour
 Diagram level: 3.
@@ -743,9 +949,11 @@ Firing rate, missile damage, and per-missile Mana cost are deferred.
 #### Ice Bolt
 Diagram level: 5.
 
-Planned behavior: fire a traveling single-target projectile that deals damage and
-briefly slows the enemy's movement. Damage, slow strength and duration, cast time,
-Mana cost, and cooldown are deferred.
+Implemented prototype: traveling single-target projectile dealing 6 ice damage.
+Positive health or absorption damage applies a 30% Chilled movement slow for
+3 seconds, scaled by skill duration. Reapplication refreshes without stacking.
+Costs 20 Mana, casts in 0.5 seconds, and has a two-second cooldown.
+See `docs/RPG_SKILLS.md` for defenses, persistence, and overlap rules.
 
 #### Discharge
 Diagram level: 5.
@@ -770,32 +978,56 @@ chain target limit are deferred.
 #### Fire Bolt
 Diagram level: 5.
 
-Planned behavior: fire a traveling single-target projectile that deals an initial
-hit and ignites the enemy. Initial damage, burn duration, cast time, Mana cost,
-and cooldown are deferred.
+Implemented prototype: traveling single-target projectile dealing 6 fire damage.
+Positive health or absorption damage ignites for 4 seconds, scaled by skill
+duration and native burning-time modifiers. Uses native burning and extinguishing,
+without custom burn stacks. Costs 20 Mana, casts in 0.5 seconds, and has a
+two-second cooldown. See `docs/RPG_SKILLS.md` for defenses and persistence.
 
 #### Icy Veins
 Diagram level: 10.
 
 Uses the shared aura model despite its name.
 
-Passive: reduce skill cooldowns while assigned to a skill slot.
+Passive: self-only 10% reduced skill cooldowns while assigned to a skill slot,
+using the existing native skill-cooldown multiplier. A base 20-second cooldown
+becomes 18 seconds before other modifiers. Apply the reduction only when a new
+cooldown is calculated through the existing skill pipeline. Assigning or removing
+Icy Veins does not rewrite already-running cooldowns.
 
 Active: make all casts instant for a limited period by removing spell wind-ups.
 Channel firing rates, including Arcane Barrage's missile rate, remain unchanged.
-Passive cooldown reduction, active duration, Mana cost, and activation cooldown
-are deferred.
+The active lasts four seconds (80 game ticks) at base, scaled by the caster's
+existing skill-duration multiplier. There is no cast-count limit: players may
+rotate every available spell cooldown during the window if they have the Mana.
+Spell resource costs and cooldowns remain unchanged by the active. Activation
+costs 30 Mana at base and has a 30-second (600-game-tick) base cooldown, using the
+existing resource-cost and cooldown multipliers. Its own passive reduces that
+cooldown to 27 seconds before other modifiers.
 
 #### Flame Cloak
 Diagram level: 10.
 
 Uses the shared aura model.
 
-Passive: reduce incoming fire damage while assigned to a skill slot.
+Passive: self-only 20% reduced incoming fire damage while assigned to a skill
+slot. Identify fire damage through the native fire damage-type tag, including
+burning, lava, and fire-tagged attacks. This grants reduction, not fire immunity;
+non-fire damage is unchanged.
 
-Active: temporarily ignite enemies that hit the player in melee. Passive damage
-reduction, retaliation duration, ignite duration, Mana cost, and cooldown are
-deferred.
+Active: temporarily ignite eligible enemies whose melee hits deal positive
+damage to the player's health, ordinary absorption, or Fortitude shield.
+Dodged, fully blocked, or otherwise fully negated hits do not trigger retaliation.
+Retaliation ignites for four seconds (80 game ticks) at base, scaled by the
+caster's existing skill-duration multiplier. Use native burning with normal
+extinguishing, fire immunity, and burning-time modifiers, as with Fire Bolt.
+Repeated hits refresh native burning rather than adding independent burn stacks.
+Target 40% base uptime for the retaliation window: its base duration is 40% of
+the chosen base activation cooldown. Apply the existing cooldown and
+skill-duration multipliers independently afterward, so effective uptime can
+exceed 40%. The base cooldown is 20 seconds (400 game ticks), giving an
+eight-second (160-game-tick) base retaliation window. Activation costs 30 Mana at
+base, scaled by the existing resource-cost multiplier.
 
 #### Teleport
 Diagram level: 10.
@@ -809,33 +1041,89 @@ Diagram level: 15.
 
 Requires: Icy Veins.
 
-Passive: slow nearby enemies while assigned to a skill slot.
+Passive: slow nearby enemies by 10% while assigned to a skill slot, using the
+shared six-block radius and one-second coverage refreshed every 0.5 seconds.
+The prototype target is the smallest noticeable slow; perceived impact requires
+in-game playtesting. Covenant movement slows do not combine: apply only the
+strongest active slow, so this 10% yields to Chilled's 30% or Frost Trap's 50%.
+Weaker effects retain their own timers and resume if still active when stronger
+coverage ends. Roots and full freezes are separate control effects. This shared
+slow rule is planned and requires updating existing slow implementations.
 
-Active: briefly freeze nearby enemies, preventing movement and attacks. Aura
-range, passive slow strength, freeze duration, Mana cost, and cooldown are
-deferred.
+Active: briefly freeze nearby enemies, preventing voluntary movement, jumping,
+attacks, and skill casting. Frozen targets can still take damage and receive
+external knockback; freeze grants no invulnerability and does not cancel external
+forces. Freeze lasts 1.5 seconds (30 game ticks) at base, scaled by the caster's
+existing skill-duration multiplier. Damage does not break freeze, including
+ongoing bleeding or burning. Applying freeze cancels pending Covenant casts
+rather than pausing them. Unfinished casts spend no resource and start no
+cooldown, following existing cancellation behavior; targets must cast again
+after thawing. Activation costs 40 Mana at base and has a 25-second
+(500-game-tick) base cooldown, using the existing resource-cost and cooldown
+multipliers.
+An otherwise valid activation still spends its Mana and starts cooldown when
+there are no eligible enemies in range, or no eligible enemy receives freeze.
+This is a committed area action, not a target-required cast.
+There is no blanket boss immunity to Freezing Aura's slow or freeze in this
+prototype. Eligible bosses follow the same control rules, while actual
+invulnerability remains respected, consistent with the trap control policy.
+There is no post-freeze immunity period or diminishing-return system in this
+prototype. Targets are eligible for another freeze immediately after thawing,
+so coordinated casters can stagger freezes, including against eligible bosses.
+Overlapping freezes still follow the shared non-stacking active-effect rules.
 
 #### Shock Aura
 Diagram level: 15.
 
-Passive: increase nearby enemies' damage taken while assigned to a skill slot.
+Passive: nearby eligible enemies take 10% increased damage from all sources while
+the aura is assigned to a skill slot, using shared six-block range and passive
+coverage/grace rules. This includes allies' attacks and ongoing damage.
 This increase stacks with Arcane Arrow's vulnerability. Overlapping Shock Auras
 do not stack with one another; only the strongest copy applies.
 
-Active: temporarily make Lightning Bolt chain between nearby enemies.
-Vulnerability strength, aura range, active duration, chain range and target limit,
-Mana cost, and cooldown are deferred.
+Active: temporarily make the caster's Lightning Bolt chain from its initial
+target to up to two additional eligible enemies (three targets total). A target
+cannot be hit twice by the same cast. Each jump reaches up to four blocks from
+the previous target, independently of the caster's six-block passive field;
+later targets can be outside that field. Each jump selects the nearest unhit
+eligible enemy with a clear path from the previous target; solid cover blocks
+arcs. If no candidate qualifies within four blocks, the chain ends. These cover
+checks occur during the cast, not as recurring passive coverage checks. The
+active lasts seven seconds (140 game ticks) at base, scaled by the caster's
+existing skill-duration multiplier, with no cast-count limit. The tuning target
+is roughly three or four chaining casts as spell cooldowns and Mana allow.
+Activation costs 30 Mana at base and has a 25-second (500-game-tick) base cooldown,
+using the existing resource-cost and cooldown multipliers. Each chained hit deals 50% of
+Lightning Bolt's base damage without further falloff: at current tuning, 6 damage
+on the initial target, then 3 and 3, before bonuses and defenses. Derive jump
+damage from base power, not damage actually received by the previous target.
 
 #### Immolation Aura
 Diagram level: 15.
 
 Requires: Flame Cloak.
 
-Passive: damage nearby enemies with fire while assigned to a skill slot.
+Passive: deal one point of fire damage per second (one pulse per 20 game ticks)
+to nearby eligible enemies while assigned, using the shared six-block range and
+coverage rules. Overlapping copies use only the strongest Immolation passive;
+they do not add damage or independent damage schedules. Damage is before defenses.
+Pulses operate independently of normal hurt-immunity windows: other attacks do
+not suppress aura pulses, and aura pulses do not suppress other attacks. Actual
+invulnerability and fire immunity remain respected.
+Immolation pulses bypass armor, shield blocking, and Dodge, while respecting
+fire protections, general damage reduction, Fortitude shields, and ordinary
+absorption.
 
-Active: temporarily boost all fire damage the player deals. Aura range, passive
-damage and interval, active damage bonus and duration, Mana cost, and cooldown
-are deferred.
+Active: self-only +30% fire damage personally dealt by the player, including
+Immolation pulses and Fire Bolt's direct damage. The fire archetype targets
+high damage throughput. The prototype boosts only fire damage attributed to
+the player; ordinary native burning ticks remain unchanged because they do not
+reliably retain caster ownership. Fire Bolt's direct hit and owned Immolation
+pulses benefit, but burns caused by Fire Bolt or Flame Cloak do not gain boosted
+tick damage. The active lasts six seconds (120 game ticks) at base, scaled by
+the caster's existing skill-duration multiplier. Activation costs 40 Mana at
+base and has a 30-second (600-game-tick) base cooldown, using the existing
+resource-cost and cooldown multipliers.
 
 #### Threefold System
 Diagram level: 15.
@@ -892,12 +1180,44 @@ Diagram level: 25.
 
 Planned recipients: the player and nearby allies.
 
-Passive: increase Mana regeneration while assigned to a skill slot.
+Passive: grant +20% Mana regeneration to the caster and nearby allies while
+assigned, using the existing Mana-regeneration attribute and shared six-block
+range and coverage rules. Maximum Mana is unchanged. Recipients whose class
+does not use Mana receive no resource benefit; this does not enable inactive
+class resource recovery.
 
-Active: temporarily add magic damage to regular melee attacks and ordinary bow
-and crossbow shots. Skills do not receive this added damage. Regeneration bonus,
-aura range, added magic damage and buff duration, Mana cost, and cooldown are
-deferred.
+Active: temporarily add two points of magic damage (one heart) per eligible
+regular melee hit or ordinary bow/crossbow hit, independent of weapon damage.
+For player melee attacks, scale the added magic portion by vanilla's pre-hit
+attack strength, as vanilla scales enchantment bonus damage: two points times
+attack strength in [0, 1]. Fully charged attacks receive the full two points;
+rapid weak swings receive less. Capture attack strength before its reset.
+Ordinary bow shots scale their bonus by bow draw strength, reaching two magic
+damage at full draw. Ordinary crossbow shots receive the full two-point bonus.
+Capture the scaled projectile bonus when fired.
+Each ordinary projectile applies its captured bonus once per enemy it
+successfully damages. Vanilla piercing can carry the bonus to multiple enemies;
+each multishot projectile carries its own captured bonus. Skills, including
+skill-created arrows, remain excluded.
+Skills do not receive this added damage. The original hit must deal positive
+damage to health, ordinary absorption, or Fortitude's shield to trigger the
+bonus. Dodged, fully blocked, or otherwise fully negated hits grant no bonus
+damage. Ordinary bow/crossbow projectiles capture Enchanting's bonus when fired:
+they retain it if they hit after the buff expires, and already-airborne shots do
+not gain it from a later activation. Captured projectile bonuses are committed
+shot effects, not lingering recipient buffs; ending aura coverage or cleaning up
+the source buff does not retroactively remove them. The added damage follows
+vanilla magic defenses: bypass armor, armor toughness, and shield blocking;
+respect Protection enchantments, Resistance, ordinary absorption, and actual
+invulnerability. Fortitude's separate shield also absorbs it. Do not roll a
+second Dodge or blocking check, and apply the added portion without suppression
+by the original hit's hurt-immunity window or extending that window. Both the
+successful original hit and its added magic portion must apply; a naive second
+ordinary damage call must not let hurt immunity discard the magic portion.
+The active buff lasts six seconds (120 game ticks) at base, scaled by the
+caster's existing skill-duration multiplier. Activation costs 40 Mana at base
+and has a 25-second (500-game-tick) base cooldown, using the existing
+resource-cost and cooldown multipliers.
 
 #### Beacon
 Diagram level: 25.

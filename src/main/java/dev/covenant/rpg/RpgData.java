@@ -61,6 +61,23 @@ public final class RpgData {
                     .serialize(SkillLoadout.CODEC.fieldOf("loadout")).copyOnDeath()
                     .sync((holder, recipient) -> holder == recipient, SkillLoadout.STREAM_CODEC).build());
 
+    /** Temporary source/recipient ownership; no saved or copied derived buffs. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.Auras.State>> AURAS = ATTACHMENTS.register(
+            "auras", () -> AttachmentType.builder(dev.covenant.rpg.skills.Auras.State::new).build());
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.AuraDamage.Combat>> AURA_COMBAT = ATTACHMENTS.register(
+            "aura_combat", () -> AttachmentType.builder(dev.covenant.rpg.skills.AuraDamage.Combat::new).build());
+    /** Only changes on freeze transitions, so client movement can use the authoritative state. */
+    public static final Supplier<AttachmentType<Boolean>> AURA_FROZEN = ATTACHMENTS.register(
+            "aura_frozen", () -> AttachmentType.builder(() -> false).sync(ByteBufCodecs.BOOL).build());
+    /** Separate owner-only shield capacity; never masquerades as native absorption. */
+    public static final Supplier<AttachmentType<Float>> FORTITUDE_CAPACITY = ATTACHMENTS.register(
+            "fortitude_capacity", () -> AttachmentType.builder(() -> 0f)
+                    .sync((holder, recipient) -> holder == recipient, ByteBufCodecs.FLOAT).build());
+    public static final Supplier<AttachmentType<Double>> AURA_PROJECTILE_POWER = ATTACHMENTS.register(
+            "aura_projectile_power", () -> AttachmentType.builder(() -> 1d).build());
+    public static final Supplier<AttachmentType<Float>> ENCHANTED_SHOT = ATTACHMENTS.register(
+            "enchanted_shot", () -> AttachmentType.builder(() -> 0f).build());
+
     private RpgData() {}
 
     public static void register(IEventBus modBus) {

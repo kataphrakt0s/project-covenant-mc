@@ -92,7 +92,7 @@ public final class ClassResources {
         var previous = player.getData(RpgData.SKILLS);
         var next = previous;
         double delta = type == PlayerClass.REAVER && !inCombat(player)
-                ? -SkillConfig.RAGE_DEPLETION.get() : regeneration(player, type);
+                ? (Auras.active(player, Auras.Kind.RAGING) ? 0 : Auras.passive(player, Auras.Kind.RAGING) ? -3 : -SkillConfig.RAGE_DEPLETION.get()) : regeneration(player, type);
         for (var other : PlayerClass.all()) {
             double amount = current(player, other);
             if (other == type) { amount = Math.clamp(amount + delta / 4, 0, maximum(player, other)); }
@@ -105,7 +105,7 @@ public final class ClassResources {
 
     /** Only positive confirmed damage involving another living actor counts, never self/environment hits. */
     public static void damaged(LivingDamageEvent.Post event) {
-        if (!(event.getInflictedDamage() > 0) || !(event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker)
+        if (!(AuraDamage.landedDamage(event) > 0) || !(event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker)
                 || attacker == event.getEntity() || attacker.isAlliedTo(event.getEntity())) { return; }
         var source = event.getSource();
         if (attacker instanceof ServerPlayer player) {
@@ -116,12 +116,12 @@ public final class ClassResources {
             var direct = source.getDirectEntity();
             if (basic && source != player.getData(RpgData.SKILL_RUNTIME).skillDamageSource
                     && direct != null && !(direct.hasData(RpgData.SKILL_SHOT) && direct.getData(RpgData.SKILL_SHOT))) {
-                gain(player, event.getInflictedDamage() * SkillConfig.RAGE_DAMAGE_DEALT.get());
+                gain(player, AuraDamage.landedDamage(event) * SkillConfig.RAGE_DAMAGE_DEALT.get());
             }
         }
         if (event.getEntity() instanceof ServerPlayer player) {
             markCombat(player);
-            gain(player, event.getInflictedDamage() * SkillConfig.RAGE_DAMAGE_TAKEN.get());
+            gain(player, AuraDamage.landedDamage(event) * SkillConfig.RAGE_DAMAGE_TAKEN.get());
         }
     }
 

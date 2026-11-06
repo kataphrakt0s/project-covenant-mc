@@ -173,7 +173,7 @@ public final class TrapGameTests {
             var armored = f.target(owner.position().add(0, 0, -4)); armored.getAttribute(Attributes.ARMOR).setBaseValue(20);
             ticks(f.ground(owner, TrapKind.BEAR, armored.position()), 11);
             check(armored.getHealth() > 196 && armored.getHealth() < 200 && Rooted.contains(armored), "Armor mitigates without blocking root");
-            var dodger = f.player(5); dodger.getAttribute(RpgStats.DODGE).setBaseValue(1);
+            var dodger = f.player(5); dodger.getAttribute(RpgStats.DODGE).setBaseValue(1); dodger.getRandom().setSeed(0);
             ticks(f.ground(owner, TrapKind.BEAR, dodger.position()), 11);
             check(dodger.getHealth() == 20 && !Rooted.contains(dodger), "Bear participates in guaranteed Dodge");
             var boss = EntityType.WITHER.create(helper.getLevel(), EntitySpawnReason.COMMAND);
@@ -324,7 +324,7 @@ public final class TrapGameTests {
         var invulnerable = f.target(center.add(0, 0, 1)); invulnerable.setInvulnerable(true);
         var behindWall = f.target(center.add(0, 0, 2));
         f.block(BlockPos.containing(center.add(0, 0, 1)), Blocks.STONE.defaultBlockState());
-        var shield = f.player(2); shield.setPos(center.add(2, 0, 0)); shield.getAttribute(RpgStats.DODGE).setBaseValue(1);
+        var shield = f.player(2); shield.setPos(center.add(2, 0, 0)); shield.getAttribute(RpgStats.DODGE).setBaseValue(1); shield.getRandom().setSeed(0);
         shield.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.SHIELD));
         shield.startUsingItem(net.minecraft.world.InteractionHand.OFF_HAND);
         helper.onEachTick(shield::doTick);
@@ -370,7 +370,7 @@ public final class TrapGameTests {
         var wall = BlockPos.containing(center.add(0, 0, 1)); f.block(wall, Blocks.STONE.defaultBlockState());
         var immune = f.target(center.add(-2, 0, 0)); immune.setInvulnerable(true);
         var shield = f.player(2); shield.setPos(center.add(1, 0, 0)); shield.setYRot(90);
-        shield.getAttribute(RpgStats.DODGE).setBaseValue(1);
+        shield.getAttribute(RpgStats.DODGE).setBaseValue(1); shield.getRandom().setSeed(0);
         shield.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.SHIELD));
         shield.startUsingItem(net.minecraft.world.InteractionHand.OFF_HAND); helper.onEachTick(shield::doTick);
         var credits = new ArrayList<UUID>();
@@ -388,7 +388,7 @@ public final class TrapGameTests {
             var bear = f.ground(owner, TrapKind.BEAR, shield.position().add(0.6, 0, 0.6)); ticks(bear, 10);
             near(shield.getHealth(), 16, "Bear bypasses shield");
             check(Rooted.contains(shield), "Shield does not prevent root");
-            shield.getAttribute(RpgStats.DODGE).setBaseValue(1); shield.setYRot(90); shield.invulnerableTime = 0;
+            shield.getAttribute(RpgStats.DODGE).setBaseValue(1); shield.getRandom().setSeed(0); shield.setYRot(90); shield.invulnerableTime = 0;
             float shieldHealth = shield.getHealth();
             var trap = f.ground(owner, TrapKind.BLAST, center); ticks(trap, 10);
             check(trap.isRemoved(), "Blast is consumed once");

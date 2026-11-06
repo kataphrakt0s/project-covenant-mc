@@ -55,6 +55,13 @@ toughness, enchantments, nonlinear mitigation, and damage-source bypass rules.
 
 Resource attributes use the same native equipment/page pipeline; see
 [RPG_SKILLS.md](RPG_SKILLS.md) for base configuration and resource rules.
+Ordinary effective Dodge chance is capped at 85% across equipment, aura bonuses,
+and other sources; the native attribute still retains its original [0, 1] bounds.
+Dodge Aura adds ten percentage points. Its active guarantees one dodgeable hit,
+bypassing the ordinary cap and consuming all overlapping guarantees together.
+Undodgeable damage is unchanged. Owned pets receive the aura chance/guarantee
+through the shared handler without enabling Dodge for unrelated mobs.
+
 Focus has no maximum-capacity attribute and always caps at 100. The three initial
 skills consume the existing cost, cooldown and cast-time coefficients; they have
 no timed effects using the duration coefficient.
@@ -162,7 +169,7 @@ state intended to persist. Pages accept any registered attribute ID, provided th
 wearer supports it; unknown IDs are ignored without destroying data. Mods add
 attributes through `EntityAttributeModificationEvent`. Native page modifiers can
 also affect equipped mobs with the corresponding attribute; Covenant's new
-attributes and dodge behavior are player-only.
+attributes remain player-only; owned pets additionally participate in aura Dodge.
 
 There are no gameplay acquisition mechanics, rolling, stat screen,
 attribute points, talents, or class stat bonuses. Author pages through server APIs,
@@ -173,7 +180,7 @@ operator item components, or the privileged [Affix Page debug commands](RPG_DATA
 `scripts/Dev.ps1 test` includes dedicated stat GameTests alongside the data/class checks:
 base values/operation order; native equipment activation/removal, independence,
 transfer, breakage, and in-place updates; skill scaling/external sources; actual
-player-file reload and clone reconstruction; deterministic 0%/100% dodge and
+player-file reload and clone reconstruction; zero Dodge, seeded capped ordinary Dodge, guaranteed aura Dodge, and
 environmental exclusions; debug commands/completion/validation and unsaved override
 isolation across actual player-file reload and cloning. Real-client delivery/reconnect, actual dimension
 travel/death, full server restart with players, tooltips, and other mods remain

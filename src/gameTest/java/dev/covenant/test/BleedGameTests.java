@@ -108,7 +108,7 @@ final class BleedGameTests {
             var dodged = player(helper, players, 36);
             var defender = player(helper, players, 38);
             defender.setPos(dodged.getX(), dodged.getY(), dodged.getZ() + 2);
-            defender.getAttribute(RpgStats.DODGE).setBaseValue(1);
+            defender.getAttribute(RpgStats.DODGE).setBaseValue(1); defender.getRandom().setSeed(0);
             check(key(Skills.activate(dodged, SkillDefinition.REND), "used"), "Dodged strike is still attempted");
             check(Bleeding.count(defender) == 0, "Dodge prevents bleed");
             near(ClassResources.current(dodged, PlayerClass.REAVER), 80, "Defended strike still spends Rage");
@@ -116,8 +116,9 @@ final class BleedGameTests {
             var immune = player(helper, players, 48);
             var invulnerable = target(helper, targets, immune, 2);
             invulnerable.setInvulnerable(true);
-            check(key(Skills.activate(immune, SkillDefinition.REND), "used") && Bleeding.count(invulnerable) == 0,
-                    "Invulnerable target takes no wound");
+            var immuneResult = Skills.activate(immune, SkillDefinition.REND);
+            check(key(immuneResult, "used") && Bleeding.count(invulnerable) == 0,
+                    "Invulnerable target takes no wound: " + immuneResult.getString() + " stacks=" + Bleeding.count(invulnerable));
 
             var cancelled = player(helper, players, 60);
             var cancelledTarget = target(helper, targets, cancelled, 2);
@@ -127,7 +128,10 @@ final class BleedGameTests {
             };
             NeoForge.EVENT_BUS.addListener(cancel);
             try {
-                check(key(Skills.activate(cancelled, SkillDefinition.REND), "used"), "Canceled damage is an attempted strike");
+                var feedback = Skills.activate(cancelled, SkillDefinition.REND);
+                check(key(feedback, "used"), "Canceled damage is an attempted strike: " + feedback.getString()
+                        + " at " + cancelled.position() + " aiming " + cancelled.getHeadLookAngle()
+                        + " toward " + cancelledTarget.position());
                 check(Bleeding.count(cancelledTarget) == 1
                         && cancelledTarget.getData(RpgData.BLEED).stacks().getFirst().remainingTicks() == 50,
                         "Canceled damage neither adds nor refreshes existing stacks");
@@ -156,8 +160,8 @@ final class BleedGameTests {
         var players = new ArrayList<ServerPlayer>();
         var targets = new ArrayList<LivingEntity>();
         try {
-            var one = player(helper, players, 0);
-            var two = player(helper, players, 8);
+            var one = player(helper, players, 0, 160);
+            var two = player(helper, players, 8, 160);
             var target = target(helper, targets, one, 2);
             target.hurtServer(helper.getLevel(), one.damageSources().playerAttack(one), 20);
             Bleeding.apply(target, one, 1, 100);
@@ -216,8 +220,8 @@ final class BleedGameTests {
             pulse(armored, 20);
             near(armored.getAbsorptionAmount(), 12, "Actual invulnerability prevents bleed damage");
 
-            var dodging = player(helper, players, 16);
-            dodging.getAttribute(RpgStats.DODGE).setBaseValue(1);
+            var dodging = player(helper, players, 16, 160);
+            dodging.getAttribute(RpgStats.DODGE).setBaseValue(1); dodging.getRandom().setSeed(0);
             Bleeding.apply(dodging, one, 2, 100);
             float health = dodging.getHealth();
             pulse(dodging, 20);
@@ -229,7 +233,7 @@ final class BleedGameTests {
     static void persistence(GameTestHelper helper) {
         var players = new ArrayList<ServerPlayer>();
         var targets = new ArrayList<LivingEntity>();
-        var attacker = player(helper, players, 0);
+        var attacker = player(helper, players, 0, 180);
         var original = target(helper, targets, attacker, 2);
         Bleeding.apply(original, attacker, 1, 100);
         pulse(original, 7);
@@ -247,7 +251,7 @@ final class BleedGameTests {
                 "Native save/load retains both relative timers");
         check(restored.stacks().getFirst().attacker().equals(attacker.getUUID()), "Saved ownership survives reload");
         near(restored.stacks().getFirst().damage(), 1, "Saved damage survives reload");
-        var returning = player(helper, players, 8);
+        var returning = player(helper, players, 8, 180);
         var playerSave = TagValueOutput.createWithContext(reporter, helper.getLevel().registryAccess());
         Bleeding.apply(attacker, returning, 2, 100);
         attacker.saveWithoutId(playerSave);
@@ -255,10 +259,10 @@ final class BleedGameTests {
         playerData.remove("UUID");
         returning.load(TagValueInput.create(reporter, helper.getLevel().registryAccess(), playerData));
         check(Bleeding.count(returning) == 1, "Player save/load retains wounds across reconnect");
-        var afterDeath = player(helper, players, 16);
+        var afterDeath = player(helper, players, 16, 180);
         afterDeath.copyAttachmentsFrom(attacker, true);
         check(Bleeding.count(afterDeath) == 0, "Death replacement does not copy wounds");
-        var endReturn = player(helper, players, 24);
+        var endReturn = player(helper, players, 24, 180);
         endReturn.copyAttachmentsFrom(attacker, false);
         check(Bleeding.count(endReturn) == 1, "Non-death replacement retains wounds");
         original.discard();
@@ -287,6 +291,10 @@ final class BleedGameTests {
     }
 
     private static ServerPlayer player(GameTestHelper helper, List<ServerPlayer> players, int x) {
+        return player(helper, players, x, 210);
+    }
+
+    private static ServerPlayer player(GameTestHelper helper, List<ServerPlayer> players, int x, int height) {
         // The deprecated helper forces gameMode() to Creative, invalidating defense and reach checks.
         var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "bleed-test-player"), false);
         var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
@@ -294,7 +302,8 @@ final class BleedGameTests {
         new io.netty.channel.embedded.EmbeddedChannel(connection);
         helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
         players.add(player);
-        var origin = helper.absolutePos(new BlockPos(2 + x, 32, 2));
+        // Wide fixtures can overlap adjacent GameTest structures; separate each test vertically.
+        var origin = helper.absolutePos(new BlockPos(2 + x, height, 2));
         player.setPos(origin.getX() + 0.5, origin.getY(), origin.getZ() + 0.5);
         player.setNoGravity(true);
         player.setGameMode(GameType.SURVIVAL);

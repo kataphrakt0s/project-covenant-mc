@@ -90,7 +90,7 @@ final class RageGameTests {
             target.setInvulnerable(false);
             near(player, 0, "Environment, self, zero, and immune damage grant no Rage");
             player.invulnerableTime = 0;
-            player.getAttribute(RpgStats.DODGE).setBaseValue(1);
+            player.getAttribute(RpgStats.DODGE).setBaseValue(1); player.getRandom().setSeed(0);
             player.hurtServer(helper.getLevel(), target.damageSources().mobAttack(target), 4);
             near(player, 0, "Dodged damage grants no Rage");
             player.getAttribute(RpgStats.DODGE).setBaseValue(0);

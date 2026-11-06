@@ -41,6 +41,14 @@ public final class Skills {
     private static final AttributeModifier AIMED_SHOT_MOVEMENT = new AttributeModifier(
             AIMED_SHOT_SLOW, -0.8, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
     private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, Covenant.MOD_ID);
+    public static final DeferredHolder<EntityType<?>, EntityType<ElementalBolt>> FIRE_BOLT = elementalBolt("fire_bolt");
+    public static final DeferredHolder<EntityType<?>, EntityType<ElementalBolt>> ICE_BOLT = elementalBolt("ice_bolt");
+
+    private static DeferredHolder<EntityType<?>, EntityType<ElementalBolt>> elementalBolt(String name) {
+        return ENTITIES.register(name, () -> EntityType.Builder.<ElementalBolt>of(ElementalBolt::new, MobCategory.MISC)
+                .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(1).noSave().noSummon()
+                .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Covenant.MOD_ID, name))));
+    }
     public static final DeferredHolder<EntityType<?>, EntityType<ArcaneBolt>> ARCANE_BOLT = ENTITIES.register("arcane_bolt", () ->
             EntityType.Builder.<ArcaneBolt>of(ArcaneBolt::new, MobCategory.MISC).sized(0.25f, 0.25f)
                     .clientTrackingRange(4).updateInterval(1).noSave()
@@ -56,7 +64,9 @@ public final class Skills {
         ENTITIES.register(modBus);
         Bleeding.register();
         Rooted.register(modBus);
+        Chilled.register(modBus);
         FrostSlows.register();
+        Auras.register();
         NeoForge.EVENT_BUS.addListener(Skills::tick);
         NeoForge.EVENT_BUS.addListener(ClassResources::damaged);
         NeoForge.EVENT_BUS.addListener(SkillCommands::register);
@@ -69,6 +79,7 @@ public final class Skills {
     /** Returns localized feedback and changes nothing on rejection. Casts spend only at completion. */
     public static Component activate(ServerPlayer player, SkillDefinition skill) {
         ClassResources.requireServer(player);
+        Auras.reconcile(player);
         var runtime = player.getData(RpgData.SKILL_RUNTIME);
         if (runtime.deploying) { return message("busy"); }
         var failure = validate(player, skill);
@@ -77,7 +88,7 @@ public final class Skills {
         if (ClassResources.now(player) < runtime.nextActivation) { return message("busy"); }
         double cost = RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, skill.cost());
         if (ClassResources.current(player, PlayerProfiles.getSelectedClass(player).orElseThrow()) < cost) { return message("resource"); }
-        long cast = (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, skill.castTicks()));
+        long cast = Auras.active(player, Auras.Kind.ICY_VEINS) && isSpell(skill) ? 0 : (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, skill.castTicks()));
         long cooldown = (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, skill.cooldownTicks()));
         if (cast == 0) { return execute(player, skill, cost, cooldown); }
         runtime.casting = skill;
@@ -94,7 +105,14 @@ public final class Skills {
         return message("started", skill.displayName(), cast / 20.0);
     }
 
+    private static boolean isSpell(SkillDefinition skill) {
+        return skill.effect() == SkillDefinition.Effect.ARCANE_BOLT || skill.effect() == SkillDefinition.Effect.ELEMENTAL_BOLT
+                || skill.effect() == SkillDefinition.Effect.LIGHTNING_BOLT;
+    }
+
     private static Component validate(ServerPlayer player, SkillDefinition skill) {
+        if (Auras.frozen(player)) { return message("frozen"); }
+        if (skill.effect() == SkillDefinition.Effect.AURA && !Auras.assigned(player, Auras.Kind.of(skill))) { return message("assigned"); }
         if (!player.isAlive() || player.isSpectator()) { return message("unavailable"); }
         var type = PlayerProfiles.getSelectedClass(player).orElse(null);
         if (type == null || !skill.allowedClasses().contains(type)) { return message("class"); }
@@ -113,6 +131,8 @@ public final class Skills {
     public static long cooldownRemaining(ServerPlayer player, SkillDefinition skill) {
         return Math.max(0, player.getData(RpgData.SKILLS).cooldowns().getOrDefault(skill.id(), 0L) - ClassResources.now(player));
     }
+
+    public static boolean isCasting(ServerPlayer player) { return player.getData(RpgData.SKILL_RUNTIME).casting != null; }
 
     private static Component execute(ServerPlayer player, SkillDefinition skill, double cost, long cooldown) {
         var failure = validate(player, skill);
@@ -147,13 +167,24 @@ public final class Skills {
         player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(skill.id(), now + Math.max(1, cooldown)));
         player.getData(RpgData.SKILL_RUNTIME).nextActivation = now + 1;
         switch (skill.effect()) {
+            case AURA -> Auras.activate(player, skill);
+            case LIGHTNING_BOLT -> ElementalBolts.lightning(player);
+            case ELEMENTAL_BOLT -> {
+                var bolt = new ElementalBolt(skill == SkillDefinition.FIRE_BOLT ? FIRE_BOLT.get() : ICE_BOLT.get(), player.level());
+                bolt.setOwner(player);
+                bolt.initialize(ElementalBolts.duration(player, skill));
+                bolt.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
+                bolt.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, 1.5f, 0);
+                player.level().addFreshEntity(bolt);
+            }
             case TRAP -> Traps.accept(player, trap);
             case BOW_SHOT -> {
                 var bow = player.getMainHandItem();
                 var ammo = ammunition;
                 var arrowItem = (ArrowItem) ammo.getItem();
                 var arrow = arrowItem.createArrow(player.level(), ammo, player, bow);
-                arrow.setBaseDamage(2 * skill.power());
+                arrow.setBaseDamage(2 * skill.power() * AuraDamage.multiplier(player, false));
+                arrow.setData(RpgData.AURA_PROJECTILE_POWER, AuraDamage.multiplier(player, false));
                 // Native level is the number of extra targets; two means at most three total.
                 ((ArrowPiercingAccessor) arrow).covenant$setPierceLevel((byte) (skill == SkillDefinition.PIERCING_SHOT ? 2 : 0));
                 arrow.pickup = ammunitionCost == 0 ? AbstractArrow.Pickup.CREATIVE_ONLY : AbstractArrow.Pickup.ALLOWED;
@@ -168,7 +199,7 @@ public final class Skills {
             }
             case CLEAVE -> {
                 SkillVisuals.cleave(player, skill.range());
-                float damage = (float) (player.getAttributeValue(RpgStats.DAMAGE) * skill.power());
+                float damage = (float) (player.getAttributeValue(RpgStats.DAMAGE) * skill.power() * AuraDamage.multiplier(player, false));
                 for (var target : targets(player, skill)) {
                     if (hurtMeleeSkill(player, target, damage)) {
                         SkillVisuals.cleaveHit(player.level(), target);
@@ -177,13 +208,15 @@ public final class Skills {
             }
             case REND -> {
                 float attackDamage = (float) player.getAttributeValue(RpgStats.DAMAGE);
-                float bleedDamage = (float) (attackDamage * Bleeding.REND_DAMAGE_FRACTION);
+                float bleedDamage = AuraDamage.bleedPower(player);
                 int duration = (int) Math.clamp(Math.ceil(RpgStats.scaleSkillValue(player,
                         RpgStats.SKILL_DURATION, Bleeding.REND_DURATION_TICKS)), 1, Integer.MAX_VALUE);
-                float health = rendTarget.getHealth();
-                float absorption = rendTarget.getAbsorptionAmount();
-                hurtMeleeSkill(player, rendTarget, (float) (attackDamage * skill.power()));
-                if (rendTarget.getHealth() < health || rendTarget.getAbsorptionAmount() < absorption) {
+                var before = AuraDamage.before(rendTarget);
+                var runtime = player.getData(RpgData.SKILL_RUNTIME);
+                runtime.applyingRend = true;
+                try { hurtMeleeSkill(player, rendTarget, (float) (attackDamage * skill.power() * AuraDamage.multiplier(player, false))); }
+                finally { runtime.applyingRend = false; }
+                if (before.landed(rendTarget)) {
                     if (bleedDamage > 0) { Bleeding.apply(rendTarget, player, bleedDamage, duration); }
                     SkillVisuals.cleaveHit(player.level(), rendTarget);
                 }
@@ -191,6 +224,7 @@ public final class Skills {
             case ARCANE_BOLT -> {
                 var bolt = new ArcaneBolt(ARCANE_BOLT.get(), player.level());
                 bolt.setOwner(player);
+                bolt.setData(RpgData.AURA_PROJECTILE_POWER, AuraDamage.multiplier(player, false));
                 bolt.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
                 bolt.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, 1.5f, 0);
                 player.level().addFreshEntity(bolt);
@@ -236,7 +270,7 @@ public final class Skills {
     }
 
     public static boolean canHit(LivingEntity owner, LivingEntity target) {
-        return owner != target && target.isAlive() && !target.isSpectator() && !owner.isAlliedTo(target)
+        return owner != target && target.isAlive() && !target.isSpectator() && !Auras.allied(owner, target)
                 && (!(owner instanceof ServerPlayer player) || !(target instanceof Player other) || player.canHarmPlayer(other))
                 && (!(target instanceof net.minecraft.world.entity.TamableAnimal pet) || !pet.isOwnedBy(owner));
     }
@@ -257,7 +291,9 @@ public final class Skills {
                 var skill = runtime.casting;
                 runtime.cancelCast(player);
                 player.sendSystemMessage(execute(player, skill, runtime.castCost, runtime.castCooldown));
-            } else if (runtime.casting == SkillDefinition.ARCANE_BOLT) {
+            } else if (runtime.casting == SkillDefinition.ARCANE_BOLT
+                    || runtime.casting.effect() == SkillDefinition.Effect.ELEMENTAL_BOLT
+                    || runtime.casting.effect() == SkillDefinition.Effect.LIGHTNING_BOLT) {
                 SkillVisuals.charge(player);
             }
         }
