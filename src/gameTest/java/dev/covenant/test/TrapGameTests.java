@@ -86,7 +86,7 @@ public final class TrapGameTests {
             SkillLoadouts.bind(owner, 0, SkillDefinition.BEAR_TRAP.id());
             SkillLoadouts.bind(owner, 0, null);
             check(!replacement.isRemoved(), "Unbinding is not unlearning");
-            SkillLoadouts.learn(owner, SkillDefinition.BEAR_TRAP.id(), false);
+            FixtureSkills.learn(owner, SkillDefinition.BEAR_TRAP.id(), false);
             check(replacement.isRemoved(), "Unlearning removes deployment");
             check(Rooted.contains(enemy), "Applied root outlives owner cleanup");
             helper.succeed();
@@ -247,7 +247,7 @@ public final class TrapGameTests {
             target.setPos(pending.position()); pending.tick();
             check(second.isRemoved() && pending.phase() == TrapEntity.Phase.TRIGGERED, "New trigger replaces owner's old patch");
             near(target.getAttributeValue(Attributes.MOVEMENT_SPEED), base * 0.5, "Replacement retains new slow");
-            SkillLoadouts.learn(other, TrapKind.BEAR.skillId, false);
+            FixtureSkills.learn(other, TrapKind.BEAR.skillId, false);
             check(pending.isRemoved(), "Deallocating Bear cleans up dependent Frost");
             near(target.getAttributeValue(Attributes.MOVEMENT_SPEED), base, "Dependent cleanup removes final slow");
 
@@ -440,7 +440,7 @@ public final class TrapGameTests {
             check(!frost.save(save) && !flame.save(save), "Native save excludes deployments and patches");
             frost.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
             check(!target.hasData(RpgData.FROST_SOURCES), "Chunk-removal path clears Frost immediately");
-            SkillLoadouts.learn(owner, TrapKind.FLAME.skillId, false);
+            FixtureSkills.learn(owner, TrapKind.FLAME.skillId, false);
             check(flame.isRemoved() && Rooted.contains(target), "Unlearning removes patch but not applied root");
 
             var pending = f.ground(owner, TrapKind.BEAR, center.add(4, 0, 0));
@@ -522,7 +522,7 @@ public final class TrapGameTests {
                 SkillLoadouts.activateSlot(returning, slot++);
                 near(ClassResources.current(returning, PlayerClass.STALKER), 100 - skill.cost(), "Saved slot activates " + kind);
             }
-            SkillLoadouts.learn(owner, TrapKind.FLAME.skillId, false);
+            FixtureSkills.learn(owner, TrapKind.FLAME.skillId, false);
             var stale = helper.getLevel().getEntitiesOfClass(TrapEntity.class, owner.getBoundingBox().inflate(5),
                     trap -> trap.kind() == TrapKind.BLAST || trap.kind() == TrapKind.FLAME);
             check(stale.isEmpty(), "Unlearning Flame removes dependent Blast's pending deployment");
@@ -572,7 +572,7 @@ public final class TrapGameTests {
             player.setGameMode(GameType.SURVIVAL); player.connection.markClientLoaded();
             player.setYRot(0); player.setXRot(0);
             PlayerProfiles.selectClass(player, PlayerClass.STALKER);
-            for (var kind : TrapKind.values()) { SkillLoadouts.learn(player, kind.skillId, true); }
+            for (var kind : TrapKind.values()) { FixtureSkills.learn(player, kind.skillId, true); }
             ClassResources.set(player, PlayerClass.STALKER, 100);
             return player;
         }

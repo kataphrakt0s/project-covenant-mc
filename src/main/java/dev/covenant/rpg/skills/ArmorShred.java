@@ -33,7 +33,10 @@ public final class ArmorShred extends MobEffect {
     /** Native application respects immunity, keeps a longer same-strength effect, and allows milk removal. */
     public static void apply(LivingEntity target, LivingEntity owner, int ticks) {
         if (target.level().isClientSide() || !target.isAlive() || ticks <= 0) { return; }
-        target.addEffect(new MobEffectInstance(EFFECT, ticks, 0, false, true, true), owner);
+        if (target.addEffect(new MobEffectInstance(EFFECT, ticks, 0, false, true, true), owner)
+                && owner instanceof net.minecraft.server.level.ServerPlayer player) {
+            dev.covenant.rpg.progression.CombatProgression.supportEnemy(player, target);
+        }
     }
 
 }

@@ -1,16 +1,24 @@
 # RPG data architecture
 
-This is storage and server API infrastructure with basic class identities and command selection.
-Character creation screens, XP curves, page acquisition, rolling/loot, and accessory integrations
-are deferred.
-Effective stat evaluation uses native equipment attributes; see [RPG_STATS.md](RPG_STATS.md).
-The Skills window uses three validated serverbound intent packets; there are no global tick scans.
+The server-authoritative foundation now includes class selection, combat XP and
+skill-point progression. See [PROGRESSION.md](PROGRESSION.md) for the progression
+format, APIs and data balance. Profession tracks have saved state; their activity
+sources and ability content await the user's requirements. Page acquisition,
+rolling/loot and accessory integrations remain deferred.
+Effective stats use native equipment attributes; see [RPG_STATS.md](RPG_STATS.md).
+Skills use bounded intent packets and event-driven combat; there are no global
+enemy progression scans.
 
 ## Permanent character state
 
+The progression format requires fresh saves. No legacy prototype profile/loadout
+migration or free-skill conversion is provided. New-format persistence and normal
+lifecycle guarantees remain required.
+
 `covenant:character_profile` is a serialized NeoForge entity attachment. Its `profile` field holds
 an immutable `CharacterProfile`: creation flag, level, current RPG experience balance (long),
-optional class/specialization/resource identifiers, and current/maximum resource (double units).
+optional class/specialization/resource identifiers, current/maximum resource (double units),
+and the required boolean `wither_claimed`. Level, XP and the claim commit together.
 These identifiers describe future RPG content, not item registry entries. A resource-less class
 has no resource type and both resource values are zero. Player-facing class selection validates
 against the built-in definitions on the logical server.
@@ -43,12 +51,12 @@ Players use `/covenant class` to see their current class, descriptions, and the 
 Tab completion suggests IDs. Operator permission is unnecessary. Commands act only on the
 executing player; console calls, unknown IDs, and selection after character creation are rejected.
 Operator-only `/covenant class switch <id>` now supports resource/skill testing;
-ordinary selection remains one-time. There is no reset command or selection screen.
+ordinary selection remains one-time. The Stats screen offers the same one-time selection.
 
 `PlayerProfiles.selectClass(ServerPlayer, PlayerClass)` creates the existing profile at level 1,
 XP 0, no specialization, and empty legacy resource fields, and initializes the separate
 built-in resource balances. There is no separate class XP or
-level. Class IDs use the existing `class` field, so no schema migration is needed. Save/load,
+level. Class IDs retain the `class` field; the progression format requires fresh saves. Save/load,
 reconnect, death, and dimension changes use the same attachment persistence/copy/owner sync path.
 Nothing writes class identity or progression into Affix Pages.
 

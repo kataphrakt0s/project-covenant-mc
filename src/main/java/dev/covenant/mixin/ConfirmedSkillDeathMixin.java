@@ -12,9 +12,12 @@ import org.spongepowered.asm.mixin.injection.At;
 abstract class ConfirmedSkillDeathMixin {
     @ModifyExpressionValue(method = "die", at = @At(value = "INVOKE",
             target = "Lnet/neoforged/neoforge/common/CommonHooks;onLivingDeath(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/damagesource/DamageSource;)Z"))
-    private boolean covenant$afterDeathDecision(boolean cancelled) {
+    private boolean covenant$afterDeathDecision(boolean cancelled, net.minecraft.world.damagesource.DamageSource source) {
         // Even a LOWEST-priority listener can still cancel. This observes the final hook result.
-        if (!cancelled) { SkillLifecycle.confirmedDeath((LivingEntity) (Object) this); }
+        if (!cancelled) {
+            dev.covenant.rpg.progression.CombatProgression.died((LivingEntity) (Object) this, source);
+            SkillLifecycle.confirmedDeath((LivingEntity) (Object) this);
+        }
         return cancelled;
     }
 }

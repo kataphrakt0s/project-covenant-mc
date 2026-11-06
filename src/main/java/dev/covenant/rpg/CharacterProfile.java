@@ -18,7 +18,12 @@ import net.minecraft.util.ExtraCodecs;
  */
 public record CharacterProfile(boolean created, int level, long experience,
         Optional<Identifier> selectedClass, Optional<Identifier> specialization,
-        Optional<Identifier> resourceType, double currentResource, double maximumResource) {
+        Optional<Identifier> resourceType, double currentResource, double maximumResource, boolean witherClaimed) {
+    /** Trusted construction convenience; new characters have not claimed the first-Wither milestone. */
+    public CharacterProfile(boolean created, int level, long experience, Optional<Identifier> selectedClass,
+            Optional<Identifier> specialization, Optional<Identifier> resourceType, double currentResource, double maximumResource) {
+        this(created, level, experience, selectedClass, specialization, resourceType, currentResource, maximumResource, false);
+    }
     public static final CharacterProfile UNINITIALIZED = new CharacterProfile(false, 0, 0,
             Optional.empty(), Optional.empty(), Optional.empty(), 0, 0);
 
@@ -30,7 +35,8 @@ public record CharacterProfile(boolean created, int level, long experience,
             Identifier.CODEC.optionalFieldOf("specialization").forGetter(CharacterProfile::specialization),
             Identifier.CODEC.optionalFieldOf("resource_type").forGetter(CharacterProfile::resourceType),
             Codec.DOUBLE.fieldOf("current_resource").forGetter(CharacterProfile::currentResource),
-            Codec.DOUBLE.fieldOf("maximum_resource").forGetter(CharacterProfile::maximumResource)
+            Codec.DOUBLE.fieldOf("maximum_resource").forGetter(CharacterProfile::maximumResource),
+            Codec.BOOL.fieldOf("wither_claimed").forGetter(CharacterProfile::witherClaimed)
     ).apply(i, CharacterProfile::new)));
     public static final MapCodec<CharacterProfile> MAP_CODEC = CODEC.fieldOf("profile");
     public static final StreamCodec<ByteBuf, CharacterProfile> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
@@ -46,7 +52,7 @@ public record CharacterProfile(boolean created, int level, long experience,
         }
         if (created ? level < 1 || selectedClass.isEmpty()
                 : level != 0 || experience != 0 || selectedClass.isPresent() || specialization.isPresent()
-                    || resourceType.isPresent() || currentResource != 0 || maximumResource != 0) {
+                    || resourceType.isPresent() || currentResource != 0 || maximumResource != 0 || witherClaimed) {
             throw new IllegalArgumentException("Inconsistent character creation state");
         }
         if (resourceType.isEmpty() && (currentResource != 0 || maximumResource != 0)) {
@@ -59,5 +65,10 @@ public record CharacterProfile(boolean created, int level, long experience,
             double maximumResource) {
         return new CharacterProfile(true, 1, 0, Optional.of(selectedClass), Optional.empty(),
                 resourceType, maximumResource, maximumResource);
+    }
+
+    public CharacterProfile withProgression(int level, long experience, boolean claimed) {
+        return new CharacterProfile(created, level, experience, selectedClass, specialization,
+                resourceType, currentResource, maximumResource, claimed);
     }
 }

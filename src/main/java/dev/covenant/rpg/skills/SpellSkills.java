@@ -20,6 +20,7 @@ final class SpellSkills {
             case ELEMENTAL_BOLT -> {
                 var bolt = new ElementalBolt(skill == SkillDefinition.FIRE_BOLT ? Skills.FIRE_BOLT.get() : Skills.ICE_BOLT.get(), player.level());
                 bolt.setOwner(player);
+                ProjectileCombat.captureSupport(bolt, player);
                 bolt.initialize(ElementalBolts.duration(player, skill));
                 bolt.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
                 bolt.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, 1.5f, 0);
@@ -28,6 +29,7 @@ final class SpellSkills {
             case ARCANE_BOLT -> {
                 var bolt = new ArcaneBolt(Skills.ARCANE_BOLT.get(), player.level());
                 bolt.setOwner(player);
+                ProjectileCombat.captureSupport(bolt, player);
                 bolt.setData(RpgData.AURA_PROJECTILE_POWER, AuraDamage.multiplier(player, false));
                 bolt.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
                 bolt.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, 1.5f, 0);

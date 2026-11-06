@@ -2,51 +2,94 @@
 
 ## Identity
 
-Crafting is the umbrella profession for meaningful specialized crafting and equipment customization. **Enchanting is a subset/specialization within Crafting**, not a separate profession or independent XP track.
+Crafting is Covenant's profession for equipment customization and material recovery. Its two dedicated progression branches are:
 
-Initial Crafting branches/directions include:
+1. [[Affix System and Equipment Customization]] — creating and modifying Covenant affixes on equipment.
+2. [[Salvaging]] — dismantling equipment for chance-based material and affix-component returns.
 
-- Enchanting and advanced magical item interaction.
-- Affix crafting and equipment customization.
-- Salvaging equipment for materials/components.
-- Specialized equipment crafting and production.
+Enchanting is **not** a dedicated Covenant specialization branch for the current design. It remains a supported Crafting XP activity through vanilla gameplay and optional mod integrations. Covenant does not add new enchantments or replace existing enchanting systems.
 
-These are content directions, not a finalized tree or feature list.
+## Affix Crafting progression
 
-## XP sources
+### Basic Affix Crafting
 
-Ordinary vanilla crafting does not award Crafting XP. Meaningful activities may include:
+- **Unlock:** Crafting Level 1
+- **Cost:** 1 Profession Point
 
-- Vanilla enchanting interactions that meet configured criteria.
-- Designated specialized or advanced recipes.
-- Meaningful use of Covenant crafting workstations.
-- Applying, modifying, upgrading, or extracting Affix Pages/affixes.
-- Salvaging equipment.
+Purchasing Basic Affix Crafting enables the Covenant Workbench's affix customization operations, subject to the player's Crafting level, item eligibility, materials, affix capacity, affix limits, and the item's remaining Crafting Potential.
 
-Rewards should be contextual and configurable, and must avoid trivial repeatable crafting loops. Automated crafting awards no XP by default; explicitly configured automation requires attribution and anti-exploit safeguards.
+Higher affix crafting tiers become accessible at the following Crafting levels:
 
-## Progression integration
+| Crafting level | Access |
+|---:|---|
+| 1 | Basic Affix Crafting (purchased ability) |
+| 5 | First advanced affix tier |
+| 10 | Higher affix tier |
+| 15 | Advanced affix tier |
+| 20 | Highest affix tier |
 
-Crafting starts at Level 0, defaults to a maximum of 20, and awards one Profession Point per level gained. It uses the shared profession XP curve but maintains independent XP and points. Ability unlocks are gated by Crafting level and purchased with variable Profession Point costs. Most branches should be broadly accessible; only genuine competing alternatives should lock each other out. Selected level milestones may automatically grant core recipes.
+These are access milestones; additional point costs for each tier have not been established. Exact tier definitions, eligible affix pools, and material recipes remain open.
 
-## Workstations and equipment tuning
+See [[Affix System and Equipment Customization]].
 
-Covenant-specific workstations are planned eventually because advanced affix crafting and salvaging need dedicated interactions through which players can tune their gear. Vanilla crafting tables, furnaces, enchanting tables, and other ordinary stations continue to function normally. Exact Covenant workstation roster, interfaces, recipes, materials, and which stations/content belong in the vertical slice remain undecided.
+## Salvaging progression
 
-The Affix Page remains attached to an individual item stack and modifiers apply only while equipped. Crafting/salvaging must respect item identity and persistence rules in [[Affix Pages]] and [[Item Data and Persistence]].
+### Salvaging
 
-## Cross-profession integration
+- **Unlock:** Crafting Level 5
+- **Cost:** 2 Profession Points
+- **Workstation:** Covenant Workbench
 
-Mining, Logging, and Farming can supply materials for specialized Crafting recipes; Crafting can turn those materials into equipment/customization products. Specific recipes may require levels or products from multiple professions. These are intentional recipe-level requirements, not a general rule that abilities in one profession require levels in another.
+Salvaging consumes eligible equipment and makes chance-based rolls for returned materials. It supports vanilla equipment, modded equipment, and equipment carrying Covenant affixes. Eligibility and recovery rules should be configurable, with optional mod integrations where required.
 
-The proposed Profession Respec recipe requiring Level 10 in all four professions is an illustrative example only; its final design is open.
+The three specializations are independently upgradeable:
 
-## Vanilla-friendly boundary
+| Specialization | Rank I | Rank II | Rank III | Cost per rank |
+|---|---:|---:|---:|---:|
+| Recovery | Level 5 | Level 10 | Level 15 | 1 point |
+| Refinement | Level 5 | Level 10 | Level 15 | 1 point |
+| Focused Recovery | Level 5 | Level 10 | Level 15 | 1 point |
 
-Vanilla crafting and enchanting remain available at Crafting Level 0. Crafting progression adds specialized capabilities and customization rather than replacing ordinary recipes or making existing stations obsolete.
+- **Recovery:** Improves the chance of receiving salvage materials.
+- **Refinement:** Improves the chance of receiving higher-quality generic crafting materials.
+- **Focused Recovery:** Improves the chance of recovering components associated with particular affix families.
 
-## Vertical-slice scope and open design
+All returns remain chance-based. An unsuccessful salvage may return nothing, and the input item is always consumed. When an item has multiple rare affixes, each affix has an independent component-recovery roll.
 
-Include Crafting as a functional fourth profession with a modest playable selection. Exact enchanting specializations, affix operations, salvage outputs, workstation functionality, XP criteria/values, point costs, recipe milestones, and respec recipe remain to be designed.
+See [[Salvaging]].
 
-Related: [[Profession Progression]], [[Experience and Reward Systems]], [[Crafting]], [[Affix Pages]], [[Affixes and Rarity]], [[Mining]], [[Logging]], [[Farming]].
+## Enchanting and optional mod integrations
+
+Enchanting activities can contribute Crafting XP when they meet configured criteria, but Covenant does not introduce new enchantments or a dedicated Enchanting skill tree. Vanilla and modded enchanting systems retain ownership of their mechanics.
+
+Apotheosis is a first-class optional compatibility target, not a mandatory dependency. Covenant should coexist with Apotheosis's systems—including its enchanting, affixes, gems, sockets, reforging, salvaging, and spawner mechanics—without duplicating, overriding, or invalidating them. Apotheosis activities such as supported enchanting, reforging, or salvaging interactions may award Crafting XP through optional integration.
+
+Covenant must remain fully functional without Apotheosis. Optional integrations should be modular and should not assume every Apotheosis module is installed. The same compatibility-first principle applies to other enchanting, equipment, and content mods.
+
+## Covenant Workbench
+
+The initial design uses one physical **Covenant Workbench** with separate interfaces for:
+
+- Affix Crafting.
+- Salvaging.
+
+Keep the underlying operations, validation, inputs, and outputs separate so they can move into distinct physical workstations later without redesigning the systems. Enchanting improvements, if any are identified in the future, should integrate with existing enchanting stations rather than require a Covenant enchanting station.
+
+## Point budget
+
+| Ability | Defined investment |
+|---|---:|
+| Basic Affix Crafting | 1 |
+| Salvaging unlock | 2 |
+| Recovery, Refinement, Focused Recovery (3 ranks each) | 9 |
+| **Total currently defined** | **12** |
+
+Eight Profession Points remain unallocated at the Level 20 cap. The Crafting-level affix access milestones do not currently have additional point costs assigned.
+
+## XP and vanilla boundaries
+
+Ordinary vanilla crafting does not award Crafting XP. Meaningful enchanting interactions, completed Covenant Workbench operations, Affix Crafting, Salvaging, and supported activities from optional integrations can be configured XP sources. Rewards should be contextual and should not create trivial repeatable crafting loops. Automated production does not award XP by default.
+
+Vanilla crafting, enchanting, equipment use, and ordinary stations remain available at Crafting Level 0.
+
+Related: [[Profession Progression]], [[Experience and Reward Systems]], [[Affix System and Equipment Customization]], [[Salvaging]], [[Crafting]], [[Mod Compatibility]], [[Mining]], [[Logging]], [[Farming]].

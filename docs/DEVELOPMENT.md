@@ -20,6 +20,42 @@ Close the development game before deploying another build. Prism's instance is
 deployment script replaces only `covenant-*.jar` in that marker-owned instance.
 Other mods and worlds are retained. New dependencies require explicit setup.
 
+## LAN test server
+
+The isolated test server is at `cmm@192.168.0.193`, in
+`/home/cmm/project-covenant-test`. Connect in Minecraft to
+`192.168.0.193:25565` using Minecraft 26.1.2, NeoForge 26.1.2.125, and the
+same Covenant JAR as the server. It uses authenticated accounts, a fresh Survival
+world, eight player slots, and a private Temurin Java 25 runtime with a 4 GiB heap
+limit. All the Mons `minecraft.service` is stopped and disabled at boot; its files
+are retained.
+
+The system-wide `covenant.service` runs the server as `cmm`, starts at boot, and
+restarts on failure after ten seconds. Its unit is
+`/etc/systemd/system/covenant.service`; startup uses the existing `start.sh` and
+world. Stops send SIGTERM and allow up to 180 seconds for native world saving.
+The earlier `tmux` session is no longer used. Service changes require sudo.
+
+```powershell
+# Check status and boot configuration.
+ssh cmm@192.168.0.193 'systemctl --no-pager status covenant.service; systemctl is-enabled covenant.service'
+# Gracefully stop and save Covenant.
+ssh -t cmm@192.168.0.193 'sudo systemctl stop covenant.service'
+# Start or restart Covenant.
+ssh -t cmm@192.168.0.193 'sudo systemctl start covenant.service'
+ssh -t cmm@192.168.0.193 'sudo systemctl restart covenant.service'
+# Inspect the latest server log.
+ssh cmm@192.168.0.193 'tail -n 40 /home/cmm/project-covenant-test/logs/latest.log'
+# Follow systemd output (Ctrl+C exits the log viewer).
+ssh -t cmm@192.168.0.193 'journalctl -u covenant.service -f'
+```
+
+For updates, build locally, stop `covenant.service` and wait for it to become
+inactive, then copy `build/libs/covenant-0.1.0-dev.jar` into the remote
+`mods/` directory. Compare SHA256 hashes before restarting and update clients to
+the same build. Keep server worlds, runtime, logs, and local connection details
+outside source control.
+
 ## In-game smoke check
 
 The user performs manual client playtesting. For routine feature work, Codex runs

@@ -51,7 +51,7 @@ final class SkillFoundationGameTests {
         var wallArrow = arrows(blocked).getFirst();
 
         var reaver = player(helper, players, origin, 20, PlayerClass.REAVER);
-        SkillLoadouts.learn(reaver, SkillDefinition.CLEAVE.id(), true);
+        FixtureSkills.learn(reaver, SkillDefinition.CLEAVE.id(), true);
         ClassResources.set(reaver, PlayerClass.REAVER, 100);
         reaver.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
         reaver.doTick();
@@ -77,7 +77,7 @@ final class SkillFoundationGameTests {
 
         var aimed = player(helper, players, origin, 35, PlayerClass.STALKER);
         learnBow(aimed);
-        SkillLoadouts.learn(aimed, SkillDefinition.AIMED_SHOT.id(), true);
+        FixtureSkills.learn(aimed, SkillDefinition.AIMED_SHOT.id(), true);
         aimed.getAttribute(RpgStats.FOCUS_REGENERATION).setBaseValue(0);
         double speed = aimed.getAttributeValue(Attributes.MOVEMENT_SPEED);
         var oldAim = target(helper, targets, aimed, 0, 4);
@@ -119,11 +119,11 @@ final class SkillFoundationGameTests {
             check(Skills.cooldownRemaining(aimed, SkillDefinition.AIMED_SHOT) > 0, "Cooldown begins at completion");
             prepare(aimed);
             check(key(Skills.activate(aimed, SkillDefinition.AIMED_SHOT), "started"), "Second wind-up begins");
-            SkillLoadouts.learn(aimed, SkillDefinition.PIERCING_SHOT.id(), false);
+            FixtureSkills.learn(aimed, SkillDefinition.PIERCING_SHOT.id(), false);
             near(aimed.getAttributeValue(Attributes.MOVEMENT_SPEED), speed, "Removing prerequisite immediately restores speed");
             check(aimed.getData(RpgData.BOW_DRAW_UNTIL) == 0, "Unlearning clears the pose");
             learnBow(aimed);
-            SkillLoadouts.learn(aimed, SkillDefinition.AIMED_SHOT.id(), true);
+            FixtureSkills.learn(aimed, SkillDefinition.AIMED_SHOT.id(), true);
         });
         helper.runAtTickTime(29, () -> {
             check(key(Skills.activate(aimed, SkillDefinition.AIMED_SHOT), "started"), "Equipment interruption begins");
@@ -178,7 +178,7 @@ final class SkillFoundationGameTests {
     }
 
     private static void learnBow(ServerPlayer player) {
-        SkillLoadouts.learn(player, SkillDefinition.PIERCING_SHOT.id(), true);
+        FixtureSkills.learn(player, SkillDefinition.PIERCING_SHOT.id(), true);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
         player.getInventory().setItem(5, new ItemStack(Items.ARROW, 8));
     }

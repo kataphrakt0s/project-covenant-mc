@@ -31,17 +31,25 @@ public final class ProjectileCombat {
     public static final Codec<ProjectileCombat> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.BOOL.optionalFieldOf("skill", false).forGetter(state -> state.skill),
             UUIDUtil.CODEC.listOf().optionalFieldOf("enchanted_targets", List.of())
-                    .forGetter(state -> List.copyOf(state.enchantedTargets))
+                    .forGetter(state -> List.copyOf(state.enchantedTargets)),
+            UUIDUtil.CODEC.listOf().optionalFieldOf("support_owners", List.of())
+                    .forGetter(state -> List.copyOf(state.supportOwners))
     ).apply(i, ProjectileCombat::new));
 
     private boolean skill;
     private final Set<UUID> enchantedTargets;
+    private final Set<UUID> supportOwners;
 
-    public ProjectileCombat() { this(false, List.of()); }
+    public ProjectileCombat() { this(false, List.of(), List.of()); }
 
-    private ProjectileCombat(boolean skill, List<UUID> enchantedTargets) {
+    private ProjectileCombat(boolean skill, List<UUID> enchantedTargets, List<UUID> supportOwners) {
         this.skill = skill;
         this.enchantedTargets = new HashSet<>(enchantedTargets);
+        this.supportOwners = new HashSet<>(supportOwners);
+    }
+    public Set<UUID> supportOwners() { return Set.copyOf(supportOwners); }
+    public static void captureSupport(Projectile projectile, LivingEntity source) {
+        projectile.getData(RpgData.PROJECTILE_COMBAT).supportOwners.addAll(Auras.supportOwners(source, false));
     }
 
     /** Mark at the server's skill firing boundary; neither trail removal nor reload changes provenance. */

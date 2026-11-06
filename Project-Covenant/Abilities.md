@@ -14,7 +14,9 @@ The intended progression model replaces free prototype learning:
 - Skill maximum rank is assigned individually as 8 or 12.
 - No more than eight distinct skills may have points allocated at once, corresponding to the eight combat keybinds.
 - Prerequisites and genuine mutually exclusive choices are enforced.
-- A crafted combat respec item refunds invested skill points. Its recipe remains undecided.
+- A crafted combat respec item refunds invested skill points. The prototype
+  recipe is four paper plus one lapis lazuli, shapeless at a vanilla crafting
+  table, producing one item; see [[Combat Skill Progression]].
 
 The current free-learning behavior is a prototype/testing state, not the intended progression economy. See [[Combat Skill Progression]] and [[Skill Trees Brainstorm]].
 

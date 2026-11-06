@@ -28,6 +28,8 @@ final class SkillsScreen extends Screen {
     private SkillTree.Node selected;
     private boolean bindingsTab;
     private SkillLoadout previous;
+    private int previousLevel = -1;
+    private java.util.Map<net.minecraft.resources.Identifier, Integer> previousDraft = java.util.Map.of();
     private SkillTreeLayout treeLayout;
     private List<Integer> treeColumns = List.of();
     private int left;
@@ -40,6 +42,9 @@ final class SkillsScreen extends Screen {
     private int viewHeight;
     private int bindingScroll;
     private List<SkillTree.Node> bindingChoices = List.of();
+    private java.util.Map<net.minecraft.resources.Identifier, Integer> baseline;
+    private java.util.Map<net.minecraft.resources.Identifier, Integer> draft;
+    private Button apply;
 
     SkillsScreen() { super(text("title")); }
 
@@ -59,7 +64,13 @@ final class SkillsScreen extends Screen {
         addTab("tree_tab", tabX, top + 43, false);
         addTab("bindings_tab", tabX, top + 68, true);
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(tabX, top + panelHeight - 27, 77, 20).build());
+                .bounds(tabX, top + panelHeight - 51, 77, 20).build());
+        apply = addRenderableWidget(Button.builder(Component.literal("Apply"), b -> {
+            ClientPacketDistributor.sendToServer(new SkillNetworking.Apply(baseline, draft));
+        }).bounds(tabX, top + panelHeight - 27, 77, 20).build());
+        if (baseline == null || !baseline.equals(loadout().ranks())) {
+            baseline = loadout().ranks(); draft = new java.util.HashMap<>(baseline);
+        }
         if (bindingsTab) { initBindings(); }
         else {
             var tree = SkillTree.forClass(currentClass);
@@ -113,14 +124,21 @@ final class SkillsScreen extends Screen {
 
     private void refresh() {
         var state = loadout();
-        if (state.equals(previous)) { return; }
+        if (!state.ranks().equals(baseline)) { baseline = state.ranks(); draft = new java.util.HashMap<>(baseline); }
+        apply.active = !draft.equals(baseline) && !minecraft.player.getData(RpgData.PROGRESSION_VIEW).inCombat();
+        int level = PlayerProfiles.get(minecraft.player).level();
+        if (state.equals(previous) && level == previousLevel && draft.equals(previousDraft)) { return; }
+        previousLevel = level;
+        previousDraft = java.util.Map.copyOf(draft);
+        var pending = new SkillLoadout(draft, java.util.Map.of());
         if (selected != null && (!state.learned().contains(selected.id()) || selected.playerClass() != currentClass)) { selected = null; }
         previous = state;
         for (var button : nodes) {
             var node = button.node;
-            button.learned = state.learned().contains(node.id());
-            button.locked = SkillTree.blocked(node, state).isPresent();
-            button.active = button.learned || !button.locked;
+            button.learned = pending.rank(node.id()) > 0;
+            boolean enabled = canAdd(node);
+            button.locked = !enabled;
+            button.active = enabled;
             button.setTooltip(Tooltip.create(nodeTooltip(node)));
         }
         for (int i = 0; i < slots.size(); i++) {
@@ -138,18 +156,49 @@ final class SkillsScreen extends Screen {
     private Component nodeTooltip(SkillTree.Node node) {
         var tip = node.displayName().copy().withStyle(ChatFormatting.GOLD).append("\n")
                 .append(node.description().copy().withStyle(ChatFormatting.GRAY));
-        tip.append("\n").append(text("diagram_level", node.diagramLevel()).withStyle(ChatFormatting.GRAY));
+        tip.append("\nLevel " + node.diagramLevel() + (node.implemented()
+                ? " · Rank " + draft.getOrDefault(node.id(), 0) + "/" + node.availableMaximum() + " (planned " + node.plannedMaximum() + ")"
+                : " · Rank cap TBD"));
+        int pending = draft.getOrDefault(node.id(), 0) - baseline.getOrDefault(node.id(), 0);
+        if (pending > 0) { tip.append("\nPending: +" + pending).withStyle(ChatFormatting.AQUA); }
+        if (node.availableMaximum() == 8) { tip.append("\n+2% launch velocity per rank after Rank 1; native impact damage scales with speed."); }
         node.prerequisite().ifPresent(id -> tip.append("\n").append(text("requires", SkillTree.find(id).orElseThrow().displayName())));
         node.exclusive().ifPresent(id -> tip.append("\n").append(text("exclusive", SkillTree.find(id).orElseThrow().displayName())));
         tip.append("\n").append(text(node.implemented() ? "implemented" : "planned").withStyle(ChatFormatting.AQUA));
-        SkillTree.blocked(node, loadout()).ifPresent(reason -> tip.append("\n").append(reason.copy().withStyle(ChatFormatting.RED)));
-        return tip.append("\n").append(text("node_hint").withStyle(ChatFormatting.GRAY));
+        SkillTree.blocked(node, new SkillLoadout(draft, java.util.Map.of())).ifPresent(reason -> tip.append("\n").append(reason.copy().withStyle(ChatFormatting.RED)));
+        return tip.append("\nLeft click: pending upgrade. Right click: remove pending.").withStyle(ChatFormatting.GRAY);
+    }
+
+    private boolean canAdd(SkillTree.Node node) {
+        return node.playerClass() == currentClass && (baseline.containsKey(node.id()) || PlayerProfiles.get(minecraft.player).level() >= node.diagramLevel())
+                && draft.getOrDefault(node.id(), 0) < node.availableMaximum()
+                && draft.values().stream().mapToInt(Integer::intValue).sum() < PlayerProfiles.get(minecraft.player).level()
+                && (draft.containsKey(node.id()) || draft.size() < 8)
+                && SkillTree.blocked(node, new SkillLoadout(draft, java.util.Map.of())).isEmpty();
+    }
+
+    private void removePending(SkillTree.Node node) {
+        int rank = draft.getOrDefault(node.id(), 0);
+        if (rank <= baseline.getOrDefault(node.id(), 0)) { return; }
+        if (rank == 1) { draft.remove(node.id()); } else { draft.put(node.id(), rank - 1); }
+        boolean changed;
+        do {
+            changed = false;
+            for (var candidate : SkillTree.ALL) {
+                if (!baseline.containsKey(candidate.id()) && draft.containsKey(candidate.id())
+                        && candidate.prerequisite().filter(id -> !draft.containsKey(id)).isPresent()) {
+                    draft.remove(candidate.id()); changed = true;
+                }
+            }
+        } while (changed);
+        refresh();
     }
 
     @Override public void tick() {
         if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
                 || minecraft.level == null || !minecraft.isWindowActive()) { onClose(); return; }
         if (PlayerProfiles.getSelectedClass(minecraft.player).orElse(null) != currentClass) {
+            baseline = null;
             selected = null;
             bindingScroll = 0;
             rebuildWidgets();
@@ -177,9 +226,7 @@ final class SkillsScreen extends Screen {
         if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             for (var button : nodes) {
                 if (button.visible && button.isMouseOver(event.x(), event.y())) {
-                    if (loadout().learned().contains(button.node.id())) {
-                        ClientPacketDistributor.sendToServer(new SkillNetworking.Learn(button.node.id(), false));
-                    }
+                    removePending(button.node);
                     return true;
                 }
             }
@@ -212,7 +259,9 @@ final class SkillsScreen extends Screen {
             }
         }
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        var hint = currentClass == null ? text("choose_class") : text(bindingsTab ? "binding_help" : "learn_hint");
+        int remaining = PlayerProfiles.get(minecraft.player).level() - draft.values().stream().mapToInt(Integer::intValue).sum();
+        var hint = currentClass == null ? text("choose_class") : bindingsTab ? text("binding_help")
+                : Component.literal(remaining + " points · Click to draft upgrades. Apply out of combat.");
         int hintY = top + panelHeight - (bindingsTab ? 47 : 23);
         var lines = font.split(hint, viewWidth - 4);
         for (int i = 0; i < Math.min(lines.size(), 2); i++) {
@@ -255,9 +304,7 @@ final class SkillsScreen extends Screen {
         private NodeButton(SkillTree.Node node) {
             super(nodeX(node), nodeY(node), treeLayout.nodeSize(), treeLayout.nodeSize(), node.displayName(), b -> {
                 selected = node;
-                if (!loadout().learned().contains(node.id())) {
-                    ClientPacketDistributor.sendToServer(new SkillNetworking.Learn(node.id(), true));
-                }
+                if (canAdd(node)) { draft.merge(node.id(), 1, Integer::sum); refresh(); }
             }, DEFAULT_NARRATION);
             this.node = node;
             var words = node.displayName().getString().split(" ");
@@ -265,7 +312,8 @@ final class SkillsScreen extends Screen {
         }
 
         @Override protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-            int border = learned ? 0xFFE5C279 : locked ? 0xFF576474 : 0xFF8E9CAF;
+            int border = draft.getOrDefault(node.id(), 0) > baseline.getOrDefault(node.id(), 0) ? 0xFF66D9E8
+                    : learned ? 0xFFE5C279 : locked ? 0xFF576474 : 0xFF8E9CAF;
             graphics.fill(getX(), getY(), getRight(), getBottom(), learned ? 0xFF443927 : 0xFF202C3B);
             graphics.outline(getX(), getY(), getWidth(), getHeight(), border);
             if (isHoveredOrFocused() || selected == node) {

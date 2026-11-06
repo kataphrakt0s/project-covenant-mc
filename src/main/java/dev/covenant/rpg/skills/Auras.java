@@ -140,6 +140,23 @@ public final class Auras {
         source.getData(RpgData.AURAS).recipients.add(target);
         state.nextExpiry = Math.min(state.nextExpiry, until);
         if (!wasPresent || (active && kind == Kind.FORTITUDE)) { update(target); }
+        if (kind.offensive) {
+            if (active) { dev.covenant.rpg.progression.CombatProgression.supportEnemy(source, target); }
+        } else { dev.covenant.rpg.progression.CombatProgression.supportAlly(source, target); }
+    }
+
+    /** All unexpired suppliers count, even where overlapping effects collapse into one modifier. */
+    public static Set<UUID> supportOwners(LivingEntity target, boolean offensive) {
+        if (!target.hasData(RpgData.AURAS)) { return Set.of(); }
+        var owners = new HashSet<UUID>();
+        long time = now(target);
+        var state = target.getData(RpgData.AURAS);
+        for (var maps : List.of(state.passive, state.active)) {
+            maps.forEach((kind, grants) -> {
+                if (kind.offensive == offensive) { grants.forEach((owner, until) -> { if (until > time) { owners.add(owner); } }); }
+            });
+        }
+        return owners;
     }
 
     public static boolean passive(LivingEntity target, Kind kind) { return has(target, kind, false); }

@@ -206,7 +206,7 @@ final class ComboGameTests {
                 var q = f.player(); q.setNoGravity(false);
                 used(q, SkillDefinition.LUNGING_COMBO); ready(q); used(q, SkillDefinition.RIP_AND_RUSH);
                 switch (reason) {
-                    case 0 -> SkillLoadouts.learn(q, SkillDefinition.LUNGING_COMBO.id(), false);
+                    case 0 -> FixtureSkills.learn(q, SkillDefinition.LUNGING_COMBO.id(), false);
                     case 1 -> NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedOutEvent(q));
                     case 2 -> NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(q, Level.OVERWORLD, Level.NETHER));
                     case 3 -> PlayerProfiles.switchClass(q, PlayerClass.STALKER);
@@ -590,7 +590,7 @@ final class ComboGameTests {
             p.setNoGravity(true); p.setGameMode(GameType.SURVIVAL); p.connection.markClientLoaded();
             p.setYRot(0); p.setXRot(0); p.getAttribute(RpgStats.DAMAGE).setBaseValue(10);
             PlayerProfiles.selectClass(p, PlayerClass.REAVER);
-            for (var skill : List.of(SkillDefinition.CLEAVE, SkillDefinition.REND, SkillDefinition.LUNGING_COMBO, SkillDefinition.RIP_AND_RUSH)) { SkillLoadouts.learn(p, skill.id(), true); }
+            for (var skill : List.of(SkillDefinition.CLEAVE, SkillDefinition.REND, SkillDefinition.LUNGING_COMBO, SkillDefinition.RIP_AND_RUSH)) { FixtureSkills.learn(p, skill.id(), true); }
             ClassResources.set(p, PlayerClass.REAVER, 100);
             return p;
         }
@@ -603,8 +603,8 @@ final class ComboGameTests {
         void freeze(ServerPlayer target, int ticks) {
             var source = player(); source.setPos(target.position().add(1, 0, 0));
             PlayerProfiles.switchClass(source, PlayerClass.WEAVER);
-            SkillLoadouts.learn(source, SkillDefinition.ICY_VEINS.id(), true);
-            SkillLoadouts.learn(source, SkillDefinition.FREEZING_AURA.id(), true);
+            FixtureSkills.learn(source, SkillDefinition.ICY_VEINS.id(), true);
+            FixtureSkills.learn(source, SkillDefinition.FREEZING_AURA.id(), true);
             SkillLoadouts.bind(source, 0, SkillDefinition.FREEZING_AURA.id());
             source.getAttribute(RpgStats.SKILL_DURATION).setBaseValue(ticks / 30.0);
             used(source, SkillDefinition.FREEZING_AURA);

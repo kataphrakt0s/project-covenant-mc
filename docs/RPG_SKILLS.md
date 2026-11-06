@@ -1,11 +1,14 @@
 # Skills, class resources, and skill trees
 
 This foundation shares the existing class/profile and native stat/Affix Page systems.
-It adds 25 code-backed skills, one persistent skill-state attachment, and one
-unsaved entity-local cast/combat/combo attachment. The Skills window presents the current
-class's brainstorm tree with free allocation and eight saved assignments. Planned
-nodes have no gameplay effects yet. Points, ranks, a full icon-based action bar, pack
-dependencies, and an alternate character system remain outside this pass.
+It adds 25 code-backed skills, persistent skill resources/cooldowns, and an
+unsaved entity-local cast/combat/combo attachment. The Skills window presents
+the current class's tree with staged point/rank purchases and eight saved
+assignments. Unimplemented nodes remain visible but unavailable. Arrow skills
+have ranks 1–8; other playable skills allow Rank 1 until upgrades are authored.
+See [PROGRESSION.md](PROGRESSION.md) for the implemented economy, XP, caps,
+support credit, balance reloads and crafted respec. A full icon action bar,
+pack dependencies and additional skill implementations remain separate work.
 Bleed is a separate target-owned persistent attachment; it never becomes permanent
 character progression or item data.
 
@@ -14,8 +17,9 @@ The roster, learning prerequisites, and agreed gameplay direction are in
 
 ## Implementation order
 
-Implement behavior in small dependency-ordered batches, with prototype tuning where
-the brainstorm defers numbers. Allocation stays free; ranks and skill points wait.
+Implement behavior in small dependency-ordered batches, with prototype tuning
+where the brainstorm defers numbers. The combat progression foundation now
+uses the existing playable roster; further skill content follows this order.
 
 1. **Basic attacks (current batch):** native three-target Piercing Shot, frontal
    Cleave, and Aimed Shot using the existing cast pipeline. Arcane Bolt remains
@@ -1117,24 +1121,22 @@ continues after G is released and does not pause the game. Escape or Done closes
 Only the current class's tree is visible. Choose a class on the Stats page (radial
 slot 2) or through `/covenant class select <id>` first. The 62-node roster and layout
 follow `Project-Covenant/Skill Trees Brainstorm.md`: 19 Stalker, 20 Reaver, 23 Weaver.
-Left-click a node to allocate/select; right-click to deallocate. Learning/unlearning
-is free and repeatable. Gold means learned; gray nodes are blocked. Hover for a
-description, prerequisites, exclusions, and implementation status. All eight tiers
-fit on the page at once, with higher tiers above lower tiers. Empty diagram lanes
-are compressed while preserving branch order and all connections. Square nodes
-resize to the available space and use temporary initials until skill icons are
-added; full names remain in hover/focus tooltips. No tree scrolling or panning is
-required. The separate Keybindings page retains its scrollable allocated-skill list.
+Left-click a node to draft a rank; right-click to remove pending ranks only.
+The bottom-right Apply button commits the batch out of combat. Closing discards
+unapplied changes. Gold means committed; cyan marks pending upgrades; gray nodes
+are blocked. Tooltips show unlock levels, available/planned ranks, prerequisites,
+exclusions and implementation status. All eight tiers fit on the page at once,
+with higher tiers above lower tiers. Empty lanes are compressed without changing
+branch order or connections; temporary initials remain until icons are added.
+No tree scrolling or panning is required.
 
-All 11 vertical links require the lower skill first; both remain allocated and
-usable independently. Ripping Aura and Fortitude Aura are mutually exclusive.
-Removing a prerequisite also removes its learned dependents and all their bindings,
-while preserving unrelated nodes and assignments. Diagram levels are informational:
-no character-level gate, point budget, or rank scaling is implemented. The three
-original skills, Aimed Shot, and Rend have gameplay; all other nodes are placeholders. Allocating or
-binding placeholders provides no passive bonuses or gameplay effects. Pressing a
-placeholder binding only reports that its gameplay is not implemented; it spends
-no resource and starts no cooldown.
+Unlock levels gate first investment only. All 11 links retain their prerequisites;
+Ripping Aura and Fortitude Aura remain exclusive. At most eight distinct skills
+can hold points. Unimplemented nodes and branches behind them cannot be bought.
+Each earned character level supplies one point. Piercing/Aimed Shot allow eight
+ranks, each additional rank adding 2% base launch velocity with native speed-based
+damage retained. All other playable skills currently allow Rank 1, with planned
+8/12 caps retained. Applied ranks require the crafted respec item to refund.
 
 Use the right-hand **Tree** and **Keybindings** tabs to switch pages. In Keybindings,
 select a current-class skill from the scrollable allocated-skill list, then left-click
@@ -1158,36 +1160,34 @@ to vanilla Swap Hands on F, freeing both F and Shift+F without changing other sw
 bindings. Set false to retain F and rebind those skill slots.
 
 `covenant:skill_loadout` is a separate immutable, persistent, death-copied, owner-synced
-player attachment. `learned` is a set of skill IDs; `bindings` maps string-serialized
-indices 0-7 to learned IDs. Missing attachment/fields default empty. Unknown saved
-skill IDs survive serialization but cannot be learned, assigned, or activated through
-requests. Keyboard choices remain local in vanilla options, while assignments follow
-the player across machines. Multiple slots may reference one skill. Unlearning clears
-all matching slots for that node and its learned dependents and cancels any affected
-pending cast; it preserves resource balances and cooldowns. Testing class switches
-retain inactive learned skills and assignments,
-with class checks at assignment, activation, and cast completion.
+player attachment. Its `ranks` map stores committed skill ranks; `bindings` maps
+string-serialized indices 0–7 to purchased IDs. Keyboard choices remain local
+in vanilla options, while assignments follow the player across machines.
+Multiple slots may reference one skill. Respec clears all ranks/bindings and
+cancels owned activity while preserving resources and committed cooldowns.
+Operator class switches retain inactive skills and assignments; assignment,
+activation and cast completion still validate the selected class.
 
-Three intent-only serverbound payloads request learning/unlearning (ID + boolean),
-assignment/clear (index + optional ID), or activation (index). NeoForge's main-thread
-handlers resolve the sender and validate living/non-spectator status, slot bounds,
-known tree ID, learning, class eligibility, prerequisites and mutual exclusions
-before mutation/effects. No client supplies resource costs, timers, damage, or
-targets. Loadout changes synchronize immediately;
-client UI reads snapshots without optimistic progression changes.
+The bounded Apply payload sends expected and desired rank maps. The server
+validates the full batch before a single immutable snapshot update, including
+combat state, points, unlock levels, rank limits, class, eight-skill ceiling,
+prerequisites, exclusions and executable availability. Stale/replayed requests
+cannot buy twice. Bind/clear and activation remain intent-only packets with
+the existing shared per-player ingress budget. The older Learn intent routes
+through the same purchase validation; unlearning through it is rejected.
+Neither path supplies costs, timers, damage or targets. Payload protocol is 3.
 
-This is an additive saved attachment. Existing worlds retain profiles, resources and
-cooldowns but must learn their class skill once in the new window. Downgrading loses
-loadout behavior and is not a supported progression migration. No existing saved
-field or ID was renamed.
-
-The tree pass reuses that exact attachment and payload format. Existing learning
-and assignments remain valid because the original skills are prerequisite-free roots.
-`SkillTree` owns node identity, class, diagram coordinates and allocation rules;
-`SkillDefinition` remains the catalog of executable effects. Adding a placeholder
-does not register a gameplay effect or expose it as an executable command.
+This progression format requires fresh saves. No free-skill conversion or legacy
+profile/loadout decoder is supplied. New saves retain normal persistence, death,
+End-return and owner-sync guarantees. `SkillTree` owns tree/rank availability;
+`SkillDefinition` remains the executable effect catalog.
 
 ## Resources
+
+All classes now share the existing seven-second/140-tick server combat deadline.
+Confirmed combat damage and qualifying support refresh it; Rage grace, Apply and
+out-of-combat respec read that same timestamp. Support grants no Rage. Existing
+damage-based Rage coefficients remain. See [PROGRESSION.md](PROGRESSION.md).
 
 | Class | Resource | Initial / base maximum | Default behavior at 20 TPS |
 | --- | --- | --- | --- |
@@ -1462,22 +1462,21 @@ wheel, and releasing G leaves Skills open. Only the current class's nodes should
 appear, including after an operator class switch while the window is open. With no
 class, only the choose-class hint appears. At different GUI scales, confirm every
 node and tier is visible at once and each compact node has its own hover/click target.
-Try a dependent before its prerequisite; then allocate both and remove the prerequisite.
-Both nodes and all their assignments must clear, leaving unrelated choices intact.
-For Reaver, learn each aura in turn and confirm it blocks the other until removed.
-Open the right-hand Keybindings tab, select a learned skill, and assign it to all
-eight slots; close and press each binding separately, waiting for cooldown/casts.
-Shift variants must activate only once and never also activate the corresponding base
-slot. Right-click one assignment, then unlearn the node: all its remaining assignments
-must clear and direct command use must fail. Relearn during cooldown to check it was
-not reset. Unlearn Arcane Bolt during its cast: no projectile/spend/cooldown should
-follow. Inspect after death, reconnect, dimension travel and save/restart. Check class
-switches retain inactive assignments without allowing their use. Check Controls,
-startup drop-Q clearing, other drop keys, GUI scale and keyboard/mouse rebindings.
-Allocate a planned node at level one, bind it, and press its key outside the window:
-only placeholder feedback should appear, without resource spending or gameplay.
-Confirm the full learned list scrolls to the final node and retains selection between
-tabs. Check allocation and binding persistence after reconnect/save/restart.
+Use a fresh save. Select a class, draft upgrades, remove pending ranks and close
+without Apply; reopening should show only committed ranks. Apply a valid draft
+out of combat and confirm points, bindings and effects follow the server result.
+Try level-locked, unimplemented, prerequisite and exclusive nodes. For rapid
+testing an operator may use `/covenant progression level 60`.
+Check the cyan pending state, all tiers at each GUI scale, and draft retention
+between tabs. Only committed skills should appear in Keybindings.
+
+Assign a purchased skill to all eight slots, then clear one slot. Test normal
+and Shift bindings, cooldowns, Controls remaps, reconnect and dimension travel.
+Craft a Combat Respec with four paper and one lapis, hold it for two seconds
+out of combat, and confirm all ranks/bindings clear while cooldowns/resources
+remain. Release early and enter combat during use: neither should consume it.
+Inspect the unlabeled bar below vanilla XP and exact Stats-page progression.
+Retained-world restart, rendered feedback and live multiplayer remain manual.
 
 1. Stalker: hold a bow, carry arrows, aim at one mob, and run
    `/covenant skill use covenant:piercing_shot`. Inspect Focus before/after; default
@@ -1522,9 +1521,11 @@ Run `scripts/Dev.ps1 test` for dedicated-server fixtures `skill_lifecycle`,
 death/End copying, snapshot codecs, class changes, commands/permissions, native page
 modifiers and bounds, timed recovery/combat refresh/depletion, real projectile/area
 damage, cast overlap/cancellation, duplicate rejection and cost scaling.
-The tree fixture additionally covers every brainstorm link, both exclusion directions,
-free level-one learning, dependent/slot cleanup, inactive-class and spectator rejection,
-placeholder no-op activation, full-tree player-file persistence, and death/End copying.
+The tree/loadout fixtures cover the roster, class/level/point/rank limits,
+prerequisites, exclusions, atomic batches, stale snapshots, spectator/combat
+rejection, bounded Apply transport, respec cleanup, actual player-file ranks
+and bindings, and death/End copying. Progression fixtures add native rewards,
+support, Wither claims, caps, raw-XP balance preservation and real server reloads.
 Bleed fixtures cover native attack-range components and clipping, defended strikes,
 absorption-only application, native multipliers, shared replacement/refresh/credit,
 independent hurt cooldown, mitigation, exact expiry, consumption, saved relative

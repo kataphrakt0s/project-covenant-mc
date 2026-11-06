@@ -64,7 +64,7 @@ final class SkillGameTests {
             check(key(Skills.activate(player, SkillDefinition.CLEAVE), "class"), "Cooldown bypass retains class checks");
             PlayerProfiles.selectClass(player, PlayerClass.REAVER);
             check(key(Skills.activate(player, SkillDefinition.CLEAVE), "unlearned"), "Cooldown bypass retains learning checks");
-            SkillLoadouts.learn(player, SkillDefinition.CLEAVE.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.CLEAVE.id(), true);
             check(key(Skills.activate(player, SkillDefinition.CLEAVE), "resource"), "Cooldown bypass retains resource checks");
             ClassResources.set(player, PlayerClass.REAVER, 100);
             player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(SkillDefinition.CLEAVE.id(), ClassResources.now(player) + 200));
@@ -94,12 +94,12 @@ final class SkillGameTests {
             check(reporter.isEmpty() && !Skills.ignoresCooldowns(loaded), "Native save/load omits debug flag");
             PlayerProfiles.switchClass(player, PlayerClass.WEAVER);
             check(Skills.ignoresCooldowns(player), "Class switching preserves debug mode on same entity");
-            SkillLoadouts.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
             player.getAttribute(RpgStats.MANA_REGENERATION).setBaseValue(0);
             ClassResources.set(player, PlayerClass.WEAVER, 100);
             player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(SkillDefinition.ARCANE_BOLT.id(), ClassResources.now(player) + 200));
             PlayerProfiles.selectClass(combo, PlayerClass.REAVER);
-            SkillLoadouts.learn(combo, SkillDefinition.LUNGING_COMBO.id(), true);
+            FixtureSkills.learn(combo, SkillDefinition.LUNGING_COMBO.id(), true);
             ClassResources.set(combo, PlayerClass.REAVER, 100);
             Skills.setIgnoreCooldowns(combo, true);
             combo.setData(RpgData.SKILLS, combo.getData(RpgData.SKILLS).withCooldown(SkillDefinition.LUNGING_COMBO.id(), ClassResources.now(combo) + 200));
@@ -164,7 +164,7 @@ final class SkillGameTests {
                 check(player.getData(RpgData.SKILLS).equals(before), "Infinite spending preserves saved balances and cooldowns");
             }
             PlayerProfiles.switchClass(player, PlayerClass.REAVER);
-            SkillLoadouts.learn(player, SkillDefinition.CLEAVE.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.CLEAVE.id(), true);
             check(key(Skills.activate(player, SkillDefinition.CLEAVE), "used"), "Zero-Rage instant skill activates");
             check(Skills.cooldownRemaining(player, SkillDefinition.CLEAVE) == 60, "Infinite resource retains cooldown");
             check(key(Skills.activate(player, SkillDefinition.CLEAVE), "cooldown"), "Infinite resource cannot bypass cooldown");
@@ -172,7 +172,7 @@ final class SkillGameTests {
             PlayerProfiles.selectClass(other, PlayerClass.REAVER);
             check(!ClassResources.infinite(other) && !ClassResources.canAfford(other, 1), "Toggle is per player");
             other.setPos(player.position().add(12, 0, 0)); other.setNoGravity(true);
-            SkillLoadouts.learn(other, SkillDefinition.LUNGING_COMBO.id(), true);
+            FixtureSkills.learn(other, SkillDefinition.LUNGING_COMBO.id(), true);
             dispatcher.execute("covenant resource infinite true", other.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS));
             check(key(Skills.activate(other, SkillDefinition.LUNGING_COMBO), "used"), "Zero-Rage combo opens");
             var copy = helper.makeMockServerPlayerInLevel(); players.add(copy); copy.restoreFrom(player, false);
@@ -196,7 +196,7 @@ final class SkillGameTests {
             PlayerProfiles.switchClass(player, PlayerClass.WEAVER);
             ClassResources.set(player, PlayerClass.WEAVER, 0);
             player.getAttribute(RpgStats.MANA_REGENERATION).setBaseValue(0);
-            SkillLoadouts.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
         } catch (RuntimeException | CommandSyntaxException error) { players.forEach(server.getPlayerList()::remove); throw new IllegalStateException(error); }
         helper.onEachTick(player::doTick);
         helper.onEachTick(comboPlayer::doTick);
@@ -383,7 +383,7 @@ final class SkillGameTests {
         player.setYRot(0);
         player.setXRot(0);
         PlayerProfiles.selectClass(player, PlayerClass.STALKER);
-        SkillLoadouts.learn(player, SkillDefinition.PIERCING_SHOT.id(), true);
+        FixtureSkills.learn(player, SkillDefinition.PIERCING_SHOT.id(), true);
         var bowTarget = target(helper, player, 0, 3);
         check(key(Skills.activate(player, SkillDefinition.PIERCING_SHOT), "bow"), "Bow prerequisite");
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
@@ -424,7 +424,7 @@ final class SkillGameTests {
             check(shot.getData(RpgData.SKILL_SHOT), "Piercing arrow retains its trail after an entity impact");
             bowTarget.discard();
             PlayerProfiles.switchClass(player, PlayerClass.REAVER);
-            SkillLoadouts.learn(player, SkillDefinition.CLEAVE.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.CLEAVE.id(), true);
             ClassResources.set(player, PlayerClass.REAVER, 50);
             player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
             player.doTick();
@@ -434,7 +434,7 @@ final class SkillGameTests {
             check(first.getHealth() < 20 && second.getHealth() < 20, "Cleave hits multiple nearby enemies");
             first.discard(); second.discard();
             PlayerProfiles.switchClass(player, PlayerClass.WEAVER);
-            SkillLoadouts.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
             ClassResources.set(player, PlayerClass.WEAVER, 100);
         });
         final Husk[] boltTarget = new Husk[1];

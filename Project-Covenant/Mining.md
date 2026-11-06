@@ -1,54 +1,113 @@
-# Mining Profession
+# Mining
 
 ## Identity
 
-Mining develops the player's mastery of prospecting, ore extraction, material processing, and geological interaction. Mining progression should add options to the existing Minecraft mining loop, not gate ordinary mining or resource access.
+Mining develops the player's mastery of prospecting, ore extraction, material processing, and resource transfiguration. It adds specialized options to the existing Minecraft mining loop; ordinary mining and access to vanilla resources remain available without Mining investment.
 
-## Established design directions
-
-### Vein Mining
-
-Vein Mining is one multi-rank ability. It affects **ores only**; it does not apply to ordinary stone, deepslate, logs, or other connected blocks.
-
-- It activates automatically when the player mines an eligible ore without sneaking.
-- Sneaking while mining performs normal single-block mining instead.
-- Ranks progressively increase the ability's extraction capability (for example, the maximum connected ore blocks affected).
-- Modded ores should be able to opt in through tags or equivalent data-driven classification rather than hardcoded block lists.
-
-Exact block limits per rank, search shape, tool/durability/drop handling, enchantment interactions, and edge cases remain to be specified and tested.
+## Ability progression
 
 ### Prospecting
 
-The interaction is established:
+| Rank | Minimum Mining level | Point cost |
+|---|---:|---:|
+| I | 1 | 1 |
+| II | 5 | 1 |
+| III | 10 | 1 |
+| IV | 15 | 1 |
 
-- Right-click a suitable stone or deepslate block while holding any valid mining tool.
-- Tool eligibility should use tags or data-driven mining-tool classification so modded tools can participate.
-- Prospecting should be a deliberate survey action, not continuous detection merely from holding a pickaxe.
+Prospecting is a deliberate survey interaction:
 
-The information revealed remains open: possibilities include nearby deposit types/abundance, directional and approximate-distance guidance, or stronger ore detection at advanced ranks. Do not assume X-ray-style block highlighting is approved.
+- Right-click a suitable stone or deepslate block while holding a valid mining tool.
+- The tool requirement is tag- or data-driven so modded mining tools can qualify.
+- Search for the nearest eligible ore deposit within the rank's detection radius.
+- Report the ore type, one of eight compass directions, and the deposit's Y coordinate.
+- Do not reveal exact block coordinates or highlight ore through walls.
+- Higher ranks increase detection radius and unlock higher ore tiers.
+- Ore tiers are assigned through data-driven tags, allowing modded ores to participate without hardcoded lists.
 
-## Additional candidate directions
+Exact radii, tier definitions, and the rank at which each tier becomes detectable remain to be balanced.
 
-The following are promising design directions, not finalized ability specifications:
+### Vein Mining
 
-- Automatic smelting or other ore/material processing.
-- Other forms of material transfiguration.
-- Defensive or resilience benefits that complement combat builds.
+| Rank | Minimum Mining level | Point cost |
+|---|---:|---:|
+| I | 2 | 1 |
+| II | 5 | 1 |
+| III | 10 | 1 |
+| IV | 15 | 1 |
 
-Abilities can be passive, conditional, or active. Any combat benefits should be modest and available to all classes.
+- Activates when the player mines an eligible ore without sneaking.
+- Sneaking performs normal single-block mining.
+- Only connected blocks of the same eligible ore are included.
+- Each rank substantially increases the maximum number of connected ore blocks affected.
+- Modded ores opt in through tags or equivalent data-driven classification.
 
-## Progression integration
+Exact block limits, connectivity rules, tool wear, loot/enchantment interactions, and edge cases remain implementation and balance details.
 
-Mining starts at Level 0, defaults to a maximum of 20, and earns one Profession Point per level gained. It shares the profession XP curve but maintains independent XP and points. Ability availability is gated by Mining level; abilities are purchased with their authored Profession Point cost. Selected Mining milestones may automatically unlock core recipes.
+### Auto-Smelt
 
-Mining XP is awarded for meaningful mining/prospecting/extraction actions, with contextual reward values. Repetitive low-value block breaking should not be an efficient progression exploit. Automated mining grants no XP by default; explicit exceptions require attribution and anti-exploit safeguards.
+- **Unlock:** Mining Level 5
+- **Cost:** 2 Profession Points
+- **Type:** Single-purchase specialization; further rank structure is not currently defined.
 
-## Cross-profession and vanilla boundaries
+Auto-Smelt can process eligible drops from blocks mined with a valid pickaxe-classified tool. Eligibility is configurable by block/item identifiers and tags. Existing furnace cooking recipes determine the output, allowing modded recipes to participate.
 
-Mining materials may support optional Logging, Farming, or Crafting recipes. Ordinary Minecraft mining and tool use are never gated by Mining level. A player who has not invested in Mining can still mine every resource available through normal Minecraft rules.
+- Shovel-mined drops are not eligible.
+- Normal loot calculation occurs before processing so Fortune-related quantities are respected.
+- Silk Touch suppresses automatic smelting.
+- Server-side configuration determines which otherwise eligible pickaxe-mined drops are processed.
 
-## Vertical-slice scope
+The exact default eligibility list and treatment of unusual recipe types remain open.
 
-Include the functional profession track and a small playable selection. Vein Mining and Prospecting are leading candidates for initial abilities. Final XP values, point costs, level gates, rank effects, recipe milestones, and the final selection of additional abilities remain open.
+### Transfiguration
 
-Related: [[Profession Progression]], [[Experience and Reward Systems]], [[Dimensional Progression Gates]], [[Crafting Profession]], [[Logging]], [[Farming]].
+- **Unlock:** Mining Level 10
+- **Cost:** 2 Profession Points
+- **Type:** Specialization; exact rank structure is deferred.
+
+Transfiguration gives an eligible mined resource a chance to be replaced by a configured alternative resource.
+
+- Roll once per mined block, not once per resulting item.
+- A successful result replaces the original eligible resource rather than creating a bonus drop.
+- Fortune affects the original drop quantity but does not increase the chance to trigger Transfiguration.
+- Each transformation defines its source, replacement, chance, and configurable conversion ratio.
+- Use identifiers and tags so modded resources can participate.
+
+Exact transformation tables, ratios, chances, and rank scaling remain to be tuned.
+
+### Defensive Mastery
+
+- **Unlock:** Mining Level 10
+- **Cost:** 3 Profession Points
+- **Type:** One specialization with class-dependent behavior.
+
+The specialization enhances the appropriate existing defensive class skill; it does not create three separate profession nodes or a new keybind.
+
+| Class | Enhanced skill |
+|---|---|
+| Reaver | Fortification Aura |
+| Stalker | Dodge Aura |
+| Weaver | Mage Armour |
+
+Exact effect values and the interaction with skill ranks remain to be balanced.
+
+## Point budget
+
+| Ability | Defined investment |
+|---|---:|
+| Prospecting (4 ranks) | 4 |
+| Vein Mining (4 ranks) | 4 |
+| Auto-Smelt | 2 |
+| Transfiguration | 2 |
+| Defensive Mastery | 3 |
+| **Total currently defined** | **15** |
+
+Five Profession Points remain unallocated at the Level 20 cap.
+
+## XP and compatibility
+
+Mining XP should reward meaningful, player-performed mining and prospecting actions. Repetitive low-value block breaking and automated mining do not award XP by default. Modded tools and ores should participate through tags, configurable definitions, and optional integrations where necessary.
+
+Ordinary Minecraft mining, tool use, and resource access are never gated by Mining level.
+
+Related: [[Profession Progression]], [[Experience and Reward Systems]], [[Dimensional Progression Gates]], [[Logging]], [[Farming]], [[Crafting Profession]], [[Mod Compatibility]].

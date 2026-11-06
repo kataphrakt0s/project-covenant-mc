@@ -122,7 +122,7 @@ final class ProjectilePersistenceGameTests {
         }
 
         void aura(ServerPlayer player, SkillDefinition skill) {
-            SkillLoadouts.learn(player, skill.id(), true);
+            FixtureSkills.learn(player, skill.id(), true);
             SkillLoadouts.bind(player, 0, skill.id());
             ClassResources.set(player, PlayerProfiles.getSelectedClass(player).orElseThrow(), 100);
             check(Skills.activate(player, skill).getString().contains("Used"), "Required aura activates");

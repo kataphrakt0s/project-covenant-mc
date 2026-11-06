@@ -28,6 +28,7 @@ public final class FrostSlows {
     static void add(LivingEntity target, TrapEntity patch) {
         var sources = target.getData(RpgData.FROST_SOURCES).patches;
         if (sources.add(patch) && sources.size() == 1) { CovenantSlows.update(target); }
+        patch.creditControl(target);
     }
 
     static void remove(LivingEntity target, TrapEntity patch) {

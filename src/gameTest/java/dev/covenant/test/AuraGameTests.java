@@ -477,7 +477,7 @@ public final class AuraGameTests {
         void learn(ServerPlayer player, SkillDefinition skill) {
             var node = SkillTree.find(skill.id()).orElseThrow();
             node.prerequisite().ifPresent(id -> learn(player, SkillDefinition.find(id).orElseThrow()));
-            SkillLoadouts.learn(player, skill.id(), true);
+            FixtureSkills.learn(player, skill.id(), true);
         }
         void equip(ServerPlayer player, SkillDefinition skill, int slot) { learn(player, skill); SkillLoadouts.bind(player, slot, skill.id()); }
         void reset(ServerPlayer player, SkillDefinition skill) {

@@ -15,7 +15,12 @@ public final class SkillNetworking {
     private SkillNetworking() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("2");
+        var registrar = event.registrar("3");
+        registrar.playToServer(Apply.TYPE, Apply.STREAM_CODEC, (request, context) -> {
+            if (context.player() instanceof ServerPlayer player && accept(player, request)) {
+                player.sendSystemMessage(SkillLoadouts.apply(player, request.expected(), request.desired()));
+            }
+        });
         registrar.playToClient(DashMotion.TYPE, DashMotion.STREAM_CODEC);
         registrar.playToClient(LightningVisual.TYPE, LightningVisual.STREAM_CODEC);
         registrar.playToServer(DashFinished.TYPE, DashFinished.STREAM_CODEC, (request, context) -> {
@@ -41,6 +46,28 @@ public final class SkillNetworking {
     private static boolean accept(ServerPlayer player, CustomPacketPayload request) {
         ClassResources.requireServer(player);
         return player.getData(dev.covenant.rpg.RpgData.SKILL_RUNTIME).requests.accept(ClassResources.now(player), request);
+    }
+
+    public record Apply(java.util.Map<Identifier, Integer> expected, java.util.Map<Identifier, Integer> desired) implements CustomPacketPayload {
+        public Apply { expected = java.util.Map.copyOf(expected); desired = java.util.Map.copyOf(desired); }
+        public static final Type<Apply> TYPE = SkillNetworking.type("apply_skills");
+        public static final StreamCodec<FriendlyByteBuf, Apply> STREAM_CODEC = StreamCodec.of((buf, value) -> {
+            writeRanks(buf, value.expected); writeRanks(buf, value.desired);
+        }, buf -> new Apply(readRanks(buf), readRanks(buf)));
+        private static void writeRanks(FriendlyByteBuf buf, java.util.Map<Identifier, Integer> ranks) {
+            buf.writeVarInt(ranks.size()); ranks.forEach((id, rank) -> { buf.writeIdentifier(id); buf.writeVarInt(rank); });
+        }
+        private static java.util.Map<Identifier, Integer> readRanks(FriendlyByteBuf buf) {
+            int size = buf.readVarInt();
+            if (size < 0 || size > 62) { throw new io.netty.handler.codec.DecoderException("Too many skill ranks"); }
+            var result = new java.util.HashMap<Identifier, Integer>();
+            for (int index = 0; index < size; index++) {
+                var id = buf.readIdentifier(); int rank = buf.readVarInt();
+                if (rank < 1 || rank > 12 || result.put(id, rank) != null) { throw new io.netty.handler.codec.DecoderException("Invalid skill rank"); }
+            }
+            return result;
+        }
+        @Override public Type<Apply> type() { return TYPE; }
     }
 
     public record Learn(Identifier skill, boolean learn) implements CustomPacketPayload {

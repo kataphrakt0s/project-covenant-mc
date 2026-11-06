@@ -49,6 +49,10 @@ See [[Design Pillars]], [[Experience and Reward Systems]], [[Profession Progress
 - Character progression does not grant traditional attribute points or a separate general-stat point budget.
 - Character levels gate the first point invested in a skill. They do not gate later ranks of an already-unlocked skill.
 - Character progression is persistent and server-authoritative.
+- The initial character dimension route is Overworld 20, Nether 40, End 60.
+  A one-time first-Wither milestone grants each eligible first-time contributor
+  a full level past dimension gates, preserving percentage progress and
+  respecting the global cap; see [[Character Progression]].
 
 See [[Character Progression]], [[Combat Skill Progression]], and [[Experience and Reward Systems]].
 
@@ -59,6 +63,13 @@ The current playable class identities are **Stalker**, **Reaver**, and **Weaver*
 Combat skills are learned and ranked through a class-specific skill tree. No more than **8 distinct skills** may have points allocated at one time, matching the maximum of eight combat keybinds. Individual skills have a maximum rank of **8 or 12**, selected according to the value and range of their rank upgrades. Rank 1 unlocks the skill; subsequent points improve its rank.
 
 Prerequisites and genuinely mutually exclusive choices remain enforced. A crafted respec item refunds the allocated combat skill points. See [[Classes and Specializations]], [[Class Resources]], [[Abilities]], [[Skill Trees Brainstorm]], and [[Combat Skill Progression]].
+
+In the progression slice, tree edits are pending until a bottom-right Apply
+button commits them out of combat; closing discards unapplied edits. Current
+playable combos cap at 12 ranks and other playable skills at 8. Rank 1 retains
+prototype tuning. Aura passive strengths stay fixed, and current arrow shots
+gain 2% of Rank 1 velocity per extra rank, reaching +14% at Rank 8 with native
+speed-based damage retained. Further rank content remains separate design work.
 
 ## Profession progression
 
@@ -79,7 +90,15 @@ See [[Profession Progression]], [[Mining]], [[Logging]], [[Farming]], and [[Craf
 
 ## Experience and dimensional progression
 
-Character XP and each profession's XP are separate progression tracks. Activity and combat XP rewards are contextual and configurable. Multiplayer combat XP is split among contributing players; exact contribution qualification and distribution rules remain to be tuned.
+Character XP and each profession's XP are separate progression tracks. Character
+XP requires a selected combat class; professions can progress before class
+selection. Activity and combat XP rewards are contextual and configurable.
+Multiplayer combat XP is split equally among eligible damage and support
+contributors, counting each player once, without a larger share for higher DPS
+or the final blow. Passive aura support tied to actual combat qualifies. A
+30-second participation window per player per enemy refreshes on qualifying
+damage or support and is checked at death/payout using timestamps. Detailed
+eligibility and attribution rules remain to be specified.
 
 Dimensional progression gates configure the maximum level that each track can reach from XP earned in a given dimension. Rules can match exact dimension identifiers or dimension tags, with explicit priority and a configurable fallback. Unmatched dimensions default to the global cap: character level 60 and profession level 20. XP earned beyond the current dimension's gate is discarded rather than banked. Existing levels are never reduced when entering a lower-cap dimension.
 

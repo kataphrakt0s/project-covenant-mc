@@ -19,9 +19,18 @@ Profession levels use one shared XP curve, but each profession retains its own X
 - Character level 1 starts with one skill point; each subsequent character level grants one more. A level-60 character has 60 lifetime points.
 - The first point invested unlocks a skill at Rank 1. Further points increase rank without additional character-level gates.
 - Each skill has an individual maximum rank of 8 or 12.
+- Initial playable caps are 12 for Lunging Combo and Rip and Rush, and 8 for
+  other currently playable skills. Rank 1 keeps current prototype tuning.
+- Tree clicks edit pending ranks; the bottom-right Apply button commits the
+  complete server-validated draft out of combat. Closing discards unapplied
+  edits. Committed ranks require the combat-respec item to refund.
 - No more than eight distinct skills may have points allocated at once, matching the eight combat keybinds.
 - Prerequisites and deliberate mutually exclusive choices are enforced.
 - A crafted combat respec item resets combat allocations and refunds invested points.
+- Aura passive strengths stay fixed across ranks. Prototype Piercing Shot and
+  Aimed Shot ranks add 2% of Rank 1 arrow velocity per extra rank, reaching +14%
+  at Rank 8 and retaining native speed-based damage. Further rank content is
+  deferred; see [[Combat Skill Progression]].
 
 See [[Character Progression]], [[Combat Skill Progression]], and [[Skill Trees Brainstorm]].
 
@@ -37,7 +46,13 @@ See [[Profession Progression]], [[Mining]], [[Logging]], [[Farming]], and [[Craf
 
 ## XP and rewards
 
-Character XP is primarily combat-earned, with occasional significant rewards for bosses, dungeon completion, discoveries, and other milestones. Multiplayer combat XP is split among contributors; final eligibility and share calculation remain open.
+Character XP requires a selected combat class and is primarily combat-earned,
+with occasional significant rewards for bosses, dungeon completion, discoveries,
+and other milestones. Multiplayer combat XP is split equally among eligible
+damage and support contributors, counting each player once. Passive aura support
+tied to actual combat qualifies. Contributions use a refreshing 30-second window
+per player per enemy, checked at death/payout. Detailed eligibility remains open;
+see [[Experience and Reward Systems]].
 
 Profession XP is contextual and action-based. Repetitive trivial actions should not be an efficient source. Direct player participation is the default. Automation grants no XP unless specifically configured with player/machine attribution and anti-exploit safeguards. Ordinary vanilla crafting does not grant Crafting XP.
 
@@ -46,6 +61,13 @@ See [[Experience and Reward Systems]].
 ## Dimensional gates
 
 Every progression track can have its own maximum level per dimension. Rules match exact dimension IDs or dimension tags; exact IDs override tag matches, and tag priority is configurable. Unmatched dimensions use a fallback of character level 60 and profession level 20. XP earned beyond the current dimension's gate is discarded, not banked. Existing levels are never reduced when entering a lower-cap dimension.
+
+The initial character route is Overworld 20, Nether 40, End 60. A player's
+first eligible Wither victory grants one full level past dimension gates,
+replacing their ordinary share, preserving percentage progress, and respecting
+the global cap. Each eligible first-time contributor can claim it independently.
+Later Wither kills use 2,000 base character XP before sharing/caps. See
+[[Character Progression]] for the complete milestone contract.
 
 See [[Dimensional Progression Gates]] and [[Progression Balance Configuration]].
 
@@ -61,6 +83,11 @@ See [[Dimensional Progression Gates]] and [[Progression Balance Configuration]].
 ## Vertical slice
 
 The vertical slice includes the complete framework and a modest playable content selection for all four professions. It does not require fully populated future profession trees or finalized XP values. See [[Progression Vertical Slice]].
+
+The implementation order is documented there. Profession content is being
+designed separately and awaits the user's handoff; further rank tables are
+also deferred. The progression foundation can proceed before those content
+dependencies, without claiming the full slice's playable content is complete.
 
 ## Related source documents
 

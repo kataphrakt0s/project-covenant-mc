@@ -116,8 +116,8 @@ final class RageGameTests {
             player.hurtServer(helper.getLevel(), target.damageSources().indirectMagic(target, target), 3);
             near(player, 23, "Enemy attributed magic grants incoming Rage");
 
-            SkillLoadouts.learn(player, SkillDefinition.CLEAVE.id(), true);
-            SkillLoadouts.learn(player, SkillDefinition.REND.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.CLEAVE.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.REND.id(), true);
             ClassResources.set(player, PlayerClass.REAVER, 100);
             target.invulnerableTime = 0;
             Skills.activate(player, SkillDefinition.CLEAVE);

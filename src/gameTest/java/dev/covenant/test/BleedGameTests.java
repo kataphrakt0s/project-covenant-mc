@@ -309,7 +309,7 @@ final class BleedGameTests {
         player.connection.markClientLoaded();
         player.setYRot(0); player.setYHeadRot(0); player.setXRot(0);
         PlayerProfiles.selectClass(player, PlayerClass.REAVER);
-        SkillLoadouts.learn(player, SkillDefinition.REND.id(), true);
+        FixtureSkills.learn(player, SkillDefinition.REND.id(), true);
         ClassResources.set(player, PlayerClass.REAVER, 100);
         player.getAttribute(RpgStats.DAMAGE).setBaseValue(10);
         return player;

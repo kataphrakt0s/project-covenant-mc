@@ -8,10 +8,42 @@ repository. Read it before feature work and follow its Obsidian wikilinks to the
 relevant system notes. The GDD describes the intended design and roadmap;
 the current purpose below and `docs/RPG_DATA.md` describe the implemented scope.
 
+The [progression slice](<Project-Covenant/Progression Vertical Slice.md>) now has
+its combat and shared saved foundation. Character XP requires a selected class;
+first selection starts level 1, zero XP, and one skill point. Positive damage
+and qualifying support earn equal, rounded-up shares from eligible enemy deaths.
+Default dimension caps are Overworld 20, Nether 40, End 60; the first qualifying
+Wither grants each unclaimed contributor one full level past the dimension gate.
+Server datapack balance reloads preserve earned levels, allocations and raw XP.
+Dimension grouping uses native dimension-type tags; explicit dimension IDs win.
+See [PROGRESSION.md](docs/PROGRESSION.md) for format, APIs and boundaries.
+
+All four independent profession tracks initialize on login at level/XP zero.
+Profession abilities, requirements, reward curves and activity sources remain
+open pending the user's separate handoff. Their saved foundation is implemented;
+playable profession content remains a dependency of the full slice.
+Use fresh saves: prototype profile/loadout migration is deliberately unsupported.
+
+All classes share the seven-second combat timer for damage/support, Rage grace,
+Apply and respec. Support/timer refresh alone grants no Rage. Skills use earned
+points, unlock levels, prerequisites, exclusions, and an eight-distinct-skill cap.
+Tree clicks draft ranks locally; bottom-right Apply commits out of combat.
+Piercing/Aimed Shot support ranks 1–8 (+2% base velocity per extra rank, native
+impact damage retained). Other playable skills allow rank 1 until upgrades are
+authored; planned 8/12 caps remain metadata. The crafted Combat Respec consumes
+four paper plus one lapis to craft, then requires two seconds of held use out
+of combat to refund all skills and clear assignments without resetting resources.
+A thin unlabeled XP bar fits below vanilla XP; Stats shows exact progress/points.
+Client rendering and gameplay feel still require manual playtesting.
+
 ## Current purpose
 
 Develop a Minecraft Java Edition mod for **26.1.2** using **NeoForge**.
 ATM11 is the eventual pack target; pack integration is outside the current scope.
+Full Apotheosis compatibility is an eventual target, including spawners in the
+progression model. Apotheosis integration is not implemented or validated; the
+progression slice remains standalone. See
+[Mod Compatibility](<Project-Covenant/Mod Compatibility.md>).
 The radial menu opens while holding **G** (rebindable under Controls > Key Binds >
 Project Covenant) with ten numbered slots. Slot 1 is **Skills**: hover and release G,
 or left-click it, to open the non-pausing Skills window. Slot 2 opens Stats with the
@@ -23,7 +55,7 @@ no saved data or stat calculation system.
 Slot 1 starts at the top; slots proceed clockwise. Mouse hover highlights a slot;
 release the binding to select or press Escape to cancel. It does not pause the world.
 It opens only in a living player's game, outside other screens,
-and closes on loss of focus. No custom blocks, items, or recipes exist yet.
+and closes on loss of focus. Combat Respec is the first custom item and recipe.
 
 The RPG storage foundation is server-authoritative: `covenant:character_profile` is
 an immutable, persistent, owner-synced NeoForge player attachment with death copying.
@@ -49,7 +81,7 @@ two-second cooldowns, and deal six damage. Fire's four-second burn and Ice's
 three-second chill scale with skill duration. Lightning stops at the first eligible
 enemy or solid block within 24 blocks. The
 Reaver also has Rend and a shared bleed foundation. The remaining brainstorm nodes
-are allocatable placeholders, without passive stat
+remain visible but unavailable for point purchases, without passive stat
 bonuses or global equipment restrictions.
 `PlayerProfiles.getSelectedClass` resolves built-in definitions;
 unknown saved IDs are preserved without fallback. See `docs/RPG_DATA.md`.
@@ -168,11 +200,10 @@ and HUD layout remain for manual playtesting. See `docs/COMBOS_IMPLEMENTATION_PL
 
 The Skills window displays only the current class's tree from
 `Project-Covenant/Skill Trees Brainstorm.md` (62 total nodes across the three classes).
-Left-click allocates/selects for free; right-click removes that node and its learned
-dependents, clearing their assignments. The server enforces all 11 prerequisite
-links and the Ripping/Fortitude Aura exclusion. Diagram levels are informational;
-there are no skill points, level gates, or ranks yet. Planned nodes can be allocated
-and bound but have no effects, costs, cooldowns, or passive bonuses. Twenty-five
+Left/right clicks draft upgrades; Apply commits point purchases out of combat.
+Committed ranks require a respec item to refund. The server enforces all 11
+prerequisite links, unlock levels and the Ripping/Fortitude Aura exclusion.
+Unimplemented nodes remain visible and unavailable for points or bindings. Twenty-five
 skills have gameplay, including all eleven auras. Assigned auras grant free
 passives; instant activations commit a resource cost and cooldown. Source-aware
 transient grants handle allies/pets, overlap, expiry, and loadout/lifecycle cleanup.
@@ -189,13 +220,13 @@ separate allocation from the learned-skill picker and eight slot assignments.
 Select a learned skill there and click a slot to assign; right-click a slot to clear.
 Defaults are **Q, R, F, C**, then **Shift+Q/R/F/C**;
 each slot is rebindable in vanilla Controls. Only initial presses activate, with
-modified bindings taking priority. `covenant:skill_loadout` persists learned IDs and
+modified bindings taking priority. `covenant:skill_loadout` persists committed ranks and
 slot assignments, copies on death/End return, and syncs only to its owner. Requests
-are server-validated; commands and cast completion also require learning. Unlearning
-cancels that skill's pending cast without erasing cooldowns. Class switching retains
-inactive learning/assignments, but class checks prevent their use. Existing saves
-start with no learned skills; resource/cooldown/profile formats are unchanged.
-The existing loadout format and stable IDs are retained; no migration is needed.
+are server-validated; commands and cast completion also require purchased skills. Respec
+cancels owned activity without erasing cooldowns. Class switching retains
+inactive learning/assignments, but class checks prevent their use. Fresh saves
+start without purchased skills. Stable attachment IDs remain, but profile/loadout
+formats changed for progression; old prototype saves are unsupported.
 Skill behavior is being added in dependency order, starting with basic attacks,
 then targeting/defense and movement, statuses, buffs/auras, persistent areas/traps,
 and channels/companions/compound mechanics. See `docs/RPG_SKILLS.md` for the order

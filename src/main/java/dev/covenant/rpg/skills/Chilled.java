@@ -26,7 +26,10 @@ public final class Chilled extends MobEffect {
     /** Retains a longer existing application and respects native effect immunity/applicability. */
     public static void apply(LivingEntity target, LivingEntity owner, int duration) {
         if (target.level().isClientSide() || !target.isAlive() || duration <= 0) { return; }
-        target.addEffect(new MobEffectInstance(EFFECT, duration, 0, false, true, false), owner);
+        if (target.addEffect(new MobEffectInstance(EFFECT, duration, 0, false, true, false), owner)
+                && owner instanceof net.minecraft.server.level.ServerPlayer player) {
+            dev.covenant.rpg.progression.CombatProgression.supportEnemy(player, target);
+        }
         CovenantSlows.update(target);
     }
 }

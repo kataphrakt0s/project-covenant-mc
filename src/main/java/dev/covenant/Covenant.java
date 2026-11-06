@@ -25,12 +25,15 @@ public final class Covenant {
     public Covenant(IEventBus modBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.SERVER, SkillConfig.SPEC);
         RpgData.register(modBus);
+        dev.covenant.rpg.progression.CombatRespecItem.register(modBus);
         RpgStats.register(modBus);
         Skills.register(modBus);
         modBus.addListener(SkillNetworking::register);
         NeoForge.EVENT_BUS.addListener(ClassCommands::register);
         NeoForge.EVENT_BUS.addListener(StatCommands::register);
         NeoForge.EVENT_BUS.addListener(AffixCommands::register);
+        NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProgressionData::register);
+        NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProgressionCommands::register);
         LOGGER.info("Project Covenant loaded (mod id: {})", MOD_ID);
     }
 }

@@ -105,6 +105,10 @@ public final class AuraDamage {
         return false;
     }
     private static void shield(LivingDamageEvent.Pre event) {
+        if (event.getNewDamage() > 0 && Auras.shield(event.getEntity()) > 0) {
+            var owner = event.getEntity().getData(RpgData.AURAS).shieldOwner;
+            if (owner != null) { dev.covenant.rpg.progression.CombatProgression.defended(event.getEntity(), event.getSource(), Set.of(owner)); }
+        }
         float absorbed = Auras.absorb(event.getEntity(), event.getNewDamage());
         if (absorbed <= 0) { return; }
         var hit = HIT.get();
@@ -169,6 +173,7 @@ public final class AuraDamage {
 
     /** Called by native bow/crossbow firing for each projectile, including multishot. */
     public static void snapshot(Projectile projectile, LivingEntity shooter, float bowStrength) {
+        ProjectileCombat.captureSupport(projectile, shooter);
         projectile.setData(RpgData.AURA_PROJECTILE_POWER, multiplier(shooter, false));
         if (projectile instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow) {
             arrow.setBaseDamage(((dev.covenant.mixin.ArrowPiercingAccessor) arrow).covenant$getBaseDamage() * projectile.getData(RpgData.AURA_PROJECTILE_POWER));

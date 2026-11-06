@@ -4,14 +4,30 @@ This file contains decisions that remain genuinely unresolved. Established progr
 
 ## Character and combat progression
 
-- Exact character XP curve, required XP per level, and intended time-to-level pacing.
+- Playtested character-level pacing. The accelerating
+  prototype curve, reference XP scale, and opening/final-level anchors are
+  agreed in [[Character Progression]], with Classic WoW as the pacing-feel target.
+  Observe kills per minute and time per level before treating that feel as
+  validated; values remain configurable. The initial repeat-boss reference is
+  a Wither kill at 2,000 base character XP before sharing/caps.
 - Exact XP rewards by enemy/encounter category and milestone.
-- Contributor eligibility for shared combat XP, support credit, participation window, and exact split formula.
-- Which individual skills use an 8-rank cap versus a 12-rank cap.
-- Per-rank effect scaling for each skill.
-- Combat respec item recipe, crafting station, and acquisition pacing.
+- Detailed damage/support attribution to enemies/encounters. Eligible contributors receive
+  equal shares, counting each player once, with a refreshing 30-second window
+  per player per enemy checked at payout. Each ordinary share rounds up to
+  whole XP before caps. Support-only participation, including
+  passive aura support tied to actual combat, already qualifies in the first slice; see
+  [[Experience and Reward Systems]].
+- Individual rank upgrades for each skill, using current prototype values at
+  Rank 1 and minor, flavorful improvements under [[Combat Skill Progression]].
+  Aura passive strengths stay fixed across ranks; their activation/coverage
+  upgrades remain to be authored.
 
 ## Profession progression
+
+Profession abilities and their requirements are being developed separately by
+the user. Keep the content questions below pending that input rather than
+selecting abilities or resolving their requirements in this planning session.
+The established shared-track foundation can still be planned independently.
 
 - Exact shared profession XP curve and level pacing.
 - Action-specific XP rewards, contextual significance rules, and anti-repeat/exploit safeguards for each profession.
@@ -25,8 +41,15 @@ This file contains decisions that remain genuinely unresolved. Established progr
 
 ## Dimensional gates and configuration
 
-- Actual dimension-by-track cap values for the intended progression path. Illustrative Overworld/Nether/End values are not final.
-- Final balance-configuration format, reload behavior, validation/error reporting, and tag-priority syntax.
+- Profession dimension caps and future modpack route overrides. The initial
+  character route is Overworld 20, Nether 40, End 60, with the first-Wither
+  level-reward exception; see [[Dimensional Progression Gates]].
+- Server datapack JSON resource paths/field schema, validation/error reporting,
+  reload failure handling, and tag-priority syntax. Balance changes preserve
+  earned levels, points, allocations, and raw XP; percentages can change.
+  Datapacks
+  are the agreed source for character XP requirements, enemy rewards, and
+  dimension-cap rules; see [[Progression Balance Configuration]].
 - Which dimensions/tags receive curated defaults in the initial configuration. Unmatched-dimension fallback is established: character 60, professions 20.
 
 ## Crafting and itemization

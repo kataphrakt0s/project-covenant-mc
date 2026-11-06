@@ -148,10 +148,12 @@ public final class ClassResources {
         }
     }
 
-    private static void markCombat(ServerPlayer player) {
+    public static void markCombat(ServerPlayer player) {
         requireServer(player);
-        if (PlayerProfiles.getSelectedClass(player).orElse(null) == PlayerClass.REAVER && player.isAlive()) {
+        if (player.isAlive()) {
+            boolean wasInCombat = inCombat(player);
             player.getData(RpgData.SKILL_RUNTIME).combatUntil = now(player) + COMBAT_GRACE_TICKS;
+            if (!wasInCombat) { dev.covenant.rpg.progression.Progression.refreshView(player); }
         }
     }
 }

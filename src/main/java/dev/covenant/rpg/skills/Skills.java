@@ -60,6 +60,7 @@ public final class Skills {
         SkillLifecycle.register();
         NeoForge.EVENT_BUS.addListener(Skills::tick);
         NeoForge.EVENT_BUS.addListener(ClassResources::damaged);
+        dev.covenant.rpg.progression.CombatProgression.register();
         NeoForge.EVENT_BUS.addListener(SkillCommands::register);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, SkillVisuals::arrowImpact);
     }
@@ -174,6 +175,7 @@ public final class Skills {
         long now = ClassResources.now(player);
         if (runtime.lastTick == now) { return; }
         runtime.lastTick = now;
+        if (now % 5 == 0) { dev.covenant.rpg.progression.Progression.refreshView(player); }
         var type = PlayerProfiles.getSelectedClass(player).orElse(null);
         var cast = runtime.cast;
         if (cast != null) {

@@ -11,12 +11,17 @@ import net.minecraft.resources.Identifier;
 public final class SkillTree {
     private SkillTree() {}
 
-    /** Diagram levels are presentation only; neither character levels nor skill points gate this pass. */
+    /** Unlock levels and prototype rank availability, shared by client and server. */
     public record Node(Identifier id, PlayerClass playerClass, int diagramLevel, int column,
             Optional<Identifier> prerequisite, Optional<Identifier> exclusive) {
         public Component displayName() { return Component.translatable("skill.covenant." + id.getPath()); }
         public Component description() { return Component.translatable("skill.covenant." + id.getPath() + ".description"); }
         public boolean implemented() { return SkillDefinition.find(id).isPresent(); }
+        public int plannedMaximum() { return !implemented() ? 0 : id.getPath().equals("lunging_combo") || id.getPath().equals("rip_and_rush") ? 12 : 8; }
+        public int availableMaximum() {
+            if (!implemented()) { return 0; }
+            return id.getPath().equals("piercing_shot") || id.getPath().equals("aimed_shot") ? 8 : 1;
+        }
     }
 
     public static final List<Integer> LEVELS = List.of(30, 25, 20, 15, 10, 5, 3, 1);
@@ -98,7 +103,7 @@ public final class SkillTree {
         return Optional.empty();
     }
 
-    /** Removing a prerequisite freely refunds its entire learned dependent branch and all matching slots. */
+    /** Trusted removal helper for fixtures/integrations; player refunds require a respec item. */
     public static SkillLoadout deallocate(SkillLoadout state, Identifier id) {
         var removed = new HashSet<Identifier>();
         removed.add(id);
@@ -111,11 +116,11 @@ public final class SkillTree {
                 }
             }
         } while (changed);
-        var learned = new HashSet<>(state.learned());
-        learned.removeAll(removed);
+        var ranks = new java.util.HashMap<>(state.ranks());
+        ranks.keySet().removeAll(removed);
         var bindings = new java.util.HashMap<>(state.bindings());
         bindings.values().removeIf(removed::contains);
-        return new SkillLoadout(learned, bindings);
+        return new SkillLoadout(ranks, bindings);
     }
 
     private static Node node(String id, PlayerClass type, int level, int column) { return node(id, type, level, column, null); }

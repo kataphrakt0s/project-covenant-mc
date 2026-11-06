@@ -59,6 +59,20 @@ final class StatsScreen extends Screen {
 
     private void refreshStats() {
         MutableComponent lines = Component.empty();
+        var profile = PlayerProfiles.get(minecraft.player);
+        var progression = minecraft.player.getData(dev.covenant.rpg.RpgData.PROGRESSION_VIEW);
+        if (profile.created()) {
+            long required = progression.requiredXp();
+            String progress = required > 0 ? profile.experience() + " / " + required + " XP ("
+                    + String.format(Locale.ROOT, "%.1f", 100.0 * profile.experience() / required) + "%)" : "Maximum level";
+            lines.append("Level " + profile.level() + " · " + progress + "\n"
+                    + dev.covenant.rpg.skills.SkillLoadouts.availablePoints(minecraft.player) + " unspent skill points"
+                    + "\nDimension cap: " + progression.dimensionCap() + " · Global cap: " + progression.globalCap() + "\n\n");
+        }
+        minecraft.player.getData(dev.covenant.rpg.RpgData.PROFESSIONS).tracks().entrySet().stream()
+                .sorted(java.util.Map.Entry.comparingByKey()).forEach(entry -> lines.append(entry.getKey().getPath()
+                        + ": level " + entry.getValue().level() + " · " + entry.getValue().experience() + " XP\n"));
+        lines.append("\n");
         for (var stat : RpgStats.SUPPORTED) {
             var instance = minecraft.player.getAttribute(stat);
             if (instance == null) { continue; }

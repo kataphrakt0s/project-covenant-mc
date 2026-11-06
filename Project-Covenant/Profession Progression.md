@@ -2,76 +2,80 @@
 
 ## Purpose
 
-Professions reward mastery of Minecraft activities. They add new capabilities, interactions, techniques, and selected recipes to the sandbox rather than gating normal gameplay or replacing vanilla mechanics. Profession progression is a parallel layer to character combat progression.
+Professions reward mastery of Minecraft activities. They add capabilities, interactions, and selected recipes without gating baseline vanilla gameplay or recreating systems already handled well by other mods.
 
-## Initial professions
+The four initial professions are:
 
 1. [[Mining]]
 2. [[Logging]]
 3. [[Farming]]
-4. [[Crafting]] — see [[Crafting Profession]]. Enchanting is a subset of Crafting, not a separate profession.
+4. [[Crafting Profession]]
 
-All characters can develop all four professions simultaneously. Profession choice is not class-restricted, there are no profession slots, and investing in one profession does not consume points from another. The framework should support future professions without changing its core architecture.
+All characters can develop all four professions simultaneously. Professions are not class-restricted, there are no profession slots, and each profession has its own XP, level, and Profession Point balance.
 
-## Level and point economy
+## Shared progression rules
 
-- Professions start at **Level 0**.
-- Default maximum profession level is **20**; the cap can be configured per profession if a future profession warrants a different progression length.
-- All professions use one shared XP curve, but each has independent XP, level, and Profession Point balances.
-- Each profession level gained awards one Profession Point. Reaching Level 20 earns 20 points.
-- Unspent points remain available; they do not expire.
-- Profession abilities generally cost 1–3 points based on their significance. Costs are individually authored rather than forced to a single value.
-- Abilities are normally single-purchase unlocks. Multi-rank profession abilities are exceptions that require a clear design reason.
+- Each profession starts at **Level 0** and has a default maximum of **Level 20**.
+- Each level gained awards **1 Profession Point**. Reaching Level 20 therefore provides 20 points for that profession.
+- All professions use a shared XP curve, but their XP and points are tracked independently.
+- Exact XP curves, action rewards, and numerical balance are intentionally deferred.
+- Unspent Profession Points are retained.
+- Ability costs generally range from 1–3 points according to their significance.
+- A level requirement makes an ability or rank available for purchase; it does not grant the purchase automatically.
+- Ranks must be purchased in sequence.
+- Specializations require their parent ability where one exists.
+- Independent branches do not lock one another out. Avoid unnecessary cross-profession prerequisites.
 - There is no global limit on the number of profession abilities a player can learn.
 
-## Core rewards versus chosen abilities
+## Broad access, selective mastery
 
-### Automatic core rewards
+The intended 20-point budget should allow broad access to a profession's foundational mechanics. Meaningful choices should primarily concern how deeply a player invests in optional upgrades, rather than locking players out of entire branches.
 
-Selected profession-level milestones can automatically grant core recipes. Automatic progression rewards are primarily recipe unlocks and should build on existing Minecraft mechanics.
+The currently defined vertical-slice options in each profession fit within 20 points. Future additions may create modest over-budget choices, but content should not be padded merely to force specialization.
 
-### Chosen profession abilities
+## Automatic rewards and purchased abilities
 
-Abilities and new interactions require deliberate Profession Point investment. Profession level determines when an ability becomes available for purchase; prerequisites and explicit mutual exclusions may apply. Most of a profession's offerings should eventually be obtainable by a sufficiently developed character.
+Profession level milestones may automatically unlock recipes or access to additional content. Abilities and new interactions require deliberate Profession Point investment. Keep these two reward types distinct in both design and implementation.
 
-Mutually exclusive choices should be reserved for genuine competing alternatives, such as two different flavors of prospecting. Choosing one should not lock out unrelated abilities or entire sections of the profession.
+Profession rewards can include passive or conditional effects, contextual interactions, active abilities that do not consume combat keybinds, recipes, and workstation operations.
 
-## Ability types and combat crossover
+## Vanilla and mod compatibility principles
 
-Profession rewards may include:
-
-- Passive benefits.
-- Conditional benefits tied to a relevant state or activity.
-- Active abilities and new contextual interactions.
-- Recipe unlocks and advanced production options.
-
-Profession abilities do not consume any of the eight combat keybinds. They should use contextual interactions, tools, workstations, or passive/conditional effects as appropriate.
-
-Profession benefits are class-agnostic. All three classes can learn the same profession benefits. Modest combat benefits are allowed where they fit a profession's identity, but they must complement rather than replace class skill trees and should not create uncontrolled stat inflation.
-
-## Vanilla-friendly rules
-
-- Profession level never gates baseline vanilla functionality. A player can use ordinary tools, mine vanilla resources, chop trees, farm crops, use vanilla stations, enchant items, and access normal vanilla recipes without profession levels.
-- Profession rewards primarily add new ways to interact with existing mechanics. Efficiency/yield improvements are secondary and should be justified.
-- Professions do not grant generic character levels or character skill points.
+- Profession levels never gate baseline vanilla tools, blocks, resources, recipes, stations, or ordinary activities.
+- Professions should enhance existing Minecraft and modded gameplay rather than recreate or replace systems that other mods already handle well.
+- Support modded content through tags, identifiers, data-driven definitions, and optional integrations where practical.
+- Optional integrations must not become mandatory dependencies.
+- Direct player participation is the default for Profession XP. Automated production does not award XP unless explicitly configured with appropriate attribution and anti-exploit safeguards.
 - Vanilla XP orbs do not award Profession XP.
 
-## XP and automation
+## Profession XP principles
 
-Each profession advances from meaningful contextual actions associated with its activity. Trivial repetitive actions should not be efficient progression sources. Direct player participation is the default. Automated production grants no XP unless explicitly configured with attribution and anti-exploit safeguards. Crafting XP excludes ordinary vanilla crafting; meaningful enchanting, designated advanced recipes, Covenant workstation use, affix crafting, and salvaging may be configured sources.
+Profession XP is contextual and tied to meaningful actions associated with the profession. Repetitive trivial actions should not be efficient progression sources. Ordinary vanilla crafting does not award Crafting XP; selected enchanting activities, specialized Covenant workstation operations, and optional mod integrations may do so.
 
-See [[Experience and Reward Systems]].
+Exact XP curves, action values, cooldowns, and anti-farming thresholds remain open for later tuning. See [[Experience and Reward Systems]].
 
-## Cross-profession relationships
+## Respec
 
-Professions can support one another through optional synergies, material supply chains, trade, and specifically authored cross-profession recipes. Most abilities and normal profession progression must not require levels in another profession. Explicit recipe exceptions may require multiple profession levels or products. The discussed idea of requiring Level 10 in all four professions for the Profession Respec recipe is an example, not a finalized recipe.
+Profession respec uses a crafted item and is more expensive than combat respec. One use resets **one selected profession's** purchased abilities and specialization ranks, refunding that profession's spent points. The profession's XP and level are preserved; other professions are unaffected. Exact recipe, cost, station requirements, and acquisition pace remain undecided.
 
-## Profession respec
+## Current investment summary
 
-Profession respec is allowed and uses its own crafted item. It is more expensive than a combat respec. One use resets **one selected profession** only: its purchased abilities and specialization choices are reset, and all spent Profession Points for that profession are refunded. The profession's XP and level are preserved. Other professions are unaffected. Exact recipe, cost, station, and acquisition pace remain open.
+These totals cover only the abilities and ranks currently defined. They are not intended to imply that all future profession content has been designed.
 
-## Vertical-slice scope
+| Profession | Currently defined point investment | Points remaining at Level 20 |
+|---|---:|---:|
+| [[Mining]] | 15 | 5 |
+| [[Logging]] | 11 | 9 |
+| [[Farming]] | 14 | 6 |
+| [[Crafting Profession]] | 12 | 8 |
 
-All four professions are included in the initial vertical slice. Each receives a small but playable selection of meaningful abilities, a few real specialization choices, and core recipe rewards. The slice implements a reusable progression framework; it does not require fully populated Level 0–20 trees or the entire future content catalog.
+## Profession documents
 
-Related: [[Progression Systems]], [[Experience and Reward Systems]], [[Dimensional Progression Gates]], [[Progression Balance Configuration]], [[Mining]], [[Logging]], [[Farming]], [[Crafting Profession]], [[Progression Vertical Slice]].
+- [[Mining]] — prospecting, ore extraction, processing, transfiguration, and defensive mastery.
+- [[Logging]] — tree felling, offensive mastery, and automatic replanting.
+- [[Farming]] — cultivation, crop harvesting, animal husbandry, and vitality.
+- [[Crafting Profession]] — equipment customization and salvaging.
+- [[Affix System and Equipment Customization]] — item-bound Covenant affixes and crafting rules.
+- [[Salvaging]] — Covenant's chance-based equipment recovery system.
+
+Related: [[Progression Systems]], [[Experience and Reward Systems]], [[Dimensional Progression Gates]], [[Progression Balance Configuration]], [[Progression Vertical Slice]].

@@ -128,11 +128,13 @@ public final class RpgStats {
             return;
         }
         var direct = event.getSource().getDirectEntity();
+        var supportOwners = dev.covenant.rpg.skills.Auras.supportOwners(player, false);
         if ((direct instanceof LivingEntity || direct instanceof Projectile
                 || (direct instanceof dev.covenant.rpg.skills.TrapEntity && event.getSource().is(dev.covenant.rpg.skills.TrapKind.BEAR.damageType)))
                 && direct != player && (dev.covenant.rpg.skills.Auras.consumeDodge(player) || player.getRandom().nextDouble() < dodgeChance(player))) {
             // Cancel before armor/shield processing: a dodged hit consumes neither health nor durability.
             event.setCanceled(true);
+            dev.covenant.rpg.progression.CombatProgression.defended(player, event.getSource(), supportOwners);
         }
     }
 }

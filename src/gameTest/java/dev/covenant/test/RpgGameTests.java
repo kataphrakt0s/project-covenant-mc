@@ -122,6 +122,17 @@ public final class RpgGameTests {
         FUNCTIONS.register("aura_projectiles", () -> AuraGameTests::projectiles);
         FUNCTIONS.register("aura_expiries", () -> AuraGameTests::expiries);
         FUNCTIONS.register("skill_tree", () -> SkillTreeGameTests::run);
+        FUNCTIONS.register("progression_engine", () -> ProgressionGameTests::engine);
+        FUNCTIONS.register("progression_rewards", () -> ProgressionGameTests::rewards);
+        FUNCTIONS.register("progression_support", () -> ProgressionGameTests::support);
+        FUNCTIONS.register("progression_wither", () -> ProgressionGameTests::wither);
+        FUNCTIONS.register("progression_death", () -> ProgressionGameTests::deathDecision);
+        FUNCTIONS.register("progression_timer", () -> ProgressionGameTests::timer);
+        FUNCTIONS.register("progression_professions", () -> ProgressionGameTests::professions);
+        FUNCTIONS.register("progression_respec", () -> ProgressionGameTests::respec);
+        FUNCTIONS.register("progression_arrow_ranks", () -> ProgressionGameTests::arrowRanks);
+        FUNCTIONS.register("progression_reload", () -> ProgressionReloadGameTests::run);
+        FUNCTIONS.register("progression_defenses", () -> ProgressionGameTests::defenses);
     }
 
     public RpgGameTests(IEventBus modBus) { FUNCTIONS.register(modBus); }

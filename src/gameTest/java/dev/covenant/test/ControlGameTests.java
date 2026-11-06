@@ -146,7 +146,7 @@ final class ControlGameTests {
             check(!prediction.accept(motion, new Vec3(30, 0, 0)), "A canceled prediction retains sequence protection");
             var player = fixture.player();
             PlayerProfiles.selectClass(player, PlayerClass.REAVER);
-            SkillLoadouts.learn(player, SkillDefinition.LUNGING_COMBO.id(), true);
+            FixtureSkills.learn(player, SkillDefinition.LUNGING_COMBO.id(), true);
             ClassResources.set(player, PlayerClass.REAVER, 100);
             Skills.activate(player, SkillDefinition.LUNGING_COMBO);
             for (int i = 0; i < 3; i++) {
@@ -179,7 +179,7 @@ final class ControlGameTests {
             near(player.getZ(), moved.z + .1, "Walking resumes after a physically moved dash endpoint");
 
             var invalid = fixture.player(); PlayerProfiles.selectClass(invalid, PlayerClass.REAVER);
-            SkillLoadouts.learn(invalid, SkillDefinition.LUNGING_COMBO.id(), true);
+            FixtureSkills.learn(invalid, SkillDefinition.LUNGING_COMBO.id(), true);
             ClassResources.set(invalid, PlayerClass.REAVER, 100); Skills.activate(invalid, SkillDefinition.LUNGING_COMBO);
             invalid.connection.handleMovePlayer(new ServerboundMovePlayerPacket.PosRot(new Vec3(Double.NaN, 0, 0), 0, 0, false, false));
             check(!invalid.connection.isAcceptingMessages(), "Active dash does not bypass vanilla invalid-coordinate disconnection");
@@ -238,8 +238,8 @@ final class ControlGameTests {
         void freeze(ServerPlayer target) {
             var source = player(); source.setPos(target.position().add(1, 0, 0)); source.connection.resetPosition();
             PlayerProfiles.selectClass(source, PlayerClass.WEAVER);
-            SkillLoadouts.learn(source, SkillDefinition.ICY_VEINS.id(), true);
-            SkillLoadouts.learn(source, SkillDefinition.FREEZING_AURA.id(), true);
+            FixtureSkills.learn(source, SkillDefinition.ICY_VEINS.id(), true);
+            FixtureSkills.learn(source, SkillDefinition.FREEZING_AURA.id(), true);
             SkillLoadouts.bind(source, 0, SkillDefinition.FREEZING_AURA.id());
             Skills.activate(source, SkillDefinition.FREEZING_AURA);
             check(Auras.frozen(target), "Freeze fixture applies");

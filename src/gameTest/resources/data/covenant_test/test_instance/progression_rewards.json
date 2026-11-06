@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:progression_rewards",
+  "environment": "minecraft:default",
+  "structure": "covenant_test:empty",
+  "max_ticks": 700,
+  "setup_ticks": 0,
+  "required": true
+}

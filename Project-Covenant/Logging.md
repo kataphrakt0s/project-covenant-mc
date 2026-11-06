@@ -1,27 +1,70 @@
-# Logging Profession
+# Logging
 
 ## Identity
 
-Logging develops forestry, tree felling, wood gathering, and wood processing. It should add specialized ways to interact with trees and wood while leaving ordinary Minecraft chopping and wood recipes available from the beginning.
+Logging develops forestry, tree felling, sustainable wood gathering, and direct offensive mastery. It adds specialized ways to interact with trees while preserving ordinary Minecraft chopping and wood recipes at all profession levels.
 
-## Established design direction
+## Ability progression
 
-Logging is expected to include meaningful tree-felling and wood-processing abilities. Profession progression may also provide modest offensive combat benefits, such as attack-related bonuses, where they fit the profession's identity.
+### Tree Felling
 
-Combat benefits are class-agnostic: Stalker, Reaver, and Weaver can all develop Logging and receive its benefits. They should complement rather than replace class skill progression and should avoid excessive stat inflation.
+| Rank | Minimum Logging level | Point cost | Intended effect |
+|---|---:|---:|---|
+| I | 1 | 1 | Initial tree-felling capability |
+| II | 5 | 1 | Increased maximum logs affected |
+| III | 10 | 1 | Further increased maximum logs affected |
+| IV | 15 | 1 | Highest defined tree-felling capability |
 
-## Progression integration
+- Breaking the base log of a supported tree with a valid axe triggers felling.
+- Sneaking preserves normal single-block chopping.
+- Connected logs belonging to the tree are felled together, subject to the rank's maximum.
+- Modded trees and axes should be supported through tags or data-driven tree definitions.
+- Normal leaf-decay behavior remains in place; Tree Felling does not introduce a separate forestry simulation.
 
-Logging starts at Level 0, defaults to a maximum of 20, and earns one Profession Point per level gained. It shares the common profession XP curve but has independent XP and points. Abilities are level-gated and purchased with variable Profession Point costs; selected milestones can automatically unlock core recipes.
+Exact log limits, tree identification rules, and detailed tool/drop interactions remain to be balanced and tested.
 
-Logging XP is awarded for meaningful player-performed forestry/logging actions. Repetitive low-value block breaking should not be an efficient progression exploit. Automated tree farms or machinery award no XP by default; configured exceptions require attribution and anti-exploit safeguards.
+### Offensive Mastery
 
-## Cross-profession and vanilla boundaries
+| Rank | Minimum Logging level | Point cost | Direct player damage bonus |
+|---|---:|---:|---:|
+| I | 5 | 1 | 2% |
+| II | 8 | 1 | 4% total |
+| III | 11 | 1 | 6% total |
+| IV | 14 | 1 | 8% total |
+| V | 17 | 1 | 10% total |
 
-Wood and forestry products can support optional Farming, Mining, or Crafting recipes. No Logging level is required to chop vanilla trees, collect wood, or use ordinary wood recipes.
+Offensive Mastery is universal across Stalker, Reaver, and Weaver. It increases damage directly attributed to the player, including ordinary attacks and player-used skills. Damage dealt by companions, pets, Ballistas, and other summoned entities is excluded.
 
-## Vertical-slice scope and open design
+The 2% per-rank value and 10% maximum are established design values; exact damage event attribution and stacking behavior should be validated during implementation.
 
-Include a functional progression track and a small playable selection of abilities/recipes. Exact tree-felling mechanics, ability names, combat bonuses, XP sources/values, point costs, level gates, and recipe milestones remain to be designed.
+### Automatic Replanting
 
-Related: [[Profession Progression]], [[Experience and Reward Systems]], [[Mining]], [[Farming]], [[Crafting Profession]].
+- **Unlock:** Logging Level 5
+- **Cost:** 2 Profession Points
+- **Type:** Single-purchase ability
+
+When Tree Felling successfully removes a supported tree, Automatic Replanting attempts to plant the matching sapling at the base location.
+
+- The matching sapling must be available in the player's inventory and is consumed on successful planting.
+- Normal planting conditions must be valid.
+- No saplings are generated for free.
+- Modded tree-to-sapling relationships should be configurable through data-driven mappings.
+
+## Point budget
+
+| Ability | Defined investment |
+|---|---:|
+| Tree Felling (4 ranks) | 4 |
+| Offensive Mastery (5 ranks) | 5 |
+| Automatic Replanting | 2 |
+| **Total currently defined** | **11** |
+
+Nine Profession Points remain unallocated at the Level 20 cap.
+
+## XP and compatibility
+
+Logging XP should reward meaningful player-performed forestry actions. Repetitive low-value block breaking and automated tree farms do not award XP by default. Modded trees and tools should be supported through tags, data-driven definitions, and optional integrations where needed.
+
+Ordinary tree chopping, wood collection, and vanilla wood recipes remain available without Logging investment.
+
+Related: [[Profession Progression]], [[Experience and Reward Systems]], [[Mining]], [[Farming]], [[Crafting Profession]], [[Mod Compatibility]].

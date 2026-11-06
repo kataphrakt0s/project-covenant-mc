@@ -13,6 +13,14 @@ empty resource and outside combat, and follows the normal F1 HUD visibility.
 Air bubbles and mount health stack above it. Rendered behavior awaits playtesting.
 
 ## Rage
+
+Planned progression change: the existing seven-second grace becomes the shared
+in-combat state for every class and is also used to block combat respec.
+Qualifying combat support refreshes that shared state. This holds Rage decay
+off; support alone and the timer itself do not generate Rage or change the
+damage-source generation rules below. See [[Combat]]. The current refresh path
+is still Reaver-only until this planned change is implemented.
+
 Reaver: starts empty, base maximum 100. Normal melee, arrow, and trident attacks
 generate 1 Rage per damage point dealt; combat damage taken generates 2 Rage per
 damage point. Both use confirmed damage after defenses, including absorption, and

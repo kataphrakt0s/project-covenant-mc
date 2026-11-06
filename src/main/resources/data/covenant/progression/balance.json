@@ -1,0 +1,108 @@
+{
+  "track_caps": {
+    "covenant:character": 60,
+    "covenant:mining": 20,
+    "covenant:logging": 20,
+    "covenant:farming": 20,
+    "covenant:crafting": 20
+  },
+  "character_requirements": [
+    50,
+    57,
+    64,
+    72,
+    82,
+    92,
+    104,
+    118,
+    133,
+    150,
+    170,
+    192,
+    217,
+    245,
+    277,
+    313,
+    354,
+    399,
+    451,
+    510,
+    576,
+    651,
+    736,
+    832,
+    940,
+    1062,
+    1200,
+    1356,
+    1533,
+    1732,
+    1957,
+    2212,
+    2499,
+    2824,
+    3192,
+    3607,
+    4076,
+    4605,
+    5204,
+    5881,
+    6646,
+    7510,
+    8486,
+    9590,
+    10837,
+    12246,
+    13838,
+    15638,
+    17671,
+    19969,
+    22565,
+    25499,
+    28815,
+    32562,
+    36795,
+    41580,
+    46986,
+    53096,
+    60000
+  ],
+  "profession_requirements": [],
+  "hostile_reward": 10,
+  "entity_rewards": {
+    "minecraft:enderman": 20,
+    "minecraft:wither": 2000,
+    "minecraft:ender_dragon": 2000
+  },
+  "reward_tags": [],
+  "fallback_caps": {
+    "covenant:character": 60,
+    "covenant:mining": 20,
+    "covenant:logging": 20,
+    "covenant:farming": 20,
+    "covenant:crafting": 20
+  },
+  "dimensions": [
+    {
+      "match": "minecraft:overworld",
+      "priority": 0,
+      "caps": {
+        "covenant:character": 20
+      }
+    },
+    {
+      "match": "minecraft:the_nether",
+      "priority": 0,
+      "caps": {
+        "covenant:character": 40
+      }
+    },
+    {
+      "match": "minecraft:the_end",
+      "priority": 0,
+      "caps": {
+        "covenant:character": 60
+      }
+    }
+  ]
+}

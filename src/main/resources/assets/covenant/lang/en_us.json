@@ -285,5 +285,6 @@
   "combo.covenant.rip_and_rush.1": "Dash",
   "combo.covenant.rip_and_rush.2": "Finisher",
   "hud.covenant.combo.moving": "%s — %s",
-  "hud.covenant.combo.waiting": "%s — %s — %ss"
+  "hud.covenant.combo.waiting": "%s — %s — %ss",
+  "item.covenant.combat_respec": "Combat Respec"
 }

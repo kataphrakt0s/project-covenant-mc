@@ -162,6 +162,9 @@ public final class TrapEntity extends Entity implements ItemSupplier {
                 && Skills.canHit(owner, target) && target.position().distanceToSqr(position()) < kind().radius * kind().radius
                 && uncovered(target);
     }
+    void creditControl(LivingEntity target) {
+        if (owner != null) { dev.covenant.rpg.progression.CombatProgression.supportEnemy(owner, target); }
+    }
 
     private boolean uncovered(LivingEntity target) {
         var from = position().add(0, 0.1, 0);

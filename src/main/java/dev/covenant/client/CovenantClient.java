@@ -32,6 +32,7 @@ public final class CovenantClient {
         container.registerConfig(ModConfig.Type.CLIENT, SkillClientConfig.SPEC);
         modBus.addListener(CovenantClient::registerRenderers);
         modBus.addListener(ResourceHud::register);
+        modBus.addListener(ProgressionHud::register);
         modBus.addListener(ClientDash::register);
         modBus.addListener(ClientSkillVisuals::register);
         modBus.addListener(this::registerKeys);

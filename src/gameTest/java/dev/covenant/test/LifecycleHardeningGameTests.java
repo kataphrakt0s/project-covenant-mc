@@ -152,10 +152,10 @@ final class LifecycleHardeningGameTests {
             var unlearned = f.player(PlayerClass.WEAVER);
             f.learn(unlearned, SkillDefinition.ARCANE_BOLT);
             check(key(Skills.activate(unlearned, SkillDefinition.ARCANE_BOLT), "started"), "Begin unlearning cast");
-            SkillLoadouts.learn(unlearned, SkillDefinition.ARCANE_BOLT.id(), true);
+            FixtureSkills.learn(unlearned, SkillDefinition.ARCANE_BOLT.id(), true);
             SkillLoadouts.bind(unlearned, 7, null);
             check(Skills.isCasting(unlearned), "No-op learn and binding requests preserve pending activity");
-            SkillLoadouts.learn(unlearned, SkillDefinition.ARCANE_BOLT.id(), false);
+            FixtureSkills.learn(unlearned, SkillDefinition.ARCANE_BOLT.id(), false);
             check(!Skills.isCasting(unlearned), "Actual unlearning routes pending-cast cancellation");
             helper.succeed();
         }
@@ -238,7 +238,7 @@ final class LifecycleHardeningGameTests {
         }
 
         void learn(ServerPlayer player, SkillDefinition... skills) {
-            for (var skill : skills) { SkillLoadouts.learn(player, skill.id(), true); }
+            for (var skill : skills) { FixtureSkills.learn(player, skill.id(), true); }
         }
 
         @Override public void close() {

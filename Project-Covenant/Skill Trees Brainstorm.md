@@ -32,8 +32,29 @@ Character level is capped at 60. A new character starts at level 1 with one skil
 point, then earns one additional skill point per character level, for 60 lifetime
 points at level 60. The first point invested in a skill unlocks it at Rank 1. Each
 additional point increases its rank; each skill will have an individual maximum
-rank of either 8 or 12, depending on its meaningful upgrade potential. Exact
-rank-cap assignments and per-rank tuning remain to be defined.
+rank of either 8 or 12, depending on its meaningful upgrade potential. For the
+initial playable roster, Lunging Combo and Rip and Rush cap at 12; all other
+currently playable combat skills cap at 8. Unfinished skills' eventual caps and
+individual per-rank effects remain to be defined. See [[Combat Skill Progression]].
+
+For the planned progression slice, existing prototype behavior and values become
+Rank 1. Further ranks provide minor, flavorful, skill-specific improvements;
+avoid flat damage per rank or routine damage scaling. Review the total benefit
+at maximum rank to preserve vanilla balance. See [[Combat Skill Progression]]
+for the agreed rank-design rules and [[Progression Vertical Slice]] for the
+existing-skills-only content boundary.
+
+For the planned aura rank tables, passive stat/effect strengths stay at Rank 1
+values across ranks. Put modest improvements into activation or coverage where
+appropriate, preserving the existing overlap rules. See
+[[Combat Skill Progression]] for the agreed aura rank boundary.
+
+For prototype arrow-shot ranks, use arrow velocity as the default improvement
+for most arrow shots, including currently playable Piercing Shot and Aimed Shot.
+Each extra rank adds 2% of Rank 1 launch velocity, additively, for +14% at Rank 8.
+Retain native speed-based arrow damage, including the resulting indirect damage
+growth. More varied rank progression is deferred. Aimed Shot's wind-up movement
+remains at its Rank 1 baseline; see [[Combat Skill Progression]].
 
 No more than eight distinct skills may have points allocated at once, matching
 the eight combat keybinds. A skill with any points invested counts toward this
@@ -43,9 +64,14 @@ mark genuinely mutually exclusive choices. Prerequisites and exclusions continue
 to be validated by the server.
 
 The current prototype uses free allocation for testing. The intended progression
-economy replaces free learning with skill-point investment. A crafted Combat
-Respec item resets combat skill allocations and refunds invested points; its
-recipe and exact crafting requirements remain undecided.
+economy replaces free learning with pending skill-point investment: left-click
+adds a pending rank, right-click removes a pending rank without refunding
+committed ranks, and a simple Apply button at the bottom right commits the
+validated draft on the server. Pending skills grant no effects or binding access
+before Apply succeeds. See [[Combat Skill Progression]]. A crafted Combat
+Respec item resets combat skill allocations and refunds invested points. Its
+prototype recipe is four paper plus one lapis lazuli, shapeless at a vanilla
+crafting table, producing one item; see [[Combat Skill Progression]].
 
 See [[Character Progression]] and [[Combat Skill Progression]].
 

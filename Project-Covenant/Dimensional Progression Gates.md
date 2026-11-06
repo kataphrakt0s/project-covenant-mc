@@ -44,20 +44,62 @@ Server owners can adjust fallback behavior. A newly installed modded dimension t
 
 ## XP behavior at a gate
 
-- XP is checked against the current dimension's cap before being applied to the relevant track.
-- When the player is already at or above that dimension's cap for the track, XP for that track is not awarded there.
+- XP is checked against the applicable source dimension's cap before being
+  applied to the relevant track. For combat XP, this is the dimension where the
+  enemy dies, not the recipient's dimension at payout.
+- When the player is already at or above that dimension's cap for the track,
+  ordinary XP for that track is not awarded there. The one-time first Wither
+  level reward below is an explicit exception for character progression.
 - XP beyond the gate is **discarded, not banked** for later dimensions.
 - Returning to a lower-cap dimension does not reduce the player's already-earned level. It only prevents further XP gain for tracks whose current level is at or above that dimension's cap.
 - Each track is evaluated independently. A Mining cap does not block character XP or Farming XP unless those tracks have also reached their respective caps.
 
-## Illustrative examples only
+### Shared combat XP at caps (planned)
+
+First divide the enemy's reward equally among eligible contributors, including
+those already at a dimension or global character cap. Then apply the applicable
+caps to each player's share. A capped player's blocked share is discarded;
+other contributors do not receive it. If a share reaches a cap partway through
+the award, accept only the XP needed to reach that cap and discard the rest.
+No blocked XP is banked or redistributed. See [[Experience and Reward Systems]].
+
+### Combat payouts after dimension changes (planned)
+
+Recorded combat contributors can receive XP after changing dimensions or
+respawning elsewhere, provided they are online and their qualifying contribution
+is still within the 30-second window. There is no same-dimension or distance
+requirement at payout. Apply the enemy's death-dimension character gate to each
+recipient; moving to a dimension with a different cap cannot change that award's
+gate. Dimension changes neither reset nor pause contribution expiry. See
+[[Experience and Reward Systems]].
+
+## Initial character route and Wither exception (planned)
+
+The initial vanilla character route uses Overworld 20, Nether 40, and End 60
+as the dimension XP caps. These are configurable entries, not dimension-entry
+restrictions or hardcoded compatibility checks. Profession dimension caps
+remain separate and open pending their requirements.
+
+A player's first qualifying Wither kill grants one full character level even
+when the normal dimension gate would prevent further character XP. Later Wither
+kills obey normal rewards and caps. This one-time reward does not bypass the
+global character cap or permanently raise a dimension cap. Multiplayer
+contributors, including support-only players, each receive their own full level
+if eligible and unclaimed; the milestone is not split. It replaces the
+recipient's normal XP share, preserves percentage XP progress, and marks the
+claim only when the level is granted. See
+[[Character Progression]] and [[Experience and Reward Systems]].
+
+## Other illustrative examples only
 
 The following are examples discussed during design, not final balance values:
 
-- A vanilla-style character/combat route could allow character progression to level 20 in the Overworld, 40 in the Nether, and 60 in the End. Mining was also discussed with an Overworld cap of 20.
+- Mining was discussed with an Overworld cap of 20, but this is not a finalized profession rule.
 - A modpack could instead configure a character/combat route such as Overworld 15, Nether 25, a first modded dimension 30, End 40, a second modded dimension 50, and a third modded dimension 60.
 
-These examples do not imply that every profession shares the same caps. Mining, Logging, Farming, and Crafting each receive independently authored values for each dimension. Exact values and the intended route remain open.
+These examples do not imply that every profession shares the same caps. Mining,
+Logging, Farming, and Crafting each receive independently authored values for
+each dimension. Profession values and modpack route overrides remain open.
 
 ## Compatibility and validation
 

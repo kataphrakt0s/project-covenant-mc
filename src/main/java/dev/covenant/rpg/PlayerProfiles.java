@@ -35,6 +35,7 @@ public final class PlayerProfiles {
     public static void selectClass(ServerPlayer player, PlayerClass selectedClass) {
         initialize(player, selectedClass.id(), Optional.empty(), 0);
         initializeResources(player);
+        dev.covenant.rpg.progression.Progression.refreshView(player);
     }
 
     /** Trusted/operator testing switch; preserves progression and every class balance, cancels a pending cast. */
@@ -43,7 +44,7 @@ public final class PlayerProfiles {
         if (!get(player).created()) { selectClass(player, selectedClass); return; }
         initializeResources(player);
         update(player, p -> new CharacterProfile(true, p.level(), p.experience(), Optional.of(selectedClass.id()),
-                p.specialization(), p.resourceType(), p.currentResource(), p.maximumResource()));
+                p.specialization(), p.resourceType(), p.currentResource(), p.maximumResource(), p.witherClaimed()));
     }
 
     private static void initializeResources(ServerPlayer player) {

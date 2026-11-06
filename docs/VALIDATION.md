@@ -2,6 +2,36 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Progression combat slice (2026-11-06)
+
+- Implemented combat XP/levels, equal rounded contributor shares, source-owned
+  support, dimension/global caps, atomic first-Wither levels, points/ranks,
+  staged Apply and crafted held-use respec. Four independent profession tracks
+  have saved state; activity sources, curves and abilities remain deferred.
+  Non-arrow playable skills allow Rank 1 until upgrades are authored.
+- Dedicated checks cover native damage/death and cancellation, support-only
+  participation and overlapping suppliers, full Fortitude absorption, capped,
+  offline and dead-player payouts, contribution/combat expiry, actual player
+  files and death/End copying, Wither claims and mixed group rewards, source
+  dimensions and native tag precedence, atomic purchases and bounded packets,
+  two-second item use/interruption and native arrow launch velocity.
+- An isolated fixture creates a disposable datapack, performs real successful
+  and rejected resource reloads, verifies raw XP/level/claim/allocation
+  preservation for online and offline data, then restores the original packs.
+  An early test exposed that generated vanilla dimensions are not ordinary
+  level-stem tag entries; grouping now uses native dimension-type tags.
+- Fresh saves are required. Both sides use payload protocol 3. No client was
+  launched or deployed. Manual: XP bar positioning/F1/GUI scales, Stats values,
+  draft clicks/tabs/close/Apply, respec recipe/animation, arrow feel, live
+  reconnect/dimension travel, retained-world restart and leveling pace.
+  Apotheosis/ATM11 integration remains deferred.
+- Final automated run: `scripts/Dev.ps1 verify` built the production JAR,
+  passed both geometry checks, and reported **All 82 required tests passed**.
+  `git diff --check` passed. JAR inspection confirmed progression classes,
+  balance data, respec recipe/models and HUD, with test/local artifacts excluded.
+  Evidence: ignored `.local/progression-final-2.log` and
+  `build/libs/covenant-0.1.0-dev.jar`.
+
 ## Skills architecture hardening (2026-11-06)
 
 - Added shared server control and lifecycle boundaries, family execution helpers,

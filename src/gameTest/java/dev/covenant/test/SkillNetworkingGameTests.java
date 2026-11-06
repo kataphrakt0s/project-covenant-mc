@@ -27,6 +27,7 @@ final class SkillNetworkingGameTests {
         var other = helper.makeMockServerPlayerInLevel();
         PlayerProfiles.selectClass(player, PlayerClass.REAVER);
         PlayerProfiles.selectClass(other, PlayerClass.REAVER);
+        PlayerProfiles.update(player, p -> dev.covenant.rpg.progression.Progression.atLevel(p, 3));
         ClassResources.set(player, PlayerClass.REAVER, 100);
         NetworkRegistry.configureMockConnection(player.connection.getConnection());
         NetworkRegistry.configureMockConnection(other.connection.getConnection());

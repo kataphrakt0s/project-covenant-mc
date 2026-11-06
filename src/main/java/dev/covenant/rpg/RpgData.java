@@ -25,6 +25,8 @@ public final class RpgData {
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Covenant.MOD_ID);
     private static final DeferredRegister.DataComponents COMPONENTS =
             DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, Covenant.MOD_ID);
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.CombatProgression.State>> COMBAT_PROGRESSION = ATTACHMENTS.register(
+            "combat_progression", () -> AttachmentType.builder(dev.covenant.rpg.progression.CombatProgression.State::new).build());
 
     public static final Supplier<AttachmentType<CharacterProfile>> PROFILE = ATTACHMENTS.register(
             "character_profile", () -> AttachmentType.builder(() -> CharacterProfile.UNINITIALIZED)
@@ -41,6 +43,13 @@ public final class RpgData {
                     .sync((holder, recipient) -> holder == recipient, SkillState.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<SkillRuntime>> SKILL_RUNTIME = ATTACHMENTS.register(
             "skill_runtime", () -> AttachmentType.builder(SkillRuntime::new).build());
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ProfessionState>> PROFESSIONS = ATTACHMENTS.register(
+            "profession_progression", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ProfessionState.INITIAL)
+                    .serialize(dev.covenant.rpg.progression.ProfessionState.CODEC.fieldOf("professions")).copyOnDeath()
+                    .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.progression.ProfessionState.STREAM_CODEC).build());
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ProgressionView>> PROGRESSION_VIEW = ATTACHMENTS.register(
+            "progression_view", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ProgressionView.EMPTY)
+                    .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.progression.ProgressionView.STREAM_CODEC).build());
     /** Two owner-only combo rows, updated only at transitions; no saved/copy state. */
     public static final Supplier<AttachmentType<dev.covenant.rpg.skills.ComboDisplay>> COMBO_DISPLAY = ATTACHMENTS.register(
             "combo_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.ComboDisplay.EMPTY)
@@ -106,5 +115,9 @@ public final class RpgData {
         // Lazily creating the default is safe after loading existing saved attachments.
         // NeoForge also sends initial state on login, respawn, and dimension changes.
         event.getEntity().getData(PROFILE);
+        event.getEntity().getData(PROFESSIONS);
+        if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            dev.covenant.rpg.progression.Progression.refreshView(player);
+        }
     }
 }

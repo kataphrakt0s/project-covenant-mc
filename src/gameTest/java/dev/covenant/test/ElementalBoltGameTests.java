@@ -157,7 +157,7 @@ final class ElementalBoltGameTests {
             player.setNoGravity(true); player.setYRot(0); player.setXRot(0);
             PlayerProfiles.selectClass(player, PlayerClass.WEAVER);
             for (var skill : new SkillDefinition[]{SkillDefinition.FIRE_BOLT, SkillDefinition.ICE_BOLT, SkillDefinition.LIGHTNING_BOLT}) {
-                SkillLoadouts.learn(player, skill.id(), true);
+                FixtureSkills.learn(player, skill.id(), true);
             }
             ClassResources.set(player, PlayerClass.WEAVER, 100);
         }

@@ -36,7 +36,9 @@ final class BowSkills {
         arrow.setData(RpgData.AURA_PROJECTILE_POWER, multiplier);
         ((ArrowPiercingAccessor) arrow).covenant$setPierceLevel((byte) (skill == SkillDefinition.PIERCING_SHOT ? 2 : 0));
         arrow.pickup = shot.ammunitionCost() == 0 ? AbstractArrow.Pickup.CREATIVE_ONLY : AbstractArrow.Pickup.ALLOWED;
-        arrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, 3, 0);
+        int rank = Math.max(1, player.getData(RpgData.SKILL_LOADOUT).rank(skill.id()));
+        arrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, (float) (3 * (1 + .02 * (rank - 1))), 0);
+        ProjectileCombat.captureSupport(arrow, player);
         arrow.setData(RpgData.SKILL_SHOT, true);
         ProjectileCombat.markSkill(arrow);
         Projectile.spawnProjectile(arrow, player.level(), ammo.copyWithCount(1));
