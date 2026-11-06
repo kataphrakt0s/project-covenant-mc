@@ -7,7 +7,18 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /** Entity-local, server-only ephemeral state. Casts/combat never copy across replacement or logout. */
 public final class SkillRuntime {
+    /** Operator testing toggle; never saved, synced, or copied to a replacement player. */
+    boolean infiniteResource;
+    /** Operator cooldown-check bypass; entity-local and never saved, synced, or death-copied. */
+    boolean ignoreCooldowns;
     boolean applyingRend;
+    boolean executing;
+    final java.util.EnumMap<Combos.Kind, Combos.Progress> combos = new java.util.EnumMap<>(Combos.Kind.class);
+    Combos.Movement movement;
+    long motionSequence;
+    long awaitingDashSequence;
+    long dashAcknowledgementUntil;
+    long rushSpeedUntil;
     final java.util.EnumMap<TrapKind, TrapEntity> traps = new java.util.EnumMap<>(TrapKind.class);
     final java.util.EnumMap<TrapKind, TrapEntity> patches = new java.util.EnumMap<>(TrapKind.class);
     long combatUntil;
@@ -32,6 +43,7 @@ public final class SkillRuntime {
 
     public void cancelSkill(ServerPlayer player, SkillDefinition skill) {
         if (casting == skill) { cancelCast(player); }
+        Combos.cancel(player, skill);
         Traps.clear(player, skill.id());
     }
 }

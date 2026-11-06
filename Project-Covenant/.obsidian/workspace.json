@@ -186,8 +186,19 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "ed097fa4c5601202",
+  "active": "b79fb49f8af121a0",
   "lastOpenFiles": [
+    "Progression Balance Configuration.md",
+    "Progression Vertical Slice.md",
+    "Progression Systems.md",
+    "Farming.md",
+    "Experience and Reward Systems.md",
+    "Logging.md",
+    "Mining.md",
+    "Dimensional Progression Gates.md",
+    "Crafting Profession.md",
+    "Profession Progression.md",
+    "Combat Skill Progression.md",
     "Skill Trees Brainstorm 1.md",
     "Skill Trees Brainstorm.md",
     "Pasted image 20261104154316.png",
@@ -203,12 +214,6 @@
     "Data-Driven Content.md",
     "Mod Compatibility.md",
     "Equipment Categories.md",
-    "Technical Architecture.md",
-    "Crafting.md",
-    "Milestone 6 - Endgame.md",
-    "Milestone 1 - RPG Foundation.md",
-    "Milestone 2 - Character Gameplay.md",
-    "Development Roadmap.md",
-    "Welcome.md"
+    "Technical Architecture.md"
   ]
 }

@@ -1,10 +1,10 @@
 # Skills, class resources, and skill trees
 
 This foundation shares the existing class/profile and native stat/Affix Page systems.
-It adds 23 code-backed skills, one persistent skill-state attachment, and one
-unsaved entity-local cast/combat attachment. The Skills window presents the current
+It adds 25 code-backed skills, one persistent skill-state attachment, and one
+unsaved entity-local cast/combat/combo attachment. The Skills window presents the current
 class's brainstorm tree with free allocation and eight saved assignments. Planned
-nodes have no gameplay effects yet. Points, ranks, an action-bar HUD, pack
+nodes have no gameplay effects yet. Points, ranks, a full icon-based action bar, pack
 dependencies, and an alternate character system remain outside this pass.
 Bleed is a separate target-owned persistent attachment; it never becomes permanent
 character progression or item data.
@@ -34,6 +34,302 @@ the brainstorm defers numbers. Allocation stays free; ranks and skill points wai
 This is a dependency guide rather than a promise to implement an entire stage in
 one pass. Rend and the bleed foundation were prioritized next for Reaver's
 dependent skills. Skills whose requirements span stages follow their latest dependency.
+
+## Combo skills
+
+Lunging Combo and Rip and Rush are implemented three-stage skills. Their shared
+staged-activation contract and prototype acceptance criteria are recorded in the
+[combo implementation plan](COMBOS_IMPLEMENTATION_PLAN.md).
+Each uses one assigned key with a fresh press per stage and server-owned progression;
+the client does not select stages. Their existing per-stage Rage costs, two-second
+then three-second follow-up windows, and cooldown on completion or timeout remain
+the implemented behavior. No skill rejects activation for lack of targets:
+empty attacks spend normally, advance their stage, and follow normal cooldown
+rules. Range, cover, and enemy eligibility determine hits rather than activation.
+
+Lunging Combo's first-stage prototype is a movement-only lunge of four
+blocks over three game ticks (0.15 seconds), dealing no attack damage. It uses the
+captured full 3D look direction and shared movement rules, with early completion
+on collision or interruption. These values remain prototype tuning.
+Stage two uses Rend's block-clipped crosshair targeting and native held-item melee
+reach, retaining enemy eligibility and line-of-sight checks. Without a valid
+target, perform a paid whiff and advance normally to stage three. The strike deals 125% of current attack
+damage at stage acceptance, using existing melee-skill damage rules and applicable
+damage modifiers.
+Both the stage-two strike and stage-three finisher are instant attacks
+with no cast time or added wind-up, retaining normal activation checks/throttling.
+Stage three's area matches Cleave: a 120-degree frontal horizontal arc
+within three blocks, requiring line of sight and retaining existing enemy
+eligibility checks and the yaw-based arc calculation. Its damage is 100%
+of current attack damage per enemy at stage acceptance, using existing melee-skill
+damage rules and applicable damage modifiers.
+An empty finisher performs a paid whiff, completes the combo, and starts its
+captured cooldown. Defended hits also complete normally; whiffs and hits dealing
+no damage apply no shred. Cleave and Rend likewise spend and start cooldowns on
+empty attacks.
+The finisher's armor shred reduces armor by 20%, leaving armor toughness
+unchanged. Percentage-based shred and its strength are provisional prototype
+tuning to revisit when enemy armor adjustments are introduced. Its provisional
+base duration is 100 game ticks (five seconds), scaled by the caster's
+skill-duration multiplier captured when the finisher starts. Later modifier
+changes do not alter an already-applied shred's duration. Apply shred only after
+the finisher deals positive damage to health, ordinary absorption, or a Fortitude
+shield. Blocked, dodged, or invulnerable hits apply none. Resolve damage against
+existing armor before applying this hit's shred, so the new application benefits
+subsequent hits. Each target has one shared armor-shred debuff for Lunging Combo
+and Rip and Rush, even across players. Strength does not stack: repeated
+applications remain at 20% and set
+expiry to the later of the existing expiry and the new application's expiry,
+never shortening a longer application.
+Once applied, shred belongs to the target and lasts for its remaining duration
+even if the caster dies, logs out, changes class, or unlearns the skill. Caster
+cleanup does not remove an already-applied shred from surviving targets.
+Save its remaining duration across target save/load and reconnects. Pause the
+timer while the target is unloaded or offline and resume when it ticks again.
+Target death clears shred, without copying it to a respawned replacement player.
+This target-owned timer is separate from transient combos and saved cooldowns.
+Shred is as a normal harmful status: milk and normal effect-clearing can
+remove it, and native effect-immunity/applicability checks can reject it. Such
+rejection does not undo finisher damage, Rage spending, or stage completion.
+
+Planned base Rage costs are 20 for the lunge, 10 for the single-target strike,
+and 20 for the finisher (50 total before modifiers). Each stage checks and spends
+its own cost using the player's current resource-cost multiplier when accepted.
+Lunging Combo's base cooldown is 240 game ticks (12 seconds), reflecting
+its extended sequence and combined mobility, damage, and armor-shred power. Use
+the shared stage-one cooldown snapshot and start it at the combo's actual end.
+
+Rip and Rush's opening circular Rend covers all directions within a
+three-block radius around the player, requiring line of sight and retaining
+existing enemy eligibility and melee-area distance checks without the frontal
+arc restriction. Apply Rend once per eligible enemy: 100% current attack damage
+with existing melee-skill modifiers, plus one normal bleed stack after positive
+health, absorption, or Fortitude damage. Retain Rend's defenses and its guard
+against an additional Ripping Aura bleed on that hit. Base bleed is 10% of
+application-time attack damage per second for 100 base ticks (five seconds),
+with existing bleed-power bonuses and skill-duration scaling captured at stage
+start. Preserve the target-owned shared three-stack cap, refresh/replacement,
+attribution, and persistence rules. Both circular attacks execute as paid whiffs
+when empty: the opening opens the dash window and the finisher completes the
+combo. Non-bleeding enemies can be damaged but grant no speed reward. The dash
+requires no target or bleed.
+The opening circular Rend and final circular AoE are instant, with no
+cast time or added wind-up. Retain normal activation checks and throttling;
+the dash remains an executing movement stage.
+
+Rip and Rush's second-stage dash travels six blocks over four game
+ticks (0.2 seconds), using the captured full 3D look direction and shared movement
+rules. Movement-speed and skill-duration bonuses do not change these values.
+Full blockage and agreed interruptions can end it early; the full third-stage window
+opens when movement actually ends.
+Planned dash damage is 50% of current attack damage captured when the stage
+begins, using existing melee-skill damage rules and applicable damage modifiers.
+Allow at most one hit attempt per enemy per dash, including defended attempts;
+remaining in contact does not retry or deal repeated hits.
+Contact requires an eligible enemy's hitbox to intersect the player's body swept
+along the actual full 3D travelled path, without an added hit radius. Clip checks
+to terrain-limited travel, including the final partial segment; enemies beside
+the swept body or beyond an obstacle that stopped movement are not contacted.
+The dash applies the same provisional 20% armor shred for 100 base ticks (five
+seconds), without changing toughness. Snapshot scaled duration at dash-stage
+start using the caster's skill-duration multiplier. Apply only after positive
+health, absorption, or Fortitude damage, resolving the hit against existing
+armor first. Reuse all shared shred cleansing, native immunity, target
+persistence/death, and caster-independent expiry rules. Both skills and all
+players refresh one target-owned debuff without stacking strength or shortening
+a longer remaining application.
+
+Rip and Rush's finisher matches its opening area: all directions within
+a three-block radius around the player's current position when activated,
+requiring line of sight and retaining the same enemy eligibility and melee-area
+distance checks. It follows the activation position even if the player has moved
+since the dash ended.
+Its damage is 100% of current attack damage per eligible enemy, captured
+when the finisher stage begins, using existing melee-skill damage rules and
+applicable damage modifiers.
+For each enemy qualifying for consumption, remove all shared bleed stacks,
+including other players' stacks, through the existing shared consumption boundary.
+Count each enemy once toward the movement-speed reward regardless of stack count.
+This can spend teammates' remaining bleed damage and reduce bleed-dependent
+nearby-enemy counts. Consume only after positive finisher damage to health,
+absorption, or Fortitude. Blocked, dodged, or invulnerable hits preserve bleeds
+and grant no speed reward. Killing blows against bleeding targets qualify;
+retain pre-hit bleed presence for reward eligibility even if death cleanup has
+already removed the stacks. Each qualifying enemy still counts once.
+The caster gains +10% base movement speed per qualifying enemy whose bleed is
+consumed, capped at +30% from Rip and Rush (three enemies). Extra stacks on one
+enemy do not increase its contribution. Follow Swiftness Aura's native
+base-relative modifier convention; this caps the skill's contribution rather
+than total movement speed.
+The speed buff lasts 80 base game ticks (four seconds), deliberately limiting
+uptime, scaled by the caster's skill-duration multiplier captured when the
+finisher starts. Later modifier changes do not alter its granted duration.
+Keep one Rip and Rush speed buff: consuming bleed from at least one qualifying
+enemy replaces it with the new finisher's strength and duration, even if weaker
+or shorter. Do not stack strengths or add durations. Consuming no bleeds leaves
+an existing buff unchanged without refreshing, extending, weakening, or removing it.
+The speed buff is transient and unsaved. Clear it on death, logout,
+dimension/class change, unlearning Rip and Rush (including dependent removal),
+or a validated actual edit to its assigned slot, even if a duplicate binding
+remains. Rejected/unchanged edits and physical key remaps leave it intact.
+Cleanup applies after combo completion too, without restarting cooldowns or
+creating a cooldown for an idle skill.
+
+Rip and Rush's base Rage costs are 30 for the opening circular Rend,
+20 for the dash, and 20 for the finisher (70 total before modifiers). Each stage
+checks and spends its own cost using the player's current resource-cost
+multiplier when accepted, following the shared per-stage rules.
+Its base cooldown is 400 game ticks (20 seconds), using the shared
+stage-one effective cooldown snapshot and starting at the combo's actual end.
+
+Capture effective cooldown duration at the first accepted stage, using the
+existing cooldown multiplier. Completion, timeout, and cancellation start that
+captured duration at the combo's actual end. Later equipment/modifier changes
+do not recalculate it; rejected starts capture nothing and start no cooldown.
+
+Each accepted stage calculates its Rage cost and damage from current equipment
+and stats when it begins, using existing scaling and damage rules. Recheck
+resources per stage; later buffs or weapon changes may affect later costs and
+damage. Already committed effects retain their own snapshots, including bleed.
+The whole-combo cooldown snapshot remains unchanged.
+
+Ordinary attacks and other non-combo skills preserve combo progress while its
+follow-up timer continues without pausing or refreshing. Existing activation
+checks still apply; ordinary attacks retain their normal Rage generation.
+
+Active lunge/dash movement permits ordinary attacks and other skills' stationary
+stages under normal activation checks. Rip and Rush's circular Rend may execute
+during Lunging Combo's lunge, while Lunging Combo's own next stage remains locked
+until its movement finishes. Do not treat skill movement as a global cast lock.
+
+Different combo skills may interleave, with independent stages, follow-up
+deadlines, and cooldowns. Their timers keep running while the other is used,
+and both spend from the same Rage balance. Duplicate bindings share the same
+skill's progression; they do not create additional independent sequences.
+
+Rejected follow-ups spend no Rage and leave progression and the original
+deadline intact. Retrying is allowed before expiry; rejection does not pause or
+refresh the window or independently start a cooldown. Normal expiry still does.
+
+Accepted, performed stages spend Rage and advance even when blocking, Dodge, or
+invulnerability prevents damage. This does not waive separately specified hit
+or defense requirements for secondary effects such as bleed or armor reduction.
+
+Freeze rejects stage activation without cancelling combo progression. Original
+deadlines keep running; thawing before expiry permits continuation, while expiry
+during freeze starts the normal cooldown. Freeze still interrupts pending casts;
+an open combo follow-up window is separate from a pending cast.
+
+Root rejects Lunging Combo's initial lunge and Rip and Rush's dash without
+spending, while stationary attack stages remain usable under normal checks.
+It does not cancel progress, pause timers, or permit skipping stages. Rejected
+follow-ups retain their original deadline; a rejected initial lunge opens no
+combo and starts no cooldown.
+
+Skill-driven lunges/dashes cannot overlap on one player. Reject conflicting
+movement-stage requests without spending, advancing, queueing, or replacing the
+current movement; existing deadlines continue. Retrying requires another press.
+Rejecting an initial movement stage opens no combo and starts no cooldown.
+
+Follow-ups become available at preceding-stage completion, with a full two-second
+window after stage one and a full three-second window after stage two. Instant
+attacks complete immediately; movement stages must finish first. Early requests
+for that combo's next stage are rejected without spending or queueing. Other
+combos' already-open windows continue running independently.
+
+Follow-up windows remain fixed at 40 and 60 game ticks (two and three seconds
+at normal game speed), unaffected by skill-duration bonuses. Keep these input
+deadlines separate from the duration rules of stage-applied statuses and buffs.
+
+Normalize the captured launch direction once. Floor/ceiling contact flattens pitch
+at the current speed without changing horizontal heading. Walls clip blocked
+horizontal components without renormalizing the remainder, so a blocked forward
+dash cannot turn tiny sideways aim into a full-speed strafe. Glancing wall slides
+retain only their original tangential speed. At simultaneous contacts, flatten
+pitch before clipping wall components. Use only the remaining fraction of the
+current tick along the surviving direction to preserve the travel budget.
+A direct impact with no surviving tangent stops movement early and completes
+the stage, keeping Rage spent and opening the full next-stage window. Never pass
+through solid terrain or require a minimum distance to unlock a follow-up.
+
+Lunges/dashes capture the player's full 3D look direction at movement start,
+including pitch for upward/downward travel. Turning afterward does not steer
+or retarget movement. Each movement stage has fixed distance and travel time,
+unaffected by movement-speed or skill-duration bonuses. Both skills' agreed
+movement values are recorded above. Collision/interruption
+may shorten travel. Surface collision may redirect the captured path; turning
+does not steer it. Suspend gravity during movement to preserve straight open-space
+travel and frictionless surface sliding; restore normal
+gravity at movement end, including early terrain collision. Follow-up windows
+do not suspend gravity. End the skill's movement momentum when the stage ends,
+including an early terrain stop, so residual dash propulsion does not extend its
+range. An upward dash stops propelling upward and normal falling resumes.
+Starting a lunge/dash replaces existing velocity and does not restore it later.
+Prior sprinting, falling, or knockback momentum does not add to the skill's path.
+New incoming knockback follows the interruption rule below.
+
+Lunges/dashes break falls by clearing accumulated fall distance at movement start
+and throughout movement, including a movement-ending landing. Resume normal fall
+tracking at any movement end, including an early interruption. Later falling
+can deal normal fall damage; follow-up windows provide no fall protection.
+
+Incoming knockback that takes effect ends active lunge/dash movement early,
+restores normal gravity, and applies normally. Keep Rage spent and open the full
+next-stage window without cancelling the combo. Movement cleanup must preserve
+the incoming impulse, including Blast Trap's explicit push.
+
+Gaining root or freeze during a lunge/dash ends skill movement early and counts
+as stage completion. Restore normal gravity, keep Rage spent, and open the full
+next-stage window without cancelling progression. Freeze blocks activation until
+thawing; root allows stationary attacks. All open windows keep running normally,
+and other combos' existing deadlines remain unchanged.
+
+Death, logout, dimension travel, or class change ends all unfinished combos and
+immediately starts each affected skill's cooldown. Keep spent Rage with no refund
+or charge for unused stages. Stop active skill movement and restore normal
+gravity without opening another follow-up. Combo progression/movement are
+transient; committed cooldowns use the existing persistent, death-copied state.
+
+Unlearning an unfinished combo ends it, stops its movement, restores normal
+gravity, and starts its cooldown without refunds or charges for unused stages.
+Cover dependent deallocation: removing Lunging Combo also ends unfinished Rip
+and Rush. Other still-learned combos remain intact. Relearning retains cooldowns;
+unlearning an idle combo creates no new cooldown.
+
+Changing or clearing an unfinished combo's slot assignment cancels it and starts
+its cooldown, even if another slot still holds it. Keep spent Rage, charge nothing
+for unused stages, stop its movement, and restore normal gravity without opening
+another follow-up. Reassigning retains the cooldown; unrelated combos remain
+intact. Rejected or unchanged assignments do not cancel progress, and editing an
+idle combo's binding creates no new cooldown.
+
+Keep binding-change cancellation within Covenant's skill-slot GUI and existing
+server checks in `SkillLoadouts.bind`. Physical key remaps in Minecraft Controls
+do not affect combo progress. Reuse the existing packets; add no Controls
+monitoring or remap notification protocol.
+
+The prototype combo HUD shows one compact line per open combo with the
+skill name, next stage, and remaining follow-up time. Executing movement shows
+its current action until the window opens. Interleaved combos have independent
+lines, removed when each combo ends. Use owner-only transition sync and display
+server deadlines without per-tick countdown packets. Skill icons with circular
+cooldown countdowns remain the intended later presentation; this pass uses text.
+
+## Combo movement synchronization
+
+Combo movement uses owner-only start/stop trajectories with native collision
+steps on both sides. The server owns travel/hits/stage completion; the client
+predicts movement with normal frame interpolation. Normal travel sends no native
+teleport stream. Predicted movement packets are held until the owner acknowledges
+the server's endpoint. Each authoritative step also updates the native connection
+position anchor: Minecraft's enclosing connection tick otherwise restores its
+pre-step cached position after `ServerPlayer.doTick()` and undoes the movement.
+After endpoint acknowledgement, vanilla's movement anchor is reset again. Only a mismatched
+endpoint or a 40-tick acknowledgement timeout causes a native correction, retaining
+current velocity. Stale/early acknowledgements cannot advance a stage or move the
+server. Native knockback is applied immediately at interruption; player/dimension
+cleanup discards client prediction. See `COMBOS_IMPLEMENTATION_PLAN.md` for details.
+Rendered movement and latency remain manual client checks.
 
 ## Aura implementation boundaries
 
@@ -665,7 +961,8 @@ still apply.
 
 ## Bleed foundation
 
-Rend implements these rules. Dependent bleed skills remain placeholders. Bleed has a shared cap of
+Rend and Rip and Rush's circular opening implement these rules. Other dependent
+bleed skills remain placeholders. Bleed has a shared cap of
 three stacks per enemy across all attackers. Reapplication refreshes all existing
 stack durations, including at the cap. Each stack counts as one instance for
 Consume and Guillotine; Blood Fever counts bleeding enemies rather than stacks.
@@ -940,6 +1237,8 @@ stat system. Effective capacities and recovery rates are never saved as characte
 | `covenant:aimed_shot` | Stalker | 40 Focus | 4 s | 1 s | Wind up, then fire one single-target arrow with base damage coefficient 4 (double vanilla). Aim remains adjustable; movement speed is 20% during wind-up. |
 | `covenant:cleave` | Reaver | 20 Rage | 3 s | Instant | Deal effective native attack damage to visible non-allied living targets within 3 blocks and a 120-degree horizontal forward arc. |
 | `covenant:rend` | Reaver | 20 Rage | 2 s | Instant | Strike the crosshair target within native held-item melee reach for effective attack damage; damaging hits apply one 5-second bleed stack at 10% captured attack damage per second. |
+| `covenant:lunging_combo` | Reaver | 20 / 10 / 20 Rage | 12 s from combo end | Lunge, then instant attacks | Four-block/three-tick lunge, 125% single-target strike, then three-block/120-degree 100% cleave and shared armor shred. Fixed 2 s / 3 s follow-up windows. |
+| `covenant:rip_and_rush` | Reaver | 30 / 20 / 20 Rage | 20 s from combo end | Instant areas, with dash | Three-block circular Rend, six-block/four-tick 50% dash and shared shred, then circular 100% finisher consuming shared bleeds for +10% base speed per enemy (max +30%) for four base seconds. |
 | `covenant:arcane_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Fire a straight amethyst-rendered projectile; one collision deals 6 attributed indirect-magic damage. |
 | `covenant:fire_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Straight single-hit projectile; 6 fire damage and 4 seconds of native burning. |
 | `covenant:ice_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Straight single-hit projectile; 6 ice damage and 30% Chilled movement slow for 3 seconds. |
@@ -983,9 +1282,10 @@ damage mitigation without replacing normal attacks, applying a second attack-spe
 formula, or triggering vanilla sweeping/critical chains. Unarmed melee is permitted.
 It excludes allies, the caster's own tame pets, spectators, and disallowed PvP targets.
 Rend uses the same exclusions with native held-item attack-range targeting, including
-native Creative/reach adjustments and block clipping. It spends nothing without a
-valid target. Attempted strikes spend normally even if blocked, dodged, or immune;
-only positive health or absorption damage applies or refreshes bleed. Its initial
+native Creative/reach adjustments and block clipping. An empty crosshair,
+out-of-reach target, or intervening wall produces a paid whiff and normal cooldown.
+Attempted strikes spend normally even if blocked, dodged, or immune;
+only positive health, absorption, or Fortitude damage applies or refreshes bleed. Its initial
 hit follows the native melee damage pipeline without adding vanilla critical,
 sweeping, attack-charge, or on-hit enchantment chains, matching Cleave's boundary.
 Arcane Bolt uses Minecraft's throwable-projectile collision and damage pipeline, has
@@ -1068,6 +1368,23 @@ can use the added `/covenant class switch <id>` testing branch.
 Use a disposable world in the isolated NeoForge instance. Select a class with the
 existing `/covenant class select <id>`, or switch with the operator-only command above.
 `/covenant resource set <amount>` edits the active resource (clamped) for tests.
+`/covenant resource infinite` toggles an operator-only per-player debug bypass;
+`/covenant resource infinite true|false` sets it explicitly. It bypasses resource
+requirements and spending for the selected class, including cast completion and
+combo stages. Stored balances, HUD values, recovery/decay, and other activation
+rules remain ordinary; switching the mode does not fill or drain a balance.
+Disabling during a cast restores its normal resource check at completion.
+`/covenant resource` reports the mode. The unsaved runtime flag survives class
+switches on the same player but resets on reconnect or replacement/respawn.
+`/covenant skill ignorecooldowns` toggles a separate operator-only, self-targeted
+cooldown-check bypass; `ignorecooldowns true|false` sets it explicitly. It covers
+instant skills, cast start/completion, and combo starts. Existing cooldowns are
+preserved, and successful activations still commit normal timers; disabling
+immediately restores remaining cooldowns, including a pending cast's completion
+check. Resources, equipment, learning, cast times, control restrictions, combo
+windows, and the one-tick request throttle still apply. `/covenant skill` reports
+the mode and actual cooldown times. Like infinite resource, this unsaved flag
+survives class switching on the same player and resets on reconnect/respawn.
 Learn the current class's skill in the Skills window before command/key activation.
 
 For visual polish, check the resource bar sits directly above hunger, uses the

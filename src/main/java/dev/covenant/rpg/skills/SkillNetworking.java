@@ -16,6 +16,10 @@ public final class SkillNetworking {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1");
+        registrar.playToClient(DashMotion.TYPE, DashMotion.STREAM_CODEC);
+        registrar.playToServer(DashFinished.TYPE, DashFinished.STREAM_CODEC, (request, context) -> {
+            if (context.player() instanceof ServerPlayer player) { Combos.acknowledgeMovement(player, request.sequence(), request.position()); }
+        });
         registrar.playToServer(Learn.TYPE, Learn.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player) {
                 player.sendSystemMessage(SkillLoadouts.learn(player, request.skill(), request.learn()));
@@ -52,6 +56,15 @@ public final class SkillNetworking {
         public static final StreamCodec<FriendlyByteBuf, Use> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, Use::slot, Use::new);
         @Override public Type<Use> type() { return TYPE; }
+    }
+
+    /** Acknowledges an already-ended server movement; reported position can only trigger a correction. */
+    public record DashFinished(long sequence, net.minecraft.world.phys.Vec3 position) implements CustomPacketPayload {
+        public static final Type<DashFinished> TYPE = SkillNetworking.type("dash_finished");
+        public static final StreamCodec<FriendlyByteBuf, DashFinished> STREAM_CODEC = StreamCodec.of((buf, value) -> {
+            buf.writeLong(value.sequence); DashMotion.vector(buf, value.position);
+        }, buf -> new DashFinished(buf.readLong(), DashMotion.vector(buf)));
+        @Override public Type<DashFinished> type() { return TYPE; }
     }
 
     private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> type(String name) {

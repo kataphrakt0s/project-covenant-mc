@@ -121,7 +121,10 @@ public final class Auras {
             if (kind == Kind.SWIFTNESS) { cleanse(target); }
             if (kind == Kind.FREEZING) {
                 target.stopUsingItem();
-                if (target instanceof ServerPlayer player) { player.getData(RpgData.SKILL_RUNTIME).cancelCast(player); }
+                if (target instanceof ServerPlayer player) {
+                    player.getData(RpgData.SKILL_RUNTIME).cancelCast(player);
+                    Combos.interruptMovement(player, false);
+                }
             }
             source.level().sendParticles(kind == Kind.FREEZING ? ParticleTypes.SNOWFLAKE : ParticleTypes.ENCHANT,
                     target.getX(), target.getY() + 1, target.getZ(), 12, .4, .5, .4, .02);

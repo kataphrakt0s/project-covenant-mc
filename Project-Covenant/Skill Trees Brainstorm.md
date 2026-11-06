@@ -1,9 +1,13 @@
 ![[Pasted image 20261104154316.png]]
 
-The image is the proposed skill roster and level layout. Piercing Shot,
-Aimed Shot, Cleave, Rend, Arcane Bolt, and all four Stalker traps are implemented; the remaining entries are
-planned skills. The breakdowns record agreed gameplay direction. Levels below
-are transcribed from the image and are informational rather than level gates.
+The image is the proposed skill roster and level layout. The levels transcribed
+below are the minimum character levels required to invest the first point in each
+skill; they are real unlock gates, not informational labels. Once a skill is
+unlocked at Rank 1, further ranks do not require additional character levels.
+Piercing Shot, Aimed Shot, Cleave, Rend, Arcane Bolt, all four Stalker traps, all
+three elemental bolts, all eleven auras, Lunging Combo, and Rip and Rush are
+implemented; the remaining entries are planned skills. The breakdowns record
+agreed gameplay direction and current prototype status.
 The first tree pass now displays only the current class's roster, with free
 allocation and the connection rules below enforced by the server. Planned nodes
 are bindable placeholders without gameplay effects. The right-hand Keybindings
@@ -22,12 +26,28 @@ tier order and prerequisite/exclusion flow remain the same. Skill icons come lat
 - Deallocating a prerequisite also deallocates its learned dependents and clears
   every affected slot. Allocation and deallocation are free in this pass.
 
-## Future skill progression
+## Skill progression rules
 
-Skills will eventually have multiple ranks, purchased from an available skill-point
-pool that gains one point per character level. XP progression, the point economy,
-and rank scaling are deferred from this brainstorm pass. The existing prototype's
-free learning remains unchanged while skill behavior is implemented separately.
+Character level is capped at 60. A new character starts at level 1 with one skill
+point, then earns one additional skill point per character level, for 60 lifetime
+points at level 60. The first point invested in a skill unlocks it at Rank 1. Each
+additional point increases its rank; each skill will have an individual maximum
+rank of either 8 or 12, depending on its meaningful upgrade potential. Exact
+rank-cap assignments and per-rank tuning remain to be defined.
+
+No more than eight distinct skills may have points allocated at once, matching
+the eight combat keybinds. A skill with any points invested counts toward this
+limit, including prerequisites. Vertical connections are prerequisites; both the
+prerequisite and dependent skill remain usable. Crossed horizontal connections
+mark genuinely mutually exclusive choices. Prerequisites and exclusions continue
+to be validated by the server.
+
+The current prototype uses free allocation for testing. The intended progression
+economy replaces free learning with skill-point investment. A crafted Combat
+Respec item resets combat skill allocations and refunds invested points; its
+recipe and exact crafting requirements remain undecided.
+
+See [[Character Progression]] and [[Combat Skill Progression]].
 
 ## Trap rules
 
@@ -326,11 +346,161 @@ All otherwise-valid living targets can bleed, including undead, golems, bosses,
 and modded living creatures. This implementation adds no creature-type bleed
 immunities; ordinary targeting rules and actual invulnerability still apply.
 
+## Combo activation model
+
+Lunging Combo and Rip and Rush are implemented three-stage skills. Each uses one
+assigned skill key: each fresh press advances that skill's fixed sequence, with
+no stage selection or skipping. Holding the key does not advance stages.
+The logical server determines the current stage; the client only requests
+activation. See the [combo implementation plan](../docs/COMBOS_IMPLEMENTATION_PLAN.md)
+for the agreed shared foundation and ordered implementation checklist. Implemented
+prototype effects and tuning are recorded in the skill details below.
+
+Capture the effective cooldown duration when the first stage is accepted and
+starts, including the existing cooldown multiplier. Completion, timeout, and
+cancellation use that captured duration, counting from the combo's actual end.
+Later equipment or modifier changes do not recalculate it. Rejected starts
+capture nothing and start no cooldown.
+
+Each stage uses current equipment and stats for its Rage cost and damage when
+accepted and begun. Buffs or weapon changes between stages can affect later
+costs and damage, and each stage checks its own resource requirement. Already
+committed effects retain their existing snapshots, including bleed stacks.
+The combo's captured cooldown duration does not change.
+
+Ordinary attacks and other non-combo skills preserve an open combo, but its
+follow-up timer continues running without pausing or refreshing. Normal skill
+activation restrictions still apply. Ordinary attacks can generate Rage for
+later stages under the existing resource rules.
+
+Ordinary attacks and other skills' stationary stages remain usable during active
+lunge/dash movement, subject to normal activation checks. For example, Rip and
+Rush's circular Rend may execute during Lunging Combo's lunge. The moving combo's
+own next stage must still wait until its movement finishes.
+
+Different combos may interleave. Each skill keeps independent progression,
+follow-up deadlines, and cooldowns while drawing from the same Rage balance.
+Using one does not pause or refresh the other. Duplicate slot assignments of
+the same combo share its progression rather than opening extra sequences.
+
+Rejected follow-ups spend nothing and preserve progression until the original
+deadline. Players may retry within that window; a rejection neither refreshes
+the timer nor independently starts a cooldown. Expiry still starts the combo's
+cooldown normally.
+
+A performed stage spends its Rage and advances the sequence even if blocking,
+Dodge, or invulnerability prevents damage. Later stages do not require earlier
+stages to land damaging hits. Secondary effects follow their own hit/defense
+requirements; advancement alone does not guarantee their application.
+
+Freeze prevents stage activation but does not cancel open combos or pause or
+refresh their follow-up windows. Players may continue after thawing if time
+remains; windows that expire during freeze start their cooldowns normally.
+Existing interruption of pending Covenant casts by freeze remains unchanged.
+
+Root blocks starting Lunging Combo's lunge and Rip and Rush's dash, while
+stationary attack stages remain usable under normal checks. Rejected movement
+stages spend nothing and cannot be skipped. An existing follow-up window keeps
+its original deadline, allowing a retry after root ends if time remains. Root
+does not itself cancel combos or pause their timers; a rejected initial lunge
+opens no combo and starts no cooldown.
+
+Skill-driven lunges and dashes execute one at a time per player. A conflicting
+movement-stage request spends nothing, does not advance or queue a stage, and
+leaves the current movement and existing deadlines unchanged. Players must press
+again after movement finishes if time remains. Rejecting an initial movement
+stage opens no combo and starts no cooldown.
+
+Each next stage becomes available when the preceding stage finishes. Stage-one
+completion opens the full two-second follow-up window; stage-two completion
+opens the full three-second window. Instant attacks complete immediately, while
+a lunge or dash must finish before its next stage becomes available. Early
+requests for that combo's next stage are rejected without spending or queueing.
+Other combos' existing windows continue running independently.
+
+The follow-up windows are fixed at 40 and 60 game ticks (two and three seconds
+at normal game speed). Skill-duration bonuses do not scale them; stage-applied
+status and buff durations follow their own separate rules.
+
+Normalize the captured launch direction once. Floor/ceiling contact flattens pitch
+at the current speed while preserving horizontal heading. Wall contact clips
+blocked horizontal components without renormalizing the remainder: blocked forward
+travel cannot become a full-speed left/right slide. Glancing wall slides retain
+their original tangential speed. Flatten pitch before clipping walls at simultaneous
+contacts. Use only the remaining fraction of the current movement tick to preserve
+the travel budget. A direct impact with no surviving tangent stops
+movement early and completes the stage, retaining Rage spent and opening the
+full next-stage window. No minimum travel distance is required, and movement
+cannot pass through solid terrain.
+
+Lunges and dashes follow the player's full 3D look direction captured at the
+start of the movement stage, including upward and downward aim. Turning during
+movement does not steer or retarget it. Floors, walls, and ceilings redirect
+travel along their surfaces; full blockage stops it. Each stage has fixed distance and travel time, unaffected by movement-speed
+or skill-duration bonuses; collisions and interruptions can still shorten travel.
+Per-skill base values are specified in the skill details below where agreed.
+Suspend gravity during the brief movement
+so open-space travel follows the captured direction, with frictionless surface sliding on contact. Restore normal gravity when movement ends,
+including an early terrain stop; follow-up windows do not suspend gravity.
+The skill's movement momentum ends with the lunge/dash, including an early terrain
+stop. There is no continued coasting from dash propulsion; an upward dash stops
+propelling the player upward and normal falling resumes.
+
+Starting a lunge/dash replaces existing velocity rather than adding to it, and
+does not restore the old velocity afterward. Activation can cancel existing
+falling or knockback momentum; new incoming knockback during movement follows
+the interruption rule below.
+
+Lunges and dashes break falls: clear accumulated fall distance at movement start
+and throughout the movement stage, including a movement-ending landing. Normal
+fall tracking resumes when movement ends, including any early stop. Subsequent
+falling can hurt normally; follow-up windows provide no fall protection.
+
+Incoming knockback that takes effect ends active lunge/dash movement early and
+applies normally. Keep Rage spent, restore normal gravity, and open the full
+next-stage window at interruption. This preserves the combo; ending dash momentum
+must not erase the incoming knockback.
+
+Gaining root or freeze during a lunge/dash stops skill movement early, restores
+normal gravity, and counts as stage completion with Rage spent. Open the full
+next-stage window without cancelling the combo. Freeze blocks activation until
+thawing; root still allows stationary attacks. Windows continue running during
+these effects, and other combos' existing deadlines do not change.
+
+Death, logout, dimension travel, or changing class ends every unfinished combo
+and immediately starts its own cooldown, without refunding spent Rage or charging
+unused stages. Stop active skill movement and restore normal gravity; do not open
+another follow-up. Progress and movement are transient and do not survive these
+transitions. Cooldowns retain the existing persistent skill-state behavior.
+
+Unlearning an unfinished combo ends it and starts its cooldown with no refund
+or charge for unused stages. Stop its active skill movement without opening
+another follow-up. This also applies to Rip and Rush when removing its Lunging
+Combo prerequisite; other still-learned combos remain intact. Relearning retains
+the cooldown, and unlearning an idle combo creates no new cooldown.
+
+Changing or clearing a slot assigned to an unfinished combo cancels it and starts
+its cooldown, even if a duplicate assignment remains. Keep spent Rage, stop its
+movement, restore normal gravity, and open no further follow-up. Reassigning does
+not reset the cooldown; other combos with unchanged bindings remain intact.
+Rejected or unchanged assignments do not cancel progress, and editing an idle
+combo's binding creates no new cooldown.
+
+Binding-change cancellation is limited to Covenant's own skill-slot GUI and
+existing server assignment checks. Physical key remaps in Minecraft Controls
+do not affect combo progress; no Controls monitoring or remap packet is needed.
+
+Prototype feedback uses one compact HUD text line per open combo showing the
+skill name, next stage, and remaining follow-up time. Interleaved combos have
+separate lines; executing movement shows its current action until its follow-up
+window opens. Ended combos disappear from this display. Icons with circular
+cooldown countdowns are the intended later presentation, outside this foundation.
+
 # Skill Details
 ## Stalker
 
 #### Piercing Shot
-Diagram level: 1.
+Minimum character level: 1.
 
 Planned behavior: fire one arrow that can hit up to three enemies in a line,
 stopping at blocks. This gives the skill a role in damaging lined-up enemies.
@@ -341,14 +511,14 @@ targets, stopping at blocks, with base damage coefficient 3 instead of vanilla 2
 (+50%). This uses native arrow piercing and collision handling.
 
 #### Disengage
-Diagram level: 3.
+Minimum character level: 3.
 
 Planned behavior: leap backward relative to the direction the player is facing.
 No target is required. This lets the player keep aiming at an approaching enemy
 while creating distance. Leap distance and other numerical tuning are deferred.
 
 #### Bear Trap
-Diagram level: 3.
+Minimum character level: 3.
 
 Current implementation: throw a single-use trap a short distance in front of the player.
 It damages and briefly roots the first enemy to step on it. The root blocks
@@ -384,7 +554,7 @@ bypasses shield blocking under the shared trap rule. Any positive health or
 absorption damage that gets through qualifies for the full root.
 
 #### Aimed Shot
-Diagram level: 5.
+Minimum character level: 5.
 
 Requires: Piercing Shot.
 
@@ -400,7 +570,7 @@ movement speed is 20%. Removing the bow/ammunition, unlearning, or lifecycle
 interruption cancels without spending. Cost and cooldown begin when the arrow fires.
 
 #### Hunter's Pet
-Diagram level: 5.
+Minimum character level: 5.
 
 Planned behavior: summon a fixed, skill-defined companion. One companion follows
 the player and assists in combat, remaining until defeated or dismissed. Pet
@@ -413,7 +583,7 @@ Initial defeat rule: defeat starts a cooldown. Once that cooldown expires, the
 player can summon the pet again. Cooldown duration is deferred.
 
 #### Barrage
-Diagram level: 5.
+Minimum character level: 5.
 
 Planned behavior: fire a rapid sequence of arrows while the skill keybind is held
 and sufficient Focus remains. Aim is adjustable throughout firing, allowing the
@@ -425,7 +595,7 @@ allowed at normal bow-draw speed during the channel. Firing rate, damage, and
 per-arrow Focus cost are deferred.
 
 #### Snipe
-Diagram level: 10.
+Minimum character level: 10.
 
 Planned behavior: charge while standing still, then fire one single-target shot.
 Its damage bonus increases with distance, up to a cap. Remaining stationary during
@@ -433,7 +603,7 @@ the charge is required; moving cancels the charge rather than preventing movemen
 Exact charge duration, distance scaling, and cap are deferred.
 
 #### Dodge Aura
-Diagram level: 10.
+Minimum character level: 10.
 
 Planned recipients: the player and nearby allies, for both the always-on passive
 and the temporary activated buff, using the shared aura ally rules and six-block
@@ -461,7 +631,7 @@ A new activation after consumption can supply another guarantee. Undodgeable
 damage neither triggers nor consumes the guarantees.
 
 #### Frost Trap
-Diagram level: 10.
+Minimum character level: 10.
 
 Requires: Bear Trap.
 
@@ -480,7 +650,7 @@ not remove the slow if the target remains inside another eligible patch;
 leaving all eligible patches ends it immediately.
 
 #### Arcane Arrow
-Diagram level: 15.
+Minimum character level: 15.
 
 Planned behavior: fire a single-target arrow that deals magic damage and briefly
 increases the target's damage taken from everyone, including teammates. Repeated
@@ -490,7 +660,7 @@ Shock Aura's damage-taken increase. Damage, vulnerability strength, and debuff
 duration are deferred.
 
 #### Poison Shot
-Diagram level: 15.
+Minimum character level: 15.
 
 Planned behavior: fire a single-target arrow that deals initial hit damage and
 then applies poison damage over time. This maintains pressure while the player
@@ -498,7 +668,7 @@ repositions or prepares another attack. Initial damage, poison damage, tick
 interval, and poison duration are deferred.
 
 #### Multishot
-Diagram level: 20.
+Minimum character level: 20.
 
 Planned behavior: fire several arrows simultaneously in a horizontal fan, covering
 enemies spread across the player's view. Each enemy can take damage at most once
@@ -506,7 +676,7 @@ per activation, even if multiple arrows connect (no shotgunning). Arrow count,
 spread angle, and damage are deferred.
 
 #### Flame Trap
-Diagram level: 20.
+Minimum character level: 20.
 
 Current implementation: when triggered, create a temporary burning area that repeatedly
 damages enemies only while they are inside it. Leaving the patch ends its damage;
@@ -533,7 +703,7 @@ and natural fire immunity prevent it. General mitigation and invulnerability
 still apply.
 
 #### Swiftness Aura
-Diagram level: 25.
+Minimum character level: 25.
 
 Planned recipients: the player and nearby allies.
 
@@ -555,7 +725,7 @@ Activation costs 25 Focus at base and has a 20-second (400-game-tick) base
 cooldown, using the existing resource-cost and cooldown multipliers.
 
 #### Snaring Shot
-Diagram level: 25.
+Minimum character level: 25.
 
 Requires: Poison Shot.
 
@@ -565,7 +735,7 @@ control. Poison damage, poison duration, slow strength, and slow duration are
 deferred.
 
 #### Blast Trap
-Diagram level: 25.
+Minimum character level: 25.
 
 Requires: Flame Trap.
 
@@ -593,7 +763,7 @@ Blast deals explosion damage and bypasses Dodge and shields. Armor and Blast
 Protection reduce its damage; general mitigation and invulnerability still apply.
 
 #### Meteor Arrow
-Diagram level: 30.
+Minimum character level: 30.
 
 Requires: Arcane Arrow.
 
@@ -607,7 +777,7 @@ The impact ignites affected enemies only; it leaves no burning ground area. It
 does not apply Arcane Arrow's vulnerability. Burn duration is deferred.
 
 #### Ballista
-Diagram level: 30.
+Minimum character level: 30.
 
 Planned behavior: deploy a temporary stationary turret that automatically fires
 heavy bolts at nearby enemies. This provides position-holding ranged support.
@@ -618,7 +788,7 @@ keeping the two most recently deployed.
 Health, duration, firing rate, targeting range, and bolt damage are deferred.
 
 #### Volley
-Diagram level: 30.
+Minimum character level: 30.
 
 Planned behavior: rain arrows vertically across a broad spread over the chosen
 ground area. The total skill area has a 6-block radius. Each arrow deals area
@@ -633,7 +803,7 @@ required. The player can reposition and use other skills while the arrows fall.
 ## Reaver
 
 #### Cleave
-Diagram level: 1.
+Minimum character level: 1.
 
 Planned behavior: a wide forward-facing melee sweep, rewarding facing and
 positioning. Sweep angle and damage tuning are deferred.
@@ -643,7 +813,7 @@ within 3 blocks, line of sight, and a 120-degree horizontal forward arc. Vertica
 aim does not rotate the arc. Cost remains 20 Rage and cooldown 3 seconds.
 
 #### Rend
-Diagram level: 3.
+Minimum character level: 3.
 
 Planned behavior: a single-target melee strike that deals an initial hit and
 applies bleeding damage over time using the shared bleed rules above.
@@ -653,12 +823,12 @@ the held item's native attack range and block-clipped targeting (normally 3 bloc
 in Survival). The initial strike deals 100% of effective native attack damage.
 A damaging hit applies one five-second stack at 10% of captured attack damage per
 second. Cost: 20 Rage; cooldown: 2 seconds. Existing cost, cooldown, and duration
-multipliers apply. No valid target spends nothing and starts no cooldown. Once a
-strike is attempted, its cost and cooldown remain spent even if defenses stop the
+multipliers apply. Missing targets produce paid whiffs and normal cooldowns.
+The cost and cooldown remain spent even if defenses stop the
 damage and prevent bleed application. No weapon-category restriction is added.
 
 #### Battle Cry
-Diagram level: 3.
+Minimum character level: 3.
 
 Planned behavior: an active shout that briefly increases all outgoing damage for
 the player and nearby allies, including spells and damage over time. This creates
@@ -666,7 +836,7 @@ a shared offensive window. Buff strength, range, duration, resource cost, and
 cooldown are deferred. Ally identification remains outside this design pass.
 
 #### Rage Storm
-Diagram level: 5.
+Minimum character level: 5.
 
 Requires: Cleave.
 
@@ -678,14 +848,14 @@ while they remain inside the moving area. Wind-up duration, movement speed, area
 size, travel distance, damage, and hit interval are deferred.
 
 #### Execute
-Diagram level: 5.
+Minimum character level: 5.
 
 Planned behavior: a heavy single-target melee attack usable only when the enemy
 is below a health threshold. Health threshold, damage, resource cost, and cooldown
 are deferred.
 
 #### Blood Fever
-Diagram level: 5.
+Minimum character level: 5.
 
 Planned behavior: grant the player movement-speed and attack-speed bonuses based
 on the number of nearby bleeding enemies. While the buff is active, its strength
@@ -697,14 +867,14 @@ measured during implementation. Update interval and bonuses per enemy are
 deferred.
 
 #### Leap
-Diagram level: 10.
+Minimum character level: 10.
 
 Planned behavior: leap toward a ground point the player aims at, dealing area
 damage on landing. No enemy target is required. Leap range, impact radius,
 damage, resource cost, and cooldown are deferred.
 
 #### Ripping Aura
-Diagram level: 10.
+Minimum character level: 10.
 
 Mutually exclusive with: Fortitude Aura.
 
@@ -743,7 +913,7 @@ damage pulses. Different targets have independent limits. Rend's own bleed
 application remains unchanged and does not trigger an extra Ripping application.
 
 #### Fortitude Aura
-Diagram level: 10.
+Minimum character level: 10.
 
 Mutually exclusive with: Ripping Aura.
 
@@ -774,14 +944,57 @@ Entering the area afterward does not grant or refresh a shield. Activation costs
 existing resource-cost and cooldown multipliers.
 
 #### Lunging Combo
-Diagram level: 15.
+Minimum character level: 15.
 
 Planned behavior: a three-activation combo.
 
-1. First activation: perform a short lunge.
-2. Second activation, within 2 seconds of the lunge: perform a single-target attack.
-3. Third activation, within 3 seconds of the second activation: perform an AoE
-   cleave that applies a small armor reduction.
+1. First activation: perform a movement-only lunge of four blocks over three game
+   ticks (0.15 seconds), dealing no attack damage. Use the captured full 3D look
+   direction and shared movement rules; collision or interruption may end it early.
+2. Second activation, within 2 seconds after the lunge finishes: perform a
+   single-target attack using Rend's block-clipped crosshair targeting and native
+   held-item melee reach, retaining enemy eligibility and line-of-sight checks.
+   Deal 125% of current attack damage at stage acceptance, using existing
+   melee-skill damage rules and applicable damage modifiers.
+   Without a valid target, perform a paid whiff and advance to stage three.
+3. Third activation, within 3 seconds after the second stage finishes: perform an AoE
+   cleave that applies 20% armor shred, leaving armor toughness unchanged.
+   Percentage-based shred and its strength are provisional prototype tuning to
+   revisit when enemy armor adjustments are introduced. Match Cleave's area: a 120-degree
+   frontal horizontal arc within three blocks, requiring line of sight and
+   retaining existing enemy eligibility checks and the yaw-based arc calculation.
+   Deal 100% of current attack damage per enemy at stage acceptance, using existing
+   melee-skill damage rules and applicable damage modifiers.
+   An empty area performs a paid whiff and completes the combo, starting its
+   captured cooldown. Defended hits also complete normally; neither whiffs nor
+   hits dealing no damage apply shred. Cleave and Rend likewise spend and start
+   cooldowns on empty attacks.
+   Shred lasts a provisional 100 game ticks (five seconds) at base, scaled by the
+   caster's skill-duration multiplier captured when the finisher starts; later
+   modifier changes do not alter an already-applied shred's duration.
+   Apply shred only after positive damage to health, ordinary absorption, or a
+   Fortitude shield; blocked, dodged, or invulnerable hits apply none. Resolve
+   damage against existing armor before applying this hit's shred, so the new
+   application benefits subsequent hits.
+   Each target has one shared armor-shred debuff for Lunging Combo and Rip and
+   Rush, even across players. Repeated
+   applications remain at 20% and set expiry to the later of the existing expiry
+   and the new application's expiry, never shortening a longer application.
+   Once applied, shred belongs to the target and remains for its remaining
+   duration if the caster dies, logs out, changes class, or unlearns the skill;
+   caster cleanup does not remove it from surviving targets.
+   Save remaining shred duration across target save/load and reconnects; pause
+   its timer while the target is unloaded or offline and resume when it ticks
+   again. Target death clears shred; do not copy it to a respawned replacement
+   player. This target-owned timer is separate from combo progress and cooldowns.
+   Treat shred as a normal harmful status: milk and normal effect-clearing can
+   remove it, and native effect-immunity/applicability checks can reject it.
+   Rejected status application does not undo finisher damage, Rage spending,
+   or stage completion.
+
+Base Rage costs are 20 for the lunge, 10 for the single-target strike, and 20 for
+the finisher (50 total before modifiers). Each stage checks and spends its own
+cost using the player's current resource-cost multiplier when accepted.
 
 Rage is spent separately for each stage performed. Unused follow-ups cost nothing;
 the player must retain enough Rage to perform later stages.
@@ -790,11 +1003,17 @@ One shared cooldown begins when the final cleave completes or a follow-up window
 expires. Letting the combo lapse after the lunge or second attack still starts
 that cooldown.
 
-Lunge distance, damage, cleave area, armor-reduction strength and duration,
-per-stage Rage costs, and cooldown duration are deferred.
+Base cooldown is 240 game ticks (12 seconds), reflecting the extended sequence
+and combined mobility, damage, and armor-shred power. Capture the effective
+duration with the cooldown multiplier when stage one starts, then start it at
+completion, timeout, or cancellation under the shared rules.
+
+The stage-two strike and stage-three finisher are instant, with no cast time or
+added wind-up, retaining normal activation checks and throttling. This is agreed
+implemented prototype behavior; numerical balance remains provisional.
 
 #### Bloody Cloak
-Diagram level: 15.
+Minimum character level: 15.
 
 Planned behavior: a temporary self-buff that heals the player for a portion of
 the bleed damage they deal. Activation clears existing Wither, ignite/burning,
@@ -803,7 +1022,7 @@ is active. Healing fraction, buff duration, resource cost, and cooldown are
 deferred.
 
 #### Overpower
-Diagram level: 20.
+Minimum character level: 20.
 
 Planned behavior: a single-target melee hit that deals normal damage to bleeding
 enemies and gains a huge damage bonus against non-bleeding enemies. This supports
@@ -812,7 +1031,7 @@ remaining usable when a teammate applies bleed. Damage, resource cost, and
 cooldown are deferred.
 
 #### Consume
-Diagram level: 20.
+Minimum character level: 20.
 
 Planned behavior: an area skill that removes bleeds from affected enemies. Each
 affected enemy takes a flat damage amount per bleed instance removed from it.
@@ -820,7 +1039,7 @@ Guillotine is the single-target counterpart. Area size, flat damage per instance
 resource cost, and cooldown are deferred.
 
 #### Enduring Cry
-Diagram level: 20.
+Minimum character level: 20.
 
 Requires: Battle Cry.
 
@@ -830,14 +1049,14 @@ attacks. Damage reduction, range, duration, resource cost, and cooldown are
 deferred. Ally identification remains outside this design pass.
 
 #### Skull Bash
-Diagram level: 25.
+Minimum character level: 25.
 
 Planned behavior: a single-target melee hit that briefly stuns the enemy,
 preventing movement and attacks. Damage, stun duration, resource cost, and
 cooldown are deferred.
 
 #### Raging Aura
-Diagram level: 25.
+Minimum character level: 25.
 
 Passive: while assigned to a skill slot, set the player's out-of-combat Rage
 decay rate to 3 Rage per second after the existing seven-second grace period.
@@ -861,7 +1080,7 @@ cooldown makes this an occasional burst rather than an activation for every
 enemy encounter.
 
 #### War Banner
-Diagram level: 25.
+Minimum character level: 25.
 
 Planned behavior: plant a temporary stationary banner that grants health
 regeneration and prevents hunger loss for the player and nearby allies within
@@ -869,18 +1088,64 @@ its radius. Regeneration strength, range, duration, resource cost, and cooldown
 are deferred. Ally identification remains outside this design pass.
 
 #### Rip and Rush
-Diagram level: 30.
+Minimum character level: 30.
 
 Requires: Lunging Combo.
 
 Planned behavior: a three-activation combo.
 
-1. First activation: apply Rend in a circular area around the player.
-2. Second activation, within 2 seconds of the first: dash forward through enemies,
-   applying armor shred to those passed through.
-3. Third activation, within 3 seconds of the second: perform another circular AoE
+1. First activation: apply Rend in a circular area covering all directions within
+   a three-block radius around the player. Require line of sight and retain
+   existing enemy eligibility and melee-area distance checks without the frontal
+   arc restriction.
+   Apply Rend once per eligible enemy: 100% current attack damage with existing
+   melee-skill modifiers and one normal bleed stack after positive health,
+   absorption, or Fortitude damage. Retain Rend's defenses and its guard against
+   an additional Ripping Aura bleed on that hit. Base bleed is 10% of
+   application-time attack damage per second for 100 base ticks (five seconds),
+   with existing bleed-power bonuses and skill-duration scaling captured at stage
+   start. Preserve the target-owned shared three-stack cap, duration refresh,
+   oldest-stack replacement, attribution, and persistence rules.
+2. Second activation, within 2 seconds after the first stage finishes: dash six
+   blocks over four game ticks (0.2 seconds), applying armor shred to enemies
+   passed through. Use the captured full 3D look direction and shared movement
+   rules; movement-speed and skill-duration bonuses do not change distance or
+   travel time. Full blockage and agreed interruptions can end movement early, opening
+   the full third-stage window when the dash actually ends.
+   Deal 50% of current attack damage captured when this stage begins, using
+   existing melee-skill damage rules and applicable damage modifiers. Allow at
+   most one hit attempt per enemy per dash, including defended attempts;
+   remaining in contact does not retry or deal repeated hits.
+   Contact requires an eligible enemy's hitbox to intersect the player's body
+   swept along the actual full 3D travelled path, without an added hit radius.
+   Clip checks to terrain-limited travel, including the final partial segment;
+   enemies beside the swept body or beyond the stopping obstacle are not contacted.
+   Apply Lunging Combo's provisional 20% shred for 100 base ticks (five seconds),
+   leaving toughness unchanged. Snapshot scaled duration at dash-stage start with
+   the caster's skill-duration multiplier. Require positive health, absorption,
+   or Fortitude damage and resolve that hit against existing armor first. Reuse
+   all shared shred cleansing, native immunity, target persistence/death, and
+   caster-independent expiry rules. Both skills and all players refresh one
+   target-owned debuff without stacking strength or shortening a longer application.
+3. Third activation, within 3 seconds after the dash finishes: perform another circular AoE
    around the player's current position, consuming bleed on affected enemies to
    grant a temporary movement-speed bonus.
+   Match the opening area: all directions within a three-block radius, requiring
+   line of sight and retaining the same enemy eligibility and melee-area distance
+   checks. Center it on the player's position when activated, even if the player
+   has moved since the dash ended.
+   Deal 100% of current attack damage per eligible enemy, captured when this
+   stage begins, using existing melee-skill damage rules and applicable damage
+   modifiers.
+   For each enemy qualifying for consumption, remove all shared bleed stacks,
+   including other players' stacks, through the existing shared consumption
+   boundary. Count each enemy once toward the movement-speed reward regardless
+   of stack count. This can spend teammates' remaining bleed damage.
+   Consumption requires positive finisher damage to health, absorption, or
+   Fortitude. Blocked, dodged, or invulnerable hits preserve bleeds and grant no
+   speed reward. Killing blows against bleeding targets qualify; retain pre-hit
+   bleed presence for reward eligibility even if death cleanup has removed the
+   stacks. Each qualifying enemy still counts once.
 
 Rage is spent separately for each stage performed; unused follow-ups cost nothing.
 One cooldown for this combo begins when the final stage completes or a follow-up
@@ -889,19 +1154,49 @@ window expires, matching Lunging Combo's timing and spending rules.
 The finisher's movement-speed bonus scales with the number of bleeding enemies
 whose bleed is consumed, up to a cap. Consuming bleeds can reduce Blood Fever's
 count of nearby bleeding enemies.
-Area sizes, dash distance, damage, armor-shred strength and duration, movement-speed
-bonus per enemy, bonus cap and duration, per-stage Rage costs, and cooldown duration
-are deferred.
+Grant the caster +10% base movement speed per qualifying enemy whose bleed is
+consumed, capped at +30% from Rip and Rush (three enemies). Extra stacks on one
+enemy do not increase its contribution. Follow Swiftness Aura's native
+base-relative modifier convention; this caps the skill's contribution rather
+than total movement speed.
+The speed buff lasts 80 base game ticks (four seconds), deliberately limiting
+uptime, scaled by the caster's skill-duration multiplier captured when the
+finisher starts. Later modifier changes do not alter its granted duration.
+Keep one Rip and Rush speed buff: consuming bleed from at least one qualifying
+enemy replaces it with the new finisher's strength and duration, even if weaker
+or shorter. Do not stack strengths or add durations. Consuming no bleeds leaves
+an existing buff unchanged without refreshing, extending, weakening, or removing it.
+The speed buff is transient and unsaved. Clear it on death, logout,
+dimension/class change, unlearning Rip and Rush (including dependent removal),
+or a validated actual edit to its assigned slot, even if a duplicate binding
+remains. Rejected/unchanged edits and physical key remaps leave it intact.
+Cleanup applies after combo completion too, without restarting cooldowns or
+creating a cooldown for an idle skill.
+Base Rage costs are 30 for the opening circular Rend, 20 for the dash, and 20 for
+the finisher (70 total before modifiers). Each stage checks and spends its own
+cost using the player's current resource-cost multiplier when accepted,
+following the shared per-stage resource rules.
+Base cooldown is 400 game ticks (20 seconds). Capture its effective duration with
+the cooldown multiplier when stage one starts, then start it at completion,
+timeout, or cancellation under the shared rules.
+The opening circular Rend and final circular AoE are instant attacks, with no
+cast time or added wind-up. Retain normal activation checks and throttling;
+the dash remains an executing movement stage.
+Both circular attacks execute with no enemies present, spending their stage
+cost and advancing normally. An empty opening opens the dash window; an empty
+finisher completes the combo and starts its captured cooldown. Non-bleeding
+enemies can be damaged but grant no speed reward. The dash requires no target
+or bleed. No skill rejects activation for lack of targets.
 
 #### Guillotine
-Diagram level: 30.
+Minimum character level: 30.
 
 Planned behavior: remove bleeds from one target, dealing a flat damage amount per
 bleed instance removed, as the single-target counterpart to Consume. Flat damage
 per instance, range, resource cost, and cooldown are deferred.
 
 #### Demon Mode
-Diagram level: 30.
+Minimum character level: 30.
 
 Planned behavior: while this temporary mode is active, attacking teleports the
 player to the enemy under their crosshair, up to 5 blocks away. The player heals
@@ -912,12 +1207,12 @@ Healing amounts, mode duration, resource cost, and cooldown are deferred.
 ## Weaver
 
 #### Arcane Bolt
-Diagram level: 1.
+Minimum character level: 1.
 
 Fire a straight amethyst-rendered projectile; one collision deals 6 attributed indirect-magic damage.
 
 #### Lightning Bolt
-Diagram level: 3.
+Minimum character level: 3.
 
 Implemented prototype: after a 0.5-second cast, strike instantly along the player's
 aim, stopping at the first eligible enemy or solid block within 24 blocks. Deals
@@ -925,14 +1220,14 @@ aim, stopping at the first eligible enemy or solid block within 24 blocks. Deals
 only; no status effect or native lightning entity. See `docs/RPG_SKILLS.md`.
 
 #### Mage Armour
-Diagram level: 3.
+Minimum character level: 3.
 
 Planned behavior: a temporary self-buff that increases armor, armor toughness,
 and knockback resistance, paid for with an upfront Mana cost. Stat bonuses,
 duration, Mana cost, and cooldown are deferred.
 
 #### Arcane Barrage
-Diagram level: 5.
+Minimum character level: 5.
 
 Requires: Arcane Bolt.
 
@@ -947,7 +1242,7 @@ is allowed at normal bow-draw speed while channeling, matching Stalker's Barrage
 Firing rate, missile damage, and per-missile Mana cost are deferred.
 
 #### Ice Bolt
-Diagram level: 5.
+Minimum character level: 5.
 
 Implemented prototype: traveling single-target projectile dealing 6 ice damage.
 Positive health or absorption damage applies a 30% Chilled movement slow for
@@ -956,7 +1251,7 @@ Costs 20 Mana, casts in 0.5 seconds, and has a two-second cooldown.
 See `docs/RPG_SKILLS.md` for defenses, persistence, and overlap rules.
 
 #### Discharge
-Diagram level: 5.
+Minimum character level: 5.
 
 Planned behavior: store stacks from previously cast ice, fire, and lightning
 spells, with a separate counter capped at 5 for each element. Activating Discharge
@@ -976,7 +1271,7 @@ sends chain-lightning arcs beyond the main AoE. Damage scaling, chain range, and
 chain target limit are deferred.
 
 #### Fire Bolt
-Diagram level: 5.
+Minimum character level: 5.
 
 Implemented prototype: traveling single-target projectile dealing 6 fire damage.
 Positive health or absorption damage ignites for 4 seconds, scaled by skill
@@ -985,7 +1280,7 @@ without custom burn stacks. Costs 20 Mana, casts in 0.5 seconds, and has a
 two-second cooldown. See `docs/RPG_SKILLS.md` for defenses and persistence.
 
 #### Icy Veins
-Diagram level: 10.
+Minimum character level: 10.
 
 Uses the shared aura model despite its name.
 
@@ -1006,7 +1301,7 @@ existing resource-cost and cooldown multipliers. Its own passive reduces that
 cooldown to 27 seconds before other modifiers.
 
 #### Flame Cloak
-Diagram level: 10.
+Minimum character level: 10.
 
 Uses the shared aura model.
 
@@ -1030,14 +1325,14 @@ eight-second (160-game-tick) base retaliation window. Activation costs 30 Mana a
 base, scaled by the existing resource-cost multiplier.
 
 #### Teleport
-Diagram level: 10.
+Minimum character level: 10.
 
 Planned behavior: blink along the player's aim, stopping at a clear position
 before solid obstacles. No enemy target is required. Range, Mana cost, and
 cooldown are deferred.
 
 #### Freezing Aura
-Diagram level: 15.
+Minimum character level: 15.
 
 Requires: Icy Veins.
 
@@ -1073,7 +1368,7 @@ so coordinated casters can stagger freezes, including against eligible bosses.
 Overlapping freezes still follow the shared non-stacking active-effect rules.
 
 #### Shock Aura
-Diagram level: 15.
+Minimum character level: 15.
 
 Passive: nearby eligible enemies take 10% increased damage from all sources while
 the aura is assigned to a skill slot, using shared six-block range and passive
@@ -1099,7 +1394,7 @@ on the initial target, then 3 and 3, before bonuses and defenses. Derive jump
 damage from base power, not damage actually received by the previous target.
 
 #### Immolation Aura
-Diagram level: 15.
+Minimum character level: 15.
 
 Requires: Flame Cloak.
 
@@ -1126,7 +1421,7 @@ base and has a 30-second (600-game-tick) base cooldown, using the existing
 resource-cost and cooldown multipliers.
 
 #### Threefold System
-Diagram level: 15.
+Minimum character level: 15.
 
 Planned design direction: combine the ideas behind Path of Exile's Elemental
 Overload and Elemental Equilibrium. See
@@ -1150,7 +1445,7 @@ Stored damage fraction, storage cap, boost strength and duration, Mana cost, and
 cooldown are deferred.
 
 #### Ice Tomb
-Diagram level: 20.
+Minimum character level: 20.
 
 Planned behavior: encase the player in ice, granting temporary invulnerability
 while preventing movement, attacks, and casting. While active, the tomb slows
@@ -1160,7 +1455,7 @@ area radius, slow strength, damage and tick interval, Mana cost, and cooldown
 are deferred.
 
 #### Firestorm
-Diagram level: 20.
+Minimum character level: 20.
 
 Planned behavior: one cast starts a fixed-duration rain of fiery impacts over an
 aimed ground area, igniting enemies hit. The player can move and cast other spells
@@ -1168,7 +1463,7 @@ while the storm runs. Area size, impact damage and frequency, burn duration,
 storm duration, Mana cost, and cooldown are deferred.
 
 #### Weaver's Web
-Diagram level: 20.
+Minimum character level: 20.
 
 Planned behavior: place a temporary web field at an aimed location. Enemies are
 briefly rooted when they enter, preventing movement while still allowing attacks.
@@ -1176,7 +1471,7 @@ Placement range, field size and duration, root duration, Mana cost, and cooldown
 are deferred.
 
 #### Enchanting Aura
-Diagram level: 25.
+Minimum character level: 25.
 
 Planned recipients: the player and nearby allies.
 
@@ -1220,7 +1515,7 @@ and has a 25-second (500-game-tick) base cooldown, using the existing
 resource-cost and cooldown multipliers.
 
 #### Beacon
-Diagram level: 25.
+Minimum character level: 25.
 
 Planned behavior: mark the player's current position with a temporary beacon.
 A second activation teleports the player back to it, with one return allowed per
@@ -1230,7 +1525,7 @@ cost-reduction radius and strength, return range, Mana cost, and cooldown are
 deferred.
 
 #### Elemental Golem
-Diagram level: 25.
+Minimum character level: 25.
 
 Planned behavior: the golem has 4 forms: fire, ice, lightning, and arcane. Its form
 is selected according to the player's last cast. Each form grants a different
@@ -1250,14 +1545,14 @@ its resummon cooldown; it can be summoned again after that cooldown expires.
 | Arcane | Increase Mana regeneration and reduce Mana costs. |
 
 #### Arcane Explosion
-Diagram level: 30.
+Minimum character level: 30.
 
 Planned behavior: after a wind-up, release one large magic-damage burst centered
 on the player. No elemental charges are required. Wind-up duration, area radius,
 damage, Mana cost, and cooldown are deferred.
 
 #### Blizzard
-Diagram level: 30.
+Minimum character level: 30.
 
 Planned behavior: one cast starts a fixed-duration storm over an aimed area,
 dealing cold damage over time and slowing enemies. Enemies remaining inside
@@ -1266,7 +1561,7 @@ damage and tick interval, slow strength, exposure needed to freeze, freeze
 duration, storm duration, Mana cost, and cooldown are deferred.
 
 #### Scorching Ray
-Diagram level: 30.
+Minimum character level: 30.
 
 Planned behavior: hold the skill keybind to channel an aimable beam that pierces
 enemies but stops at solid blocks, hitting aligned enemies within its range. It

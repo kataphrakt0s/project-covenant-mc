@@ -12,13 +12,18 @@
     "AuraEffectMixin",
     "FreezeMobMixin",
     "FreezePlayerMixin",
-    "AuraProjectileMixin"
+    "AuraProjectileMixin",
+    "ComboMovementMixin",
+    "ComboPlayerMixin",
+    "ComboKnockbackMixin",
+    "ComboMovePacketMixin"
   ],
   "client": [
     "client.BowUsePoseMixin",
     "client.LocalBowUsePoseMixin",
     "client.BowFirstPersonMixin",
-    "client.BowThirdPersonMixin"
+    "client.BowThirdPersonMixin",
+    "client.ComboLocalTravelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -71,7 +71,11 @@ resource preservation and class restrictions. Ordinary selection stays one-time.
 
 For resources and skills, use `/covenant resource` and `/covenant skill` for
 inspection, `/covenant skill use <id>` for activation, and operator-only
-`/covenant resource set <amount>` to seed the active balance. See
+`/covenant resource set <amount>` to seed the active balance. Operator-only
+`/covenant resource infinite` toggles resource-free testing; append `true` or
+`false` to set it explicitly. It bypasses resource checks/spending while retaining
+cooldowns and other activation rules, preserves ordinary balances/HUD values, and
+resets on reconnect or player replacement. `/covenant resource` reports its state. See
 [RPG_SKILLS.md](RPG_SKILLS.md#in-game-testing) for each skill's test steps,
 configuration, modifier IDs, persistence and cancellation expectations.
 
@@ -148,6 +152,11 @@ generates `.vscode/launch.json`; it is ignored because it contains absolute path
 
 ## Validation protocol
 
+- For server-driven player movement, exercise the full native connection tick,
+  not only `ServerPlayer.doTick()` or posted player-tick events. The pinned
+  connection wrapper restores cached `firstGood` coordinates after `doTick()`;
+  an authoritative position change must update that anchor to survive the tick.
+  `combo_connection_movement` covers both dash distances and walking handoff.
 - Define observable acceptance criteria before implementing a feature.
 - Build with `scripts/Dev.ps1 build`; this includes the dependency-free
   `radialMenuTest` Java task for sector ordering, boundaries, the center dead zone,

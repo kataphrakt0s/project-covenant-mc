@@ -72,12 +72,28 @@ public final class ClassResources {
         if (!previous.equals(next)) { player.setData(RpgData.SKILLS, next); }
     }
 
-    public static boolean consume(ServerPlayer player, double cost) {
+    /** Entity-local debug mode applies to whichever known class is selected; balances remain ordinary. */
+    public static boolean infinite(ServerPlayer player) { return player.getData(RpgData.SKILL_RUNTIME).infiniteResource; }
+
+    public static void setInfinite(ServerPlayer player, boolean enabled) {
+        requireServer(player);
+        player.getData(RpgData.SKILL_RUNTIME).infiniteResource = enabled;
+    }
+
+    /** Shared preflight for instant skills, casts, and staged spending; debug mode bypasses resource requirements. */
+    public static boolean canAfford(ServerPlayer player, double cost) {
         requireServer(player);
         if (!Double.isFinite(cost) || cost < 0) { throw new IllegalArgumentException("Invalid resource cost"); }
         var type = PlayerProfiles.getSelectedClass(player).orElse(null);
-        if (type == null || current(player, type) < cost) { return false; }
-        set(player, type, current(player, type) - cost);
+        return type != null && (infinite(player) || current(player, type) >= cost);
+    }
+
+    public static boolean consume(ServerPlayer player, double cost) {
+        if (!canAfford(player, cost)) { return false; }
+        if (!infinite(player)) {
+            var type = PlayerProfiles.getSelectedClass(player).orElseThrow();
+            set(player, type, current(player, type) - cost);
+        }
         return true;
     }
 

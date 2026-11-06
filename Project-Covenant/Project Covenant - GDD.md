@@ -1,81 +1,130 @@
 ---
 project: Project Covenant
 type: design-document
-version: 0.1
+version: 0.2
 status: foundational
 ---
 
 # Project Covenant — Foundational GDD
 
 ## Vision
-A comprehensive, modular action-RPG experience within Minecraft. Covenant adds deep character progression, meaningful itemization, class abilities, dangerous world progression, and repeatable endgame while preserving Minecraft's sandbox identity and supporting modded content.
+
+A modular, Minecraft-native RPG experience built around the activities, systems, equipment, dimensions, and modding ecosystem that make Minecraft compelling. Covenant adds class-based combat skills, long-term character progression, profession mastery, item customization, and more structured world challenges without replacing the sandbox or withholding vanilla functionality.
 
 > Minecraft mods should contribute to the RPG rather than be replaced by it.
+
+Covenant should feel like Minecraft roleplay with deeper character development—not an ARPG dropped into a 3D world that ignores the game around it.
 
 See [[Project Vision]] and [[Design Pillars]].
 
 ## Core gameplay loop
-1. Explore regions and discover enemies, resources, dungeons, and activities.
-2. Fight using familiar Minecraft interactions augmented by RPG systems.
-3. Earn experience, crafting materials, equipment, and special rewards.
-4. Develop the character through levels, attributes, classes, specializations, talents, and gear.
-5. Craft and customize equipment.
-6. Attempt increasingly difficult content.
-7. Repeat with new challenges and build goals.
 
-See [[Core Gameplay Loop]].
+1. Explore the world, its dimensions, structures, resources, and activities.
+2. Fight enemies, gather materials, craft, farm, log, mine, enchant, and interact with the world.
+3. Earn Covenant character XP from combat and significant accomplishments, and independent profession XP from relevant activities.
+4. Develop a combat build through class skills and develop practical mastery through professions.
+5. Acquire, craft, salvage, and customize existing vanilla or modded equipment.
+6. Explore more dangerous dimensions and encounters as progression gates allow.
+7. Pursue deeper builds, profession capabilities, equipment customization, dungeons, bosses, and other long-term goals.
 
-## World and progression
-The world receives a comprehensive RPG progression overhaul. Regions have distinct identities, recommended difficulty ranges, enemy populations, resources, equipment opportunities, dungeons, and bosses. Exploration remains open-ended: players may discover dangerous content early, but its threat should be legible and its rewards meaningful.
+See [[Core Gameplay Loop]] and [[Progression Systems]].
 
-Enemy difficulty reflects region, encounter role, and progression context—not indiscriminate player-level scaling.
+## Vanilla-friendly design
 
-See [[World Progression]], [[Regions and Biomes]], [[Enemy Progression]].
+- Vanilla mechanics remain functional and worthwhile. Covenant does not gate baseline Minecraft activities, tools, blocks, resources, ordinary recipes, or interactions behind RPG levels.
+- Vanilla XP orbs and the vanilla XP/enchanting-level system remain independent of Covenant progression.
+- Covenant progression rewards meaningful participation and mastery, primarily by unlocking new capabilities, interactions, and options.
+- Numerical bonuses from Covenant systems should remain controlled. Professions can complement combat, but should not replace class skill progression or make vanilla equipment irrelevant.
+- Modded content should be supported through data-driven definitions, tags, identifiers, and optional integrations rather than mandatory dependencies or hardcoded mod lists.
+
+See [[Design Pillars]], [[Experience and Reward Systems]], [[Profession Progression]], and [[Mod Compatibility]].
 
 ## Character progression
-- Level cap: **100**.
-- Configurable experience curve.
-- Progression is persistent and server-authoritative.
-- Character development includes attributes, class, specialization, talents, abilities, and equipment.
-- Equipment modifiers are derived from currently equipped items, not permanently copied into character progression.
 
-See [[Character Progression]], [[Attributes]], [[Classes and Specializations]], [[Class Resources]].
+- Maximum character level: **60**.
+- A new character begins at level 1 with **1 skill point**.
+- Characters earn **1 additional skill point for each level gained after level 1**, for **60 lifetime skill points at level 60**.
+- Character XP comes primarily from combat. Significant discoveries, dungeon completions, bosses, and other major accomplishments can grant supplemental XP.
+- Vanilla XP orbs do not grant Covenant character XP.
+- Character progression does not grant traditional attribute points or a separate general-stat point budget.
+- Character levels gate the first point invested in a skill. They do not gate later ranks of an already-unlocked skill.
+- Character progression is persistent and server-authoritative.
 
-## Statistics
-The implemented foundation uses Health, Damage, Armor, Movement Speed, Attack Speed, and Dodge, with neutral multipliers for future skill costs, cooldowns, cast times, and durations. Native Minecraft attributes combine equipment and other native modifier sources. The current scope has no primary attributes, attribute points, talent system, or conditional modifier framework; broader progression notes remain roadmap material.
+See [[Character Progression]], [[Combat Skill Progression]], and [[Experience and Reward Systems]].
 
-See [[Statistics]], [[Stat Calculation Pipeline]].
+## Combat classes and skills
 
-## Itemization and equipment
-Covenant enhances existing Minecraft equipment rather than requiring replacement items. RPG data attaches to item instances through [[Affix Pages]].
+The current playable class identities are **Stalker**, **Reaver**, and **Weaver**. Classes establish combat style and class resource; they do not impose rigid equipment restrictions.
 
-Affix Pages belong to individual item stacks and travel with the item through inventories, containers, drops, pickup, trading, player transfers, and save/reload. Unequipping preserves the page; modifiers apply only while equipped.
+Combat skills are learned and ranked through a class-specific skill tree. No more than **8 distinct skills** may have points allocated at one time, matching the maximum of eight combat keybinds. Individual skills have a maximum rank of **8 or 12**, selected according to the value and range of their rank upgrades. Rank 1 unlocks the skill; subsequent points improve its rank.
 
-Future itemization includes rarity tiers, multiple affixes, affix tiers, and exceptional properties. Crafting is the primary equipment acquisition and improvement philosophy. Direct drops remain suitable for unique rewards and special encounters.
+Prerequisites and genuinely mutually exclusive choices remain enforced. A crafted respec item refunds the allocated combat skill points. See [[Classes and Specializations]], [[Class Resources]], [[Abilities]], [[Skill Trees Brainstorm]], and [[Combat Skill Progression]].
 
-See [[Equipment]], [[Affix Pages]], [[Equipment Categories]], [[Affixes and Rarity]], [[Crafting]], [[Loot and Rewards]].
+## Profession progression
 
-## Combat
-Hybrid combat retains recognizable Minecraft attacks, weapons, and blocking while adding class abilities, resources, cooldowns, statistics, status effects, and specialized mechanics. Enemies eventually include ordinary, elite, champion, and boss roles with differentiated behaviors. Modded entities should participate without requiring their source mods to depend on Covenant.
+The initial profession roster is:
 
-See [[Combat]], [[Abilities]], [[Encounter Design]].
+- **Mining**
+- **Logging**
+- **Farming**
+- **Crafting** (with Enchanting as a subset, not a separate profession)
+
+Every character can develop every profession, independently of class. Each profession begins at level 0, uses the shared profession XP curve, and has a default maximum level of **20**. Each level gained awards one Profession Point, for 20 points at level 20. Points purchase level-gated abilities and interactions, generally at variable costs of 1–3 points. Most profession abilities should eventually be obtainable; only genuine alternative specializations should lock one another out.
+
+Profession levels automatically grant core recipe unlocks at selected milestones. New abilities and interactions require deliberate Profession Point investment. Profession abilities do not consume combat keybinds. Profession respecs reset one profession's allocations, refund its points, preserve its XP and level, and use a crafted item more expensive than the combat respec item.
+
+Profession XP comes from meaningful activity-specific actions, not vanilla XP orbs. Ordinary vanilla crafting does not award Crafting XP. Automation grants no profession XP by default; explicitly configured automation exceptions must have attribution and anti-exploit safeguards.
+
+See [[Profession Progression]], [[Mining]], [[Logging]], [[Farming]], and [[Crafting Profession]].
+
+## Experience and dimensional progression
+
+Character XP and each profession's XP are separate progression tracks. Activity and combat XP rewards are contextual and configurable. Multiplayer combat XP is split among contributing players; exact contribution qualification and distribution rules remain to be tuned.
+
+Dimensional progression gates configure the maximum level that each track can reach from XP earned in a given dimension. Rules can match exact dimension identifiers or dimension tags, with explicit priority and a configurable fallback. Unmatched dimensions default to the global cap: character level 60 and profession level 20. XP earned beyond the current dimension's gate is discarded rather than banked. Existing levels are never reduced when entering a lower-cap dimension.
+
+See [[Experience and Reward Systems]], [[Dimensional Progression Gates]], and [[Progression Balance Configuration]].
+
+## Statistics and equipment
+
+The current direct-stat vocabulary is Health, Damage, Armor, Movement Speed, Attack Speed, and Dodge. Skill-related modifiers include Resource Cost, Cooldown, Cast Time, and Skill Duration. There is no traditional Strength/Dexterity/Constitution/Intelligence/Willpower/Ego attribute system and no attribute-point allocation.
+
+Equipment is based on existing Minecraft and modded items. RPG modifiers are attached to individual item stacks through [[Affix Pages]] and apply only while equipped. Equipment, Affix Pages, and selected skill/profession effects provide character customization without requiring a replacement gear ecosystem.
+
+See [[Statistics]], [[Attributes]], [[Stat Calculation Pipeline]], [[Equipment]], [[Affix Pages]], and [[Affixes and Rarity]].
+
+## Crafting and equipment customization
+
+Ordinary vanilla crafting remains unchanged. The Crafting profession covers meaningful specialized crafting activities, including Enchanting, affix manipulation, equipment crafting, and salvaging. Covenant-specific workstations are planned for advanced equipment crafting and salvaging so players can tune their gear. Exact station roster, recipes, materials, and release timing remain to be designed.
+
+See [[Crafting]], [[Crafting Profession]], [[Affix Pages]], and [[Affixes and Rarity]].
+
+## World and combat progression
+
+The world remains open to exploration. Regions, dimensions, encounter roles, and content establish threat; avoid indiscriminate player-level scaling of every vanilla or modded entity. Dimensional XP gates provide configurable progression pacing but do not prevent players from physically entering or exploring a dimension.
+
+See [[World Progression]], [[Regions and Biomes]], [[Enemy Progression]], [[Encounter Design]], and [[Dimensional Progression Gates]].
 
 ## Endgame
-Endgame combines escalating repeatable challenges, structured dungeons and bosses, and open-world progression such as rare encounters, events, exploration, and high-level gathering. Level 100 begins a broader endgame rather than ending character development.
 
-See [[Endgame]], [[Challenge Tiers]], [[Dungeons]], [[Bosses]], [[World Events]].
+The character level cap is 60; there is no level-100 or post-level-100 progression track in the current design. Long-term play comes from higher-risk dimensions and encounters, equipment and Affix Page tuning, deeper class builds, profession mastery, dungeons, bosses, challenge tiers, and world events.
+
+See [[Endgame]], [[Challenge Tiers]], [[Dungeons]], [[Bosses]], and [[World Events]].
 
 ## Mod compatibility
-Covenant is standalone. ATM11 is a compatibility test target, not a mandatory dependency. Support vanilla and modded equipment/entities, optional integrations, and extension points without unnecessarily overriding vanilla combat.
 
-See [[Mod Compatibility]].
+Covenant is standalone. ATM11 is a compatibility test target, not a mandatory dependency. Vanilla and modded tools, blocks, ores, activities, entities, equipment, recipes, and dimensions should participate where configured. Prefer tags, identifiers, data-driven definitions, and optional integrations over hardcoded compatibility lists.
+
+See [[Mod Compatibility]] and [[Data-Driven Content]].
 
 ## Technical principles
-Server-authoritative gameplay; persistent profiles; item-instance RPG data stored with stacks; data-driven definitions where useful; multiplayer/dedicated-server safety; optional integrations; automated tests; separation of character progression, item data, and derived statistics.
 
-See [[Technical Architecture]], [[Player Profiles]], [[Item Data and Persistence]], [[Networking and Authority]], [[Testing Strategy]].
+Server-authoritative gameplay; persistent per-player progression profiles; item-instance RPG data stored with stacks; effective statistics derived from sources; data-driven progression and reward definitions where useful; dimension rules resolved from identifiers/tags; dedicated-server safety; optional integrations; automated tests; and clear separation of character progression, profession progression, item data, and derived statistics.
+
+See [[Technical Architecture]], [[Player Profiles]], [[Item Data and Persistence]], [[Networking and Authority]], and [[Testing Strategy]].
 
 ## Development sequence
-[[Milestone 1 - RPG Foundation]] → [[Milestone 2 - Character Gameplay]] → [[Milestone 3 - Itemization and Crafting]] → [[Milestone 4 - World Progression]] → [[Milestone 5 - Class Depth and Content]] → [[Milestone 6 - Endgame]].
 
-See [[Development Roadmap]] and [[Implementation Priorities]].
+The vertical slice includes the complete progression framework and a modest, playable first content selection for all four professions. It does not require fully populated profession trees or final XP tuning. See [[Progression Vertical Slice]], [[Development Roadmap]], and [[Implementation Priorities]].
+
+The existing milestone sequence remains: [[Milestone 1 - RPG Foundation]] → [[Milestone 2 - Character Gameplay]] → [[Milestone 3 - Itemization and Crafting]] → [[Milestone 4 - World Progression]] → [[Milestone 5 - Class Depth and Content]] → [[Milestone 6 - Endgame]].

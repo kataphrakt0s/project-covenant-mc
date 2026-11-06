@@ -40,6 +40,13 @@ public final class RpgData {
                     .sync((holder, recipient) -> holder == recipient, SkillState.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<SkillRuntime>> SKILL_RUNTIME = ATTACHMENTS.register(
             "skill_runtime", () -> AttachmentType.builder(SkillRuntime::new).build());
+    /** Two owner-only combo rows, updated only at transitions; no saved/copy state. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.ComboDisplay>> COMBO_DISPLAY = ATTACHMENTS.register(
+            "combo_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.ComboDisplay.EMPTY)
+                    .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.skills.ComboDisplay.STREAM_CODEC).build());
+    /** Tracking-synced execution flag for input/control hooks; owner trajectory uses start/stop payloads. */
+    public static final Supplier<AttachmentType<Boolean>> COMBO_MOVING = ATTACHMENTS.register(
+            "combo_moving", () -> AttachmentType.builder(() -> false).sync(ByteBufCodecs.BOOL).build());
     /** Active Frost patch references; never saved, synced, or copied to a replacement entity. */
     public static final Supplier<AttachmentType<FrostSlows.Sources>> FROST_SOURCES = ATTACHMENTS.register(
             "frost_sources", () -> AttachmentType.builder(FrostSlows.Sources::new).build());

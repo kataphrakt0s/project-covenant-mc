@@ -1,6 +1,7 @@
 package dev.covenant.rpg.skills;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import dev.covenant.rpg.PlayerProfiles;
@@ -12,7 +13,7 @@ import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
-/** Self-targeted inspection/activation; balance edits and class switching require operator permission. */
+/** Self-targeted inspection/activation; debug edits and class switching require operator permission. */
 public final class SkillCommands {
     private SkillCommands() {}
 
@@ -21,8 +22,16 @@ public final class SkillCommands {
                 .then(Commands.literal("resource").executes(c -> inspect(c.getSource()))
                         .then(Commands.literal("set").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0))
-                                        .executes(c -> set(c.getSource(), DoubleArgumentType.getDouble(c, "amount"))))))
+                                        .executes(c -> set(c.getSource(), DoubleArgumentType.getDouble(c, "amount")))))
+                        .then(Commands.literal("infinite").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .executes(c -> infinite(c.getSource(), null))
+                                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                        .executes(c -> infinite(c.getSource(), BoolArgumentType.getBool(c, "enabled"))))))
                 .then(Commands.literal("skill").executes(c -> list(c.getSource()))
+                        .then(Commands.literal("ignorecooldowns").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .executes(c -> ignoreCooldowns(c.getSource(), null))
+                                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                        .executes(c -> ignoreCooldowns(c.getSource(), BoolArgumentType.getBool(c, "enabled")))))
                         .then(Commands.literal("use").then(Commands.argument("skill", IdentifierArgument.id())
                                 .suggests((c, b) -> SharedSuggestionProvider.suggestResource(SkillDefinition.ALL.stream().map(SkillDefinition::id), b))
                                 .executes(c -> {
@@ -52,6 +61,7 @@ public final class SkillCommands {
                     ClassResources.regeneration(player, type), selected.orElse(null) == type ? "active" : "inactive"), false);
         }
         source.sendSuccess(() -> Component.translatable("commands.covenant.resource.combat", ClassResources.inCombat(player)), false);
+        source.sendSuccess(() -> infiniteFeedback(ClassResources.infinite(player)), false);
         return 1;
     }
 
@@ -63,8 +73,33 @@ public final class SkillCommands {
         return inspect(source);
     }
 
+    private static int infinite(CommandSourceStack source, Boolean enabled) throws CommandSyntaxException {
+        var player = source.getPlayerOrException();
+        boolean next = enabled == null ? !ClassResources.infinite(player) : enabled;
+        ClassResources.setInfinite(player, next);
+        source.sendSuccess(() -> infiniteFeedback(next), false);
+        return 1;
+    }
+
+    private static Component infiniteFeedback(boolean enabled) {
+        return Component.translatable("commands.covenant.resource.infinite." + (enabled ? "enabled" : "disabled"));
+    }
+
+    private static int ignoreCooldowns(CommandSourceStack source, Boolean enabled) throws CommandSyntaxException {
+        var player = source.getPlayerOrException();
+        boolean next = enabled == null ? !Skills.ignoresCooldowns(player) : enabled;
+        Skills.setIgnoreCooldowns(player, next);
+        source.sendSuccess(() -> cooldownFeedback(next), false);
+        return 1;
+    }
+
+    private static Component cooldownFeedback(boolean enabled) {
+        return Component.translatable("commands.covenant.skill.ignorecooldowns." + (enabled ? "enabled" : "disabled"));
+    }
+
     private static int list(CommandSourceStack source) throws CommandSyntaxException {
         var player = source.getPlayerOrException();
+        source.sendSuccess(() -> cooldownFeedback(Skills.ignoresCooldowns(player)), false);
         for (var skill : SkillDefinition.ALL) {
             source.sendSuccess(() -> Component.translatable("commands.covenant.skill.entry", skill.id().toString(),
                     skill.displayName(), skill.description(),

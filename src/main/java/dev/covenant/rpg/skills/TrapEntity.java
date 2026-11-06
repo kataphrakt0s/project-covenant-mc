@@ -233,6 +233,7 @@ public final class TrapEntity extends Entity implements ItemSupplier {
             double strength = falloff * (1 - resistance) * (1 - ordinary);
             var direction = target.position().subtract(position()).multiply(1, 0, 1);
             if (direction.lengthSqr() < 0.0001) { direction = new Vec3(0, 0, 1); }
+            if (strength > 0 && target instanceof ServerPlayer player) { Combos.interruptMovement(player, false); }
             target.push(direction.normalize().scale(0.65 * strength).add(0, 0.22 * strength, 0));
             target.hurtMarked = true;
         }

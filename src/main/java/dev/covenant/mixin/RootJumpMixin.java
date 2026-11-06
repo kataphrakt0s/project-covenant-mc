@@ -13,13 +13,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 abstract class RootJumpMixin {
     @Inject(method = "jumpFromGround", at = @At("HEAD"), cancellable = true)
     private void covenant$rootJump(CallbackInfo ci) {
-        if ((Rooted.contains((LivingEntity) (Object) this) || dev.covenant.rpg.skills.Auras.frozen((LivingEntity) (Object) this))) { ci.cancel(); }
+        if ((Rooted.contains((LivingEntity) (Object) this) || dev.covenant.rpg.skills.Auras.frozen((LivingEntity) (Object) this)
+                || dev.covenant.rpg.skills.Combos.moving((LivingEntity) (Object) this))) { ci.cancel(); }
     }
 
     @WrapOperation(method = "aiStep", at = @At(value = "INVOKE", target =
             "Lnet/minecraft/world/entity/LivingEntity;jumpInFluid(Lnet/neoforged/neoforge/fluids/FluidType;)V"), require = 3)
     private void covenant$rootSwimJump(LivingEntity target, net.neoforged.neoforge.fluids.FluidType fluid,
             Operation<Void> original) {
-        if (!Rooted.contains(target) && !dev.covenant.rpg.skills.Auras.frozen(target)) { original.call(target, fluid); }
+        if (!Rooted.contains(target) && !dev.covenant.rpg.skills.Auras.frozen(target)
+                && !dev.covenant.rpg.skills.Combos.moving(target)) { original.call(target, fluid); }
     }
 }

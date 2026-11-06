@@ -34,6 +34,7 @@ public final class Rooted extends MobEffect {
             // blanket addEffect overrides on bosses such as the Wither.
             target.forceAddEffect(new MobEffectInstance(EFFECT, duration, 0, false, true, false), null);
         }
+        if (contains(target) && target instanceof net.minecraft.server.level.ServerPlayer player) { Combos.interruptMovement(player, false); }
     }
 
     private static void died(LivingDeathEvent event) {

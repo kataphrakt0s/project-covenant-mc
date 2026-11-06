@@ -43,6 +43,193 @@ final class SkillGameTests {
     private SkillGameTests() {}
 
     @SuppressWarnings("removal")
+    static void ignoreCooldowns(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        var players = new ArrayList<ServerPlayer>();
+        var player = helper.makeMockServerPlayerInLevel(); players.add(player);
+        var combo = helper.makeMockServerPlayerInLevel(); players.add(combo);
+        var position = helper.absolutePos(new BlockPos(2, 120, 2));
+        player.setPos(position.getX() + .5, position.getY(), position.getZ() + .5); player.setNoGravity(true);
+        combo.setPos(player.position().add(12, 0, 0)); combo.setNoGravity(true);
+        var dispatcher = server.getCommands().getDispatcher();
+        var ordinary = player.createCommandSourceStack().withPermission(PermissionSet.NO_PERMISSIONS);
+        var operator = ordinary.withPermission(PermissionSet.ALL_PERMISSIONS);
+        try {
+            reject(() -> dispatcher.execute("covenant skill ignorecooldowns", ordinary));
+            reject(() -> dispatcher.execute("covenant skill ignorecooldowns true", ordinary));
+            reject(() -> dispatcher.execute("covenant skill ignorecooldowns", server.createCommandSourceStack()));
+            check(!Skills.ignoresCooldowns(player), "Rejected commands preserve default mode");
+            dispatcher.execute("covenant skill ignorecooldowns", operator);
+            check(Skills.ignoresCooldowns(player) && !Skills.ignoresCooldowns(combo), "Toggle is self-only");
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "class"), "Cooldown bypass retains class checks");
+            PlayerProfiles.selectClass(player, PlayerClass.REAVER);
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "unlearned"), "Cooldown bypass retains learning checks");
+            SkillLoadouts.learn(player, SkillDefinition.CLEAVE.id(), true);
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "resource"), "Cooldown bypass retains resource checks");
+            ClassResources.set(player, PlayerClass.REAVER, 100);
+            player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(SkillDefinition.CLEAVE.id(), ClassResources.now(player) + 200));
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "used"), "Instant skill bypasses preexisting cooldown");
+            near(ClassResources.current(player, PlayerClass.REAVER), 80, "Instant skill still spends Rage");
+            check(Skills.cooldownRemaining(player, SkillDefinition.CLEAVE) == 60, "Normal timer commits while bypassed");
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "busy"), "Same-tick throttle remains enforced");
+            var before = player.getData(RpgData.SKILLS);
+            dispatcher.execute("covenant skill ignorecooldowns false", operator);
+            dispatcher.execute("covenant skill ignorecooldowns false", operator);
+            check(!Skills.ignoresCooldowns(player) && player.getData(RpgData.SKILLS).equals(before), "Explicit false is idempotent and preserves timers");
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "cooldown"), "Disabling restores remaining cooldown");
+            dispatcher.execute("covenant skill ignorecooldowns true", operator);
+            dispatcher.execute("covenant skill ignorecooldowns true", operator);
+            check(Skills.ignoresCooldowns(player), "Explicit true is idempotent");
+            dispatcher.execute("covenant skill ignorecooldowns", operator);
+            check(!Skills.ignoresCooldowns(player), "No-argument command toggles off");
+            dispatcher.execute("covenant skill ignorecooldowns", operator);
+            var copy = helper.makeMockServerPlayerInLevel(); players.add(copy); copy.restoreFrom(player, false);
+            check(!Skills.ignoresCooldowns(copy), "Cooldown flag is not death-copied");
+            var reporter = new ProblemReporter.Collector();
+            var output = net.minecraft.world.level.storage.TagValueOutput.createWithContext(reporter, player.registryAccess());
+            player.saveWithoutId(output);
+            var loaded = helper.makeMockServerPlayerInLevel(); players.add(loaded);
+            var data = output.buildResult(); data.remove("UUID");
+            loaded.load(TagValueInput.create(reporter, loaded.registryAccess(), data));
+            check(reporter.isEmpty() && !Skills.ignoresCooldowns(loaded), "Native save/load omits debug flag");
+            PlayerProfiles.switchClass(player, PlayerClass.WEAVER);
+            check(Skills.ignoresCooldowns(player), "Class switching preserves debug mode on same entity");
+            SkillLoadouts.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
+            player.getAttribute(RpgStats.MANA_REGENERATION).setBaseValue(0);
+            ClassResources.set(player, PlayerClass.WEAVER, 100);
+            player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(SkillDefinition.ARCANE_BOLT.id(), ClassResources.now(player) + 200));
+            PlayerProfiles.selectClass(combo, PlayerClass.REAVER);
+            SkillLoadouts.learn(combo, SkillDefinition.LUNGING_COMBO.id(), true);
+            ClassResources.set(combo, PlayerClass.REAVER, 100);
+            Skills.setIgnoreCooldowns(combo, true);
+            combo.setData(RpgData.SKILLS, combo.getData(RpgData.SKILLS).withCooldown(SkillDefinition.LUNGING_COMBO.id(), ClassResources.now(combo) + 200));
+            check(key(Skills.activate(combo, SkillDefinition.LUNGING_COMBO), "used"), "Combo opens through existing cooldown");
+        } catch (RuntimeException | CommandSyntaxException error) { players.forEach(server.getPlayerList()::remove); throw new IllegalStateException(error); }
+        helper.onEachTick(player::doTick);
+        helper.onEachTick(combo::doTick);
+        helper.runAtTickTime(2, () -> {
+            check(key(Skills.activate(player, SkillDefinition.ARCANE_BOLT), "started"), "Cast begins through existing cooldown");
+            check(Skills.isCasting(player), "Cooldown bypass retains wind-up");
+            near(ClassResources.current(player, PlayerClass.WEAVER), 100, "Cast has not spent early");
+            check(key(Skills.activate(player, SkillDefinition.ARCANE_BOLT), "casting"), "Overlapping cast remains rejected");
+        });
+        helper.runAtTickTime(5, () -> check(key(Skills.activate(combo, SkillDefinition.LUNGING_COMBO), "used"), "Combo strike advances normally"));
+        helper.runAtTickTime(7, () -> {
+            check(key(Skills.activate(combo, SkillDefinition.LUNGING_COMBO), "used"), "Combo finisher executes");
+            check(Skills.cooldownRemaining(combo, SkillDefinition.LUNGING_COMBO) > 0, "Combo still commits end cooldown");
+        });
+        helper.runAtTickTime(9, () -> check(key(Skills.activate(combo, SkillDefinition.LUNGING_COMBO), "used"), "Completed combo can reopen during cooldown"));
+        helper.runAtTickTime(14, () -> {
+            check(!Skills.isCasting(player), "Cast completes while bypass enabled");
+            near(ClassResources.current(player, PlayerClass.WEAVER), 80, "Completed cast spends normal Mana");
+            check(Skills.cooldownRemaining(player, SkillDefinition.ARCANE_BOLT) > 0, "Completed cast commits normal cooldown");
+            check(key(Skills.activate(player, SkillDefinition.ARCANE_BOLT), "started"), "Cast can restart while cooldown remains");
+            Skills.setIgnoreCooldowns(player, false);
+        });
+        helper.runAtTickTime(28, () -> {
+            try {
+                check(!Skills.isCasting(player), "Disabling bypass revalidates cooldown at cast completion");
+                near(ClassResources.current(player, PlayerClass.WEAVER), 80, "Rejected cast completion does not spend Mana");
+                check(key(Skills.activate(player, SkillDefinition.ARCANE_BOLT), "cooldown"), "Cooldown remains enforced after disabling");
+                helper.succeed();
+            } finally { players.forEach(server.getPlayerList()::remove); }
+        });
+    }
+
+    @SuppressWarnings("removal")
+    static void infiniteResource(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        var players = new ArrayList<ServerPlayer>();
+        var player = helper.makeMockServerPlayerInLevel(); players.add(player);
+        var comboPlayer = helper.makeMockServerPlayerInLevel(); players.add(comboPlayer);
+        var position = helper.absolutePos(new BlockPos(2, 95, 2));
+        player.setPos(position.getX() + .5, position.getY(), position.getZ() + .5); player.setNoGravity(true);
+        var dispatcher = server.getCommands().getDispatcher();
+        var ordinary = player.createCommandSourceStack().withPermission(PermissionSet.NO_PERMISSIONS);
+        var operator = ordinary.withPermission(PermissionSet.ALL_PERMISSIONS);
+        try {
+            reject(() -> dispatcher.execute("covenant resource infinite", ordinary));
+            reject(() -> dispatcher.execute("covenant resource infinite true", ordinary));
+            reject(() -> dispatcher.execute("covenant resource infinite", server.createCommandSourceStack()));
+            check(!ClassResources.infinite(player), "Rejected commands cannot enable infinite resource");
+            dispatcher.execute("covenant resource infinite", operator);
+            check(ClassResources.infinite(player), "No-argument command toggles on");
+            check(!ClassResources.canAfford(player, 1), "Infinite resource cannot bypass missing class");
+            PlayerProfiles.selectClass(player, PlayerClass.REAVER);
+            for (var type : PlayerClass.all()) {
+                PlayerProfiles.switchClass(player, type);
+                ClassResources.set(player, type, 0);
+                var before = player.getData(RpgData.SKILLS);
+                check(ClassResources.canAfford(player, 10000) && ClassResources.consume(player, 10000), "Infinite resource works above capacity for " + type);
+                check(player.getData(RpgData.SKILLS).equals(before), "Infinite spending preserves saved balances and cooldowns");
+            }
+            PlayerProfiles.switchClass(player, PlayerClass.REAVER);
+            SkillLoadouts.learn(player, SkillDefinition.CLEAVE.id(), true);
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "used"), "Zero-Rage instant skill activates");
+            check(Skills.cooldownRemaining(player, SkillDefinition.CLEAVE) == 60, "Infinite resource retains cooldown");
+            check(key(Skills.activate(player, SkillDefinition.CLEAVE), "cooldown"), "Infinite resource cannot bypass cooldown");
+            var other = comboPlayer;
+            PlayerProfiles.selectClass(other, PlayerClass.REAVER);
+            check(!ClassResources.infinite(other) && !ClassResources.canAfford(other, 1), "Toggle is per player");
+            other.setPos(player.position().add(12, 0, 0)); other.setNoGravity(true);
+            SkillLoadouts.learn(other, SkillDefinition.LUNGING_COMBO.id(), true);
+            dispatcher.execute("covenant resource infinite true", other.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS));
+            check(key(Skills.activate(other, SkillDefinition.LUNGING_COMBO), "used"), "Zero-Rage combo opens");
+            var copy = helper.makeMockServerPlayerInLevel(); players.add(copy); copy.restoreFrom(player, false);
+            check(!ClassResources.infinite(copy), "Infinite debug flag is not death-copied");
+            var reporter = new ProblemReporter.Collector();
+            var output = net.minecraft.world.level.storage.TagValueOutput.createWithContext(reporter, player.registryAccess());
+            player.saveWithoutId(output);
+            var loaded = helper.makeMockServerPlayerInLevel(); players.add(loaded);
+            var data = output.buildResult(); data.remove("UUID");
+            loaded.load(TagValueInput.create(reporter, loaded.registryAccess(), data));
+            check(reporter.isEmpty() && !ClassResources.infinite(loaded), "Native save/load does not retain debug flag");
+            dispatcher.execute("covenant resource infinite false", operator);
+            dispatcher.execute("covenant resource infinite false", operator);
+            check(!ClassResources.infinite(player) && !ClassResources.consume(player, 1), "Explicit false is idempotent and restores resource checks");
+            dispatcher.execute("covenant resource infinite true", operator);
+            dispatcher.execute("covenant resource infinite true", operator);
+            check(ClassResources.infinite(player), "Explicit true is idempotent");
+            dispatcher.execute("covenant resource infinite", operator);
+            check(!ClassResources.infinite(player), "No-argument command toggles off");
+            dispatcher.execute("covenant resource infinite true", operator);
+            PlayerProfiles.switchClass(player, PlayerClass.WEAVER);
+            ClassResources.set(player, PlayerClass.WEAVER, 0);
+            player.getAttribute(RpgStats.MANA_REGENERATION).setBaseValue(0);
+            SkillLoadouts.learn(player, SkillDefinition.ARCANE_BOLT.id(), true);
+        } catch (RuntimeException | CommandSyntaxException error) { players.forEach(server.getPlayerList()::remove); throw new IllegalStateException(error); }
+        helper.onEachTick(player::doTick);
+        helper.onEachTick(comboPlayer::doTick);
+        helper.runAtTickTime(2, () -> {
+            try {
+                var result = Skills.activate(player, SkillDefinition.ARCANE_BOLT);
+                check(key(result, "started"), "Zero-Mana cast passes affordability check: " + result.getString());
+                check(Skills.isCasting(player), "Infinite resource retains cast time");
+            } catch (RuntimeException error) { players.forEach(server.getPlayerList()::remove); throw error; }
+        });
+        helper.runAtTickTime(14, () -> {
+            try {
+                check(!Skills.isCasting(player) && Skills.cooldownRemaining(player, SkillDefinition.ARCANE_BOLT) > 0, "Zero-Mana cast completes with normal cooldown");
+                near(ClassResources.current(player, PlayerClass.WEAVER), 0, "Cast does not spend or fill stored Mana");
+                check(key(Skills.activate(comboPlayer, SkillDefinition.LUNGING_COMBO), "used"), "Zero-Rage combo follow-up executes");
+                near(ClassResources.current(comboPlayer, PlayerClass.REAVER), 0, "Combo follow-up leaves Rage unchanged");
+                player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(SkillDefinition.ARCANE_BOLT.id(), 0));
+                check(key(Skills.activate(player, SkillDefinition.ARCANE_BOLT), "started"), "Second zero-Mana cast starts");
+                dispatcher.execute("covenant resource infinite false", operator);
+            } catch (RuntimeException | CommandSyntaxException error) { players.forEach(server.getPlayerList()::remove); throw new IllegalStateException(error); }
+        });
+        helper.runAtTickTime(28, () -> {
+            try {
+                check(!Skills.isCasting(player) && Skills.cooldownRemaining(player, SkillDefinition.ARCANE_BOLT) == 0, "Disabling during cast restores resource check at completion");
+                near(ClassResources.current(player, PlayerClass.WEAVER), 0, "Rejected completion preserves balance");
+                check(key(Skills.activate(comboPlayer, SkillDefinition.LUNGING_COMBO), "used"), "Zero-Rage combo finisher executes");
+                check(Skills.cooldownRemaining(comboPlayer, SkillDefinition.LUNGING_COMBO) == 240, "Infinite combo retains end cooldown");
+                helper.succeed();
+            } finally { players.forEach(server.getPlayerList()::remove); }
+        });
+    }
+
+    @SuppressWarnings("removal")
     static void lifecycle(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         var players = new ArrayList<ServerPlayer>();

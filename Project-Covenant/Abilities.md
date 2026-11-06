@@ -2,55 +2,28 @@
 
 Abilities express class identity through damage, defense, mobility, control, utility, and resource interactions.
 
-The basic implementation provides Piercing Shot (Stalker bow attack), Cleave (Reaver
-nearby melee attack), and Arcane Bolt (Weaver single-target magic projectile).
-Code-backed definitions own class access, resource costs, cooldowns, cast times,
-and effect parameters. Existing native skill multipliers apply. The server validates,
-casts, spends and executes. Radial slot 1 opens a small Skills window with one node
-per class: left-click learns/selects for free, right-click unlearns, and eight slots
-assign learned skills to Q/R/F/C and their Shift variants. Commands and keybindings
-share the learned-skill requirement. Learning/assignments persist with the player;
-unlearning clears matching assignments and cancels a pending cast without resetting
-cooldowns. See [the implementation contract](../docs/RPG_SKILLS.md). Broad trees,
-points/unlock progression, specializations, larger collections and action-bar HUD
-remain deferred.
+The basic class abilities include Piercing Shot (Stalker), Cleave (Reaver), and Arcane Bolt (Weaver), with additional implemented and planned skills recorded in [[Skill Trees Brainstorm]]. Code-backed definitions own class access, resource costs, cooldowns, cast times, and effect parameters. The server validates, casts, spends, and executes abilities. See [the implementation contract](../docs/RPG_SKILLS.md).
 
-Planned skill-tree design is recorded in [[Skill Trees Brainstorm]]. Vertical
-connections require learning the lower skill before the higher skill, with both
-remaining usable. Crossed horizontal connections mark mutually exclusive learning
-choices: learning Ripping Aura locks out Fortitude Aura, and vice versa. These
-rules are agreed design and are not implemented in the current Skills window.
+## Combat skill progression
 
-Planned aura model: an aura supplies an always-on passive effect while assigned to
-a skill slot, and pressing its assigned keybind activates a different, stronger
-temporary buff. Learning alone does not activate the passive; removing the aura
-from the loadout ends it. Specific effects are being designed in
-[[Skill Trees Brainstorm]]; auras are not implemented.
+The intended progression model replaces free prototype learning:
 
-Related: [[Classes and Specializations]], [[Class Resources]], [[Combat]].
+- Character level 1 grants the first skill point; each subsequent character level grants one more, for 60 total at level 60.
+- A skill's listed minimum character level gates its initial point only. Spending that first point unlocks the skill at Rank 1.
+- Further points increase the skill's rank without further character-level gates.
+- Skill maximum rank is assigned individually as 8 or 12.
+- No more than eight distinct skills may have points allocated at once, corresponding to the eight combat keybinds.
+- Prerequisites and genuine mutually exclusive choices are enforced.
+- A crafted combat respec item refunds invested skill points. Its recipe remains undecided.
 
-Rend and its shared bleed foundation are now implemented alongside Aimed Shot and
-the original three skills. Rend is an instant native-reach melee strike costing
-20 Rage with a two-second cooldown. A damaging hit adds one five-second stack,
-dealing 10% of captured attack damage per second, up to three stacks shared across
-attackers. Reapplication refreshes all durations and replaces the oldest stack at
-the cap. Bleeding persists with paused timers while targets are inactive and clears
-on death. See [[Skill Trees Brainstorm]] and the implementation contract for the
-full targeting, defense, ownership, and persistence rules. Other bleed-dependent
-skills remain planned.
+The current free-learning behavior is a prototype/testing state, not the intended progression economy. See [[Combat Skill Progression]] and [[Skill Trees Brainstorm]].
 
-Skill visuals use vanilla-style hand/weapon movements and skill-specific particles
-for the existing three skills. Custom character animation rigs are outside this
-pass. Rendered behavior awaits playtesting; see
-[the implementation contract](../docs/RPG_SKILLS.md).
+## Existing keybindings and auras
 
-Arcane Bolt's effects are a blue-white charge during its existing cast,
-a sparkling projectile trail, and a small impact burst.
+The current keybinding/loadout implementation has eight combat slots: Q, R, F, C, and their Shift variants. Auras use the shared model described in [[Skill Trees Brainstorm]]: their passive effect is active while assigned to a slot, and pressing the assigned key activates a distinct temporary effect. Profession abilities do not consume these combat slots; they use contextual actions, tools, workstations, or passive/conditional effects as appropriate.
 
-Cleave's effects are a vanilla-style weapon swing, a brief circular sweep
-matching its existing all-around reach, and red sparks on enemies hit.
+## Current implementation notes
 
-Piercing Shot's effects are a brief vanilla bow-charge animation,
-a subtle yellow-white arrow trail, and a small impact spark. It remains instant,
-with no added firing delay. The cosmetic draw lasts six ticks (0.3 seconds at
-20 TPS) and does not start actual item use or interfere with normal bow use.
+Learning/assignments currently persist with the player. Unlearning clears matching assignments and cancels a pending cast without resetting cooldowns in the prototype. The final respec behavior is defined by [[Combat Skill Progression]]. Visual and playtesting status for individual skills remains in [[Skill Trees Brainstorm]] and [the implementation contract](../docs/RPG_SKILLS.md).
+
+Related: [[Classes and Specializations]], [[Class Resources]], [[Combat]], [[Profession Progression]].

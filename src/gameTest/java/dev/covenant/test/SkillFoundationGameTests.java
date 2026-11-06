@@ -70,9 +70,10 @@ final class SkillFoundationGameTests {
                 "Cleave rejects outside-arc, rear, distant, and occluded targets");
         front.discard(); insideEdge.discard(); outsideEdge.discard(); far.discard(); hidden.discard();
         reaver.setData(RpgData.SKILLS, reaver.getData(RpgData.SKILLS).withCooldown(SkillDefinition.CLEAVE.id(), 0));
+        reaver.setData(RpgData.SKILL_RUNTIME, new dev.covenant.rpg.skills.SkillRuntime());
         var rage = ClassResources.current(reaver, PlayerClass.REAVER);
-        check(key(Skills.activate(reaver, SkillDefinition.CLEAVE), "target"), "Only rear target cannot activate Cleave");
-        near(ClassResources.current(reaver, PlayerClass.REAVER), rage, "Rejected sweep does not spend Rage");
+        check(key(Skills.activate(reaver, SkillDefinition.CLEAVE), "used"), "Only rear target produces a paid Cleave whiff");
+        near(ClassResources.current(reaver, PlayerClass.REAVER), rage - 20, "Empty forward sweep spends Rage");
 
         var aimed = player(helper, players, origin, 35, PlayerClass.STALKER);
         learnBow(aimed);

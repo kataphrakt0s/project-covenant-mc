@@ -1,17 +1,27 @@
 # Classes and Specializations
 
-The initial playable identities are **Stalker**, **Reaver**, and **Weaver**. Classes do not restrict equipment.
+## Playable classes
 
-- **Stalker**: bow-focused ranged combat, precision, ranged damage, and maintaining distance. Intended for bows and other suitable ranged weapons.
-- **Reaver**: dedicated melee combat, close-quarters damage, and direct combat. Intended for swords, axes, and other melee weapons.
-- **Weaver**: elemental spellcasting and simple offensive magic. Intended for magical equipment where supported; elemental skills and abilities are future work.
+The initial playable identities are **Stalker**, **Reaver**, and **Weaver**. Classes determine combat identity, class resource, and access to their class skill tree. They do not impose rigid equipment restrictions; vanilla and modded equipment should remain usable where mechanically appropriate.
 
-Implemented foundation: stable IDs `covenant:stalker`, `covenant:reaver`, and `covenant:weaver`, localized descriptions, and one-time server-authoritative selection via `/covenant class select <id>`. `/covenant class` lists choices and the current selection. The existing player profile owns and persists the choice; classes add no bonuses, resources, skills, or equipment restrictions yet. See `docs/RPG_DATA.md` for APIs and persistence contracts.
+- **Stalker**: bow-focused ranged combat, precision, mobility, and maintaining distance. Resource: Focus.
+- **Reaver**: direct melee combat, aggression, and close-quarters pressure. Resource: Rage.
+- **Weaver**: elemental spellcasting and magical control. Resource: Mana.
 
-Future scope: recognizable class abilities and resources, meaningful within-class customization, specializations, and talents. No specialization structure, talent economy, or cross-class customization is implemented.
+Stable IDs are `covenant:stalker`, `covenant:reaver`, and `covenant:weaver`. The existing player profile owns and persists the selected class. The current command surface includes `/covenant class select <id>` for one-time server-authoritative selection and `/covenant class` to list choices/current selection. See `docs/RPG_DATA.md` and [[Class Resources]].
 
-Planned Reaver build direction: support both bleed-focused and non-bleed builds.
-Overpower rewards attacking a non-bleeding enemy with a huge melee hit. This is
-design intent recorded in [[Skill Trees Brainstorm]], not implemented behavior.
+## Class skill progression
 
-Related: [[Abilities]], [[Class Resources]], [[Character Progression]].
+Each class has its own skill tree. Character level gates the first point invested in each skill; the first point unlocks Rank 1. Further ranks use skill points without additional character-level gates. A character may have no more than eight distinct skills allocated at once, matching the eight combat keybinds. Individual skill rank caps are 8 or 12.
+
+See [[Combat Skill Progression]] and [[Skill Trees Brainstorm]].
+
+## Equipment and professions
+
+Classes do not restrict profession development. Every class can independently develop Mining, Logging, Farming, and Crafting. Profession abilities and their modest combat crossovers are available regardless of class and do not consume combat keybinds.
+
+## Specialization scope
+
+The class skill trees, their prerequisites, and explicitly mutually exclusive options are the current within-class customization foundation. A separate class-specialization or talent-point economy is not established by the current progression design. Do not invent one as a prerequisite for the vertical slice.
+
+Related: [[Abilities]], [[Class Resources]], [[Character Progression]], [[Profession Progression]].

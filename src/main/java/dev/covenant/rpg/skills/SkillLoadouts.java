@@ -56,7 +56,10 @@ public final class SkillLoadouts {
             if (blocked.isPresent()) { return blocked.orElseThrow(); }
         }
         var next = previous.withBinding(slot, id);
-        if (!previous.equals(next)) { player.setData(RpgData.SKILL_LOADOUT, next); }
+        if (!previous.equals(next)) {
+            Combos.bindingChanged(player, previous.bindings().get(slot));
+            player.setData(RpgData.SKILL_LOADOUT, next);
+        }
         Auras.reconcile(player);
         return message(id == null ? "cleared" : "assigned", slot + 1);
     }

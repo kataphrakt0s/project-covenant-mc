@@ -76,6 +76,7 @@ public final class PlayerProfiles {
         }
         if (!previous.equals(next)) {
             if (!previous.selectedClass().equals(next.selectedClass())) {
+                dev.covenant.rpg.skills.Combos.clear(player);
                 initializeResources(player);
                 player.getData(RpgData.SKILL_RUNTIME).cancelCast(player);
                 dev.covenant.rpg.skills.Traps.clear(player, null);

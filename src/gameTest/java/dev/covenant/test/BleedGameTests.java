@@ -55,19 +55,18 @@ final class BleedGameTests {
         try {
             var source = player(helper, players, 0);
             near(source.entityInteractionRange(), 3, "Native default Survival reach");
-            check(key(Skills.activate(source, SkillDefinition.REND), "target"), "No target is rejected");
-            near(ClassResources.current(source, PlayerClass.REAVER), 100, "No-target rejection costs nothing");
+            whiff(source, "Empty crosshair is a paid whiff");
             var target = target(helper, targets, source, 3.5);
-            check(key(Skills.activate(source, SkillDefinition.REND), "target"), "Beyond normal reach is rejected");
+            whiff(source, "Beyond normal reach whiffs");
             target.setPos(source.getX(), source.getY(), source.getZ() + 2);
             var wall = BlockPos.containing(source.getX(), source.getEyeY(), source.getZ() + 1);
             helper.getLevel().setBlockAndUpdate(wall, Blocks.STONE.defaultBlockState());
-            check(key(Skills.activate(source, SkillDefinition.REND), "target"), "Walls stop crosshair targeting");
+            whiff(source, "Walls stop hits but do not reject activation");
             helper.getLevel().setBlockAndUpdate(wall, Blocks.AIR.defaultBlockState());
             var shortWeapon = new ItemStack(Items.STICK);
             shortWeapon.set(DataComponents.ATTACK_RANGE, new AttackRange(0, 1, 0, 1, 0, 1));
             source.setItemSlot(EquipmentSlot.MAINHAND, shortWeapon);
-            check(key(Skills.activate(source, SkillDefinition.REND), "target"), "Short native item reach is honored");
+            whiff(source, "Short native item reach causes a whiff");
             source.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
             check(key(Skills.activate(source, SkillDefinition.REND), "used"), "Rend executes");
             near(target.getHealth(), 190, "Initial hit is 100 percent attack damage");
@@ -343,6 +342,14 @@ final class BleedGameTests {
 
     private static boolean key(Component c, String suffix) {
         return c.getContents() instanceof TranslatableContents text && text.getKey().equals("commands.covenant.skill." + suffix);
+    }
+    private static void whiff(ServerPlayer source, String message) {
+        check(key(Skills.activate(source, SkillDefinition.REND), "used"), message);
+        near(ClassResources.current(source, PlayerClass.REAVER), 80, "Whiff spends 20 Rage");
+        check(Skills.cooldownRemaining(source, SkillDefinition.REND) == 40, "Whiff starts cooldown");
+        source.setData(RpgData.SKILLS, source.getData(RpgData.SKILLS).withCooldown(SkillDefinition.REND.id(), 0));
+        source.setData(RpgData.SKILL_RUNTIME, new dev.covenant.rpg.skills.SkillRuntime());
+        ClassResources.set(source, PlayerClass.REAVER, 100);
     }
     private static void near(double actual, double expected, String message) {
         check(Math.abs(actual - expected) < 0.0001, message + ": expected " + expected + ", got " + actual);

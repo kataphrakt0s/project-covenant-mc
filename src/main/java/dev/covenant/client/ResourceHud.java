@@ -73,6 +73,21 @@ public final class ResourceHud {
                 graphics.fill(x + 1, shieldY + 1, x + 1 + (int) ((WIDTH - 2) * shield / 6), shieldY + HEIGHT - 1, 0xFF7E9DAB);
                 graphics.centeredText(minecraft.font, shieldLabel, x + WIDTH / 2, shieldY + 1, 0xFFFFFFFF);
             }
+            var combos = player.getData(dev.covenant.rpg.RpgData.COMBO_DISPLAY);
+            int comboY = y - (shield > 0 ? 2 : 1) * (HEIGHT + 3);
+            for (var row : combos.rows()) {
+                long remaining = row.deadline() - (minecraft.level.getGameTime() + combos.clockOffset());
+                if (!row.moving() && remaining <= 0) { continue; }
+                String skill = row.combo() == 0 ? "lunging_combo" : "rip_and_rush";
+                var action = net.minecraft.network.chat.Component.translatable("combo.covenant." + skill + "." + row.stage());
+                var text = net.minecraft.network.chat.Component.translatable(row.moving() ? "hud.covenant.combo.moving" : "hud.covenant.combo.waiting",
+                        net.minecraft.network.chat.Component.translatable("skill.covenant." + skill), action,
+                        String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, remaining) / 20.0));
+                int width = minecraft.font.width(text);
+                graphics.text(minecraft.font, text, Math.max(3, x + WIDTH - width), comboY + 1, 0xFFFFFFFF);
+                minecraft.gui.rightHeight += HEIGHT + 3;
+                comboY -= HEIGHT + 3;
+            }
         });
     }
 }

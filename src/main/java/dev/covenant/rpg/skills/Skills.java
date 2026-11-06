@@ -67,6 +67,8 @@ public final class Skills {
         Chilled.register(modBus);
         FrostSlows.register();
         Auras.register();
+        ArmorShred.register(modBus);
+        Combos.register();
         NeoForge.EVENT_BUS.addListener(Skills::tick);
         NeoForge.EVENT_BUS.addListener(ClassResources::damaged);
         NeoForge.EVENT_BUS.addListener(SkillCommands::register);
@@ -81,13 +83,15 @@ public final class Skills {
         ClassResources.requireServer(player);
         Auras.reconcile(player);
         var runtime = player.getData(RpgData.SKILL_RUNTIME);
-        if (runtime.deploying) { return message("busy"); }
+        Combos.expire(player);
+        if (runtime.deploying || runtime.executing) { return message("busy"); }
         var failure = validate(player, skill);
         if (failure != null) { return failure; }
         if (runtime.casting != null) { return message("casting"); }
         if (ClassResources.now(player) < runtime.nextActivation) { return message("busy"); }
+        if (skill.effect() == SkillDefinition.Effect.COMBO) { return Combos.activate(player, skill); }
         double cost = RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, skill.cost());
-        if (ClassResources.current(player, PlayerProfiles.getSelectedClass(player).orElseThrow()) < cost) { return message("resource"); }
+        if (!ClassResources.canAfford(player, cost)) { return message("resource"); }
         long cast = Auras.active(player, Auras.Kind.ICY_VEINS) && isSpell(skill) ? 0 : (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, skill.castTicks()));
         long cooldown = (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, skill.cooldownTicks()));
         if (cast == 0) { return execute(player, skill, cost, cooldown); }
@@ -117,19 +121,26 @@ public final class Skills {
         var type = PlayerProfiles.getSelectedClass(player).orElse(null);
         if (type == null || !skill.allowedClasses().contains(type)) { return message("class"); }
         if (!player.getData(RpgData.SKILL_LOADOUT).learned().contains(skill.id())) { return message("unlearned"); }
-        if (cooldownRemaining(player, skill) > 0) { return message("cooldown", cooldownRemaining(player, skill) / 20.0); }
+        if (!ignoresCooldowns(player) && cooldownRemaining(player, skill) > 0) { return message("cooldown", cooldownRemaining(player, skill) / 20.0); }
         if (skill.effect() == SkillDefinition.Effect.BOW_SHOT) {
             var weapon = player.getMainHandItem();
             if (!(weapon.getItem() instanceof BowItem)) { return message("bow"); }
             if (!(player.getProjectile(weapon).getItem() instanceof ArrowItem)) { return message("arrow"); }
         }
-        if (skill.effect() == SkillDefinition.Effect.CLEAVE && targets(player, skill).isEmpty()) { return message("target"); }
-        if (skill.effect() == SkillDefinition.Effect.REND && rendTarget(player) == null) { return message("target"); }
         return null;
     }
 
+    /** Actual saved timer, including while the debug bypass is enabled. */
     public static long cooldownRemaining(ServerPlayer player, SkillDefinition skill) {
         return Math.max(0, player.getData(RpgData.SKILLS).cooldowns().getOrDefault(skill.id(), 0L) - ClassResources.now(player));
+    }
+
+    public static boolean ignoresCooldowns(ServerPlayer player) { return player.getData(RpgData.SKILL_RUNTIME).ignoreCooldowns; }
+
+    /** Bypasses checks only; disabling immediately restores all remaining saved cooldowns. */
+    public static void setIgnoreCooldowns(ServerPlayer player, boolean enabled) {
+        ClassResources.requireServer(player);
+        player.getData(RpgData.SKILL_RUNTIME).ignoreCooldowns = enabled;
     }
 
     public static boolean isCasting(ServerPlayer player) { return player.getData(RpgData.SKILL_RUNTIME).casting != null; }
@@ -167,6 +178,7 @@ public final class Skills {
         player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(skill.id(), now + Math.max(1, cooldown)));
         player.getData(RpgData.SKILL_RUNTIME).nextActivation = now + 1;
         switch (skill.effect()) {
+            case COMBO -> throw new IllegalStateException("Combos use staged activation");
             case AURA -> Auras.activate(player, skill);
             case LIGHTNING_BOLT -> ElementalBolts.lightning(player);
             case ELEMENTAL_BOLT -> {
@@ -207,18 +219,9 @@ public final class Skills {
                 }
             }
             case REND -> {
-                float attackDamage = (float) player.getAttributeValue(RpgStats.DAMAGE);
-                float bleedDamage = AuraDamage.bleedPower(player);
-                int duration = (int) Math.clamp(Math.ceil(RpgStats.scaleSkillValue(player,
-                        RpgStats.SKILL_DURATION, Bleeding.REND_DURATION_TICKS)), 1, Integer.MAX_VALUE);
-                var before = AuraDamage.before(rendTarget);
-                var runtime = player.getData(RpgData.SKILL_RUNTIME);
-                runtime.applyingRend = true;
-                try { hurtMeleeSkill(player, rendTarget, (float) (attackDamage * skill.power() * AuraDamage.multiplier(player, false))); }
-                finally { runtime.applyingRend = false; }
-                if (before.landed(rendTarget)) {
-                    if (bleedDamage > 0) { Bleeding.apply(rendTarget, player, bleedDamage, duration); }
-                    SkillVisuals.cleaveHit(player.level(), rendTarget);
+                if (rendTarget != null) {
+                    applyRend(player, rendTarget, (float) (player.getAttributeValue(RpgStats.DAMAGE) * AuraDamage.multiplier(player, false)),
+                            AuraDamage.bleedPower(player), Combos.duration(player, Bleeding.REND_DURATION_TICKS));
                 }
             }
             case ARCANE_BOLT -> {
@@ -237,14 +240,14 @@ public final class Skills {
     }
 
     /** Uses the same held-item attack range and block-clipped crosshair pick as native melee. */
-    private static LivingEntity rendTarget(ServerPlayer player) {
+    static LivingEntity rendTarget(ServerPlayer player) {
         var range = player.getAttackRangeWith(player.getMainHandItem());
         var hit = range.getClosesetHit(player, 1, entity -> entity.isPickable() && !entity.isSpectator());
         return hit instanceof EntityHitResult entityHit && entityHit.getEntity() instanceof LivingEntity target
                 && canHit(player, target) && player.hasLineOfSight(target) ? target : null;
     }
 
-    private static boolean hurtMeleeSkill(ServerPlayer player, LivingEntity target, float damage) {
+    static boolean hurtMeleeSkill(ServerPlayer player, LivingEntity target, float damage) {
         var runtime = player.getData(RpgData.SKILL_RUNTIME);
         var previous = runtime.skillDamageSource;
         var source = player.damageSources().playerAttack(player);
@@ -253,7 +256,20 @@ public final class Skills {
         finally { runtime.skillDamageSource = previous; }
     }
 
-    private static java.util.List<LivingEntity> targets(ServerPlayer player, SkillDefinition skill) {
+    static void applyRend(ServerPlayer player, LivingEntity target, float damage, float bleed, int duration) {
+        var before = AuraDamage.before(target);
+        var runtime = player.getData(RpgData.SKILL_RUNTIME);
+        boolean previous = runtime.applyingRend;
+        runtime.applyingRend = true;
+        try { hurtMeleeSkill(player, target, damage); }
+        finally { runtime.applyingRend = previous; }
+        if (before.landed(target)) {
+            if (bleed > 0) { Bleeding.apply(target, player, bleed, duration); }
+            SkillVisuals.cleaveHit(player.level(), target);
+        }
+    }
+
+    static java.util.List<LivingEntity> targets(ServerPlayer player, SkillDefinition skill) {
         return player.level().getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(skill.range()),
                 target -> canHit(player, target) && player.distanceToSqr(target) <= skill.range() * skill.range()
                         && inCleaveArc(player, target)
@@ -303,15 +319,15 @@ public final class Skills {
     }
 
     private static void changedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) { player.getData(RpgData.SKILL_RUNTIME).cancelCast(player); Traps.clear(player, null); }
+        if (event.getEntity() instanceof ServerPlayer player) { Combos.clear(player); player.getData(RpgData.SKILL_RUNTIME).cancelCast(player); Traps.clear(player, null); }
     }
 
     private static void loggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) { player.getData(RpgData.SKILL_RUNTIME).cancelCast(player); Traps.clear(player, null); }
+        if (event.getEntity() instanceof ServerPlayer player) { Combos.clear(player); player.getData(RpgData.SKILL_RUNTIME).cancelCast(player); Traps.clear(player, null); }
     }
 
     private static void died(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) { player.getData(RpgData.SKILL_RUNTIME).cancelCast(player); Traps.clear(player, null); }
+        if (event.getEntity() instanceof ServerPlayer player) { Combos.clear(player); player.getData(RpgData.SKILL_RUNTIME).cancelCast(player); Traps.clear(player, null); }
     }
 
     static Component message(String key, Object... args) { return Component.translatable("commands.covenant.skill." + key, args); }

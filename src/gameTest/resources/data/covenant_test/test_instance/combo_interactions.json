@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:combo_interactions",
+  "environment": "minecraft:default",
+  "structure": "covenant_test:empty",
+  "max_ticks": 180
+}

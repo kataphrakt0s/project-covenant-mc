@@ -32,6 +32,7 @@ public final class CovenantClient {
         container.registerConfig(ModConfig.Type.CLIENT, SkillClientConfig.SPEC);
         modBus.addListener(CovenantClient::registerRenderers);
         modBus.addListener(ResourceHud::register);
+        modBus.addListener(ClientDash::register);
         modBus.addListener(this::registerKeys);
         NeoForge.EVENT_BUS.addListener(this::onKey);
         NeoForge.EVENT_BUS.addListener(this::onMouseButton);

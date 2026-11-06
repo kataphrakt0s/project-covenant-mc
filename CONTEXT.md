@@ -100,6 +100,20 @@ and cast completion own all spending/effects. Cooldowns persist on the saved
 overworld game clock; pending casts cancel on logout, death, class/dimension change.
 `/covenant resource` inspects balances. Operator-only `resource set <amount>` and
 `class switch <id>` support testing; ordinary selection remains one-time.
+Operator-only `/covenant resource infinite` toggles a per-player debug bypass of
+class-resource requirements and spending; `infinite true|false` sets it explicitly.
+It applies to whichever known class is selected, including combo stages and cast
+completion. Balances/HUD values and ordinary recovery/decay remain unchanged;
+cooldowns, casting, learning, equipment, and control checks still apply. The flag
+is unsaved and does not copy to replacement players, so reconnect/respawn resets it.
+`/covenant resource` reports its state.
+Operator-only `/covenant skill ignorecooldowns` toggles a self-only cooldown-check
+bypass; an optional `true|false` sets it explicitly. `/covenant skill` reports the
+mode alongside actual remaining timers. Timers still commit and elapse normally,
+including combo completion; disabling restores any remaining cooldown immediately,
+including revalidation at cast completion. Other activation rules and the one-tick
+request throttle remain enforced. This independent unsaved flag resets on
+reconnect/respawn and survives class switches on the same player.
 See `docs/RPG_SKILLS.md` for defaults, APIs, persistence, and test steps.
 
 Rend hits the crosshair target using native held-item melee reach (normally three
@@ -111,7 +125,46 @@ refreshes all durations and replaces the oldest stack at the cap. The server-onl
 pauses while the target is not ticking, and clears on death. One shared pulse per
 second applies each stack independently of native hurt cooldown, bypassing armor,
 blocking, and Dodge while retaining general mitigation and absorption. Other
-bleed-dependent skills remain placeholders. See `docs/RPG_SKILLS.md`.
+bleed-dependent skills remain placeholders except Rip and Rush below. See `docs/RPG_SKILLS.md`.
+
+Reaver's Lunging Combo and Rip and Rush are playable three-press sequences with
+independent progression and fixed 40/60-tick follow-up windows. Lunging Combo
+lunges four blocks over three ticks, strikes for 125% attack damage, then cleaves
+for 100% in the existing three-block/120-degree area. Costs are 20/10/20 Rage;
+its base cooldown is twelve seconds. Rip and Rush opens with three-block circular
+Rend, dashes six blocks over four ticks for 50% damage per contacted enemy, then
+performs a three-block circular 100% finisher consuming shared bleeds on damaging
+hits (including kills). Costs are 30/20/20 Rage; its base cooldown is twenty
+seconds. Cooldown duration snapshots at stage one and starts at completion,
+timeout, or lifecycle/loadout cancellation. All skill attacks may whiff: no target
+never rejects activation; resource spending, progression, and cooldowns still occur.
+This also applies to Cleave and Rend. Cover/range/allies gate hits, not activation.
+
+Both combos share one native harmful 20% armor-shred status for five base seconds,
+with unchanged toughness, damage-gated application, native immunity/cleansing,
+and a target-owned saved relative timer paused while inactive. It clears on target
+death and survives caster departure; refresh retains the later expiry without
+stacking strength. Rip and Rush grants +10% base speed per consumed enemy, capped
+at +30%, for four base seconds, using a transient modifier cleared on expiry and
+lifecycle/loadout edits. Duration scaling snapshots at the applying stage.
+Movement captures full 3D aim, replaces momentum, suppresses gravity, breaks falls,
+flattens pitch on floor/ceiling contact while preserving horizontal heading,
+and clips blocked wall components without boosting the surviving sideways speed.
+Movement completes early on full blockage
+or root/freeze/effective knockback including
+Blast pushes. One server-owned movement may run at a time, while other stationary
+skills/attacks remain usable. The server advances native collision steps while an
+owner-only start/stop trajectory lets the client simulate native movement with
+normal frame interpolation. Normal dash travel sends no teleport corrections.
+Each authoritative step updates the native connection's cached position anchor,
+so its enclosing tick cannot restore the pre-step position.
+Late predicted position packets are held through an endpoint acknowledgement;
+the server resets the native movement anchor on a matching endpoint, with one
+impulse-preserving correction on disagreement or a 40-tick acknowledgement timeout.
+Costs, hits, movement completion, and follow-up windows remain server-owned.
+Runtime, gravity suppression, and owner-only HUD rows are never saved or copied.
+Saved cooldown/resource/loadout formats are unchanged. Movement feel, latency,
+and HUD layout remain for manual playtesting. See `docs/COMBOS_IMPLEMENTATION_PLAN.md`.
 
 The Skills window displays only the current class's tree from
 `Project-Covenant/Skill Trees Brainstorm.md` (62 total nodes across the three classes).
@@ -119,7 +172,7 @@ Left-click allocates/selects for free; right-click removes that node and its lea
 dependents, clearing their assignments. The server enforces all 11 prerequisite
 links and the Ripping/Fortitude Aura exclusion. Diagram levels are informational;
 there are no skill points, level gates, or ranks yet. Planned nodes can be allocated
-and bound but have no effects, costs, cooldowns, or passive bonuses. Twenty-three
+and bound but have no effects, costs, cooldowns, or passive bonuses. Twenty-five
 skills have gameplay, including all eleven auras. Assigned auras grant free
 passives; instant activations commit a resource cost and cooldown. Source-aware
 transient grants handle allies/pets, overlap, expiry, and loadout/lifecycle cleanup.

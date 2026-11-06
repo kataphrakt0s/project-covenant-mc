@@ -2,6 +2,200 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Dash direction on wall contact (2026-11-05)
+
+- Fixed both dashes converting blocked forward motion into full-speed sideways
+  movement. Launch aim remains normalized and captured at movement start. Wall
+  collisions now clip the blocked horizontal components without renormalizing the
+  surviving direction. Floor/ceiling contact still flattens pitch while preserving
+  horizontal heading and speed; simultaneous contacts flatten before wall clipping.
+  Distances, base times, costs, damage, and combo progression are retained.
+- `scripts/Dev.ps1 test` passed all 63 required dedicated-server GameTests. Expanded
+  sliding checks cover both skills hitting walls with tiny left/right aim offsets,
+  owner prediction, unchanged floor travel, original tangential wall speed, ceiling
+  contact, and Rush's actual swept hit path. Earlier runs exposed a contact-fixture
+  placement issue after adding lanes; appending the new lanes preserved its original
+  chunk placement and the complete final suite passed.
+- `scripts/Dev.ps1 build` and `git diff --check` passed. No client was launched.
+  Manual check: dash almost straight into a wall with small left/right aim offsets,
+  then compare a deliberate diagonal wall approach and downward floor aim.
+
+## Ignore skill cooldowns debug toggle (2026-11-05)
+
+- Added operator-only, self-targeted `/covenant skill ignorecooldowns` with optional
+  `true|false`. This independent unsaved runtime flag bypasses cooldown validation
+  for instant skills, cast start/completion, and combo starts. Saved cooldowns still
+  commit and elapse; disabling restores remaining timers. Skill inspection reports
+  the mode and actual timers. Class changes preserve the flag on the same entity;
+  native save/load and replacement/respawn omit it.
+- `scripts/Dev.ps1 test` passed all 63 required dedicated-server GameTests. The new
+  fixture checks command permissions, console rejection, per-player scope, toggle
+  and explicit modes, instant/cast/combo reuse, normal spending/casting/throttling,
+  saved timer preservation, mid-cast disabling, native save/load, and death copying.
+  The first run had a corrected new-test cost expectation and an existing arrow
+  collision fixture failure; both passed in the complete final rerun.
+- `scripts/Dev.ps1 build` passed, including the geometry checks. `git diff --check`
+  passed. Client testing remains manual: enable, repeat a learned skill during its
+  cooldown, disable, and confirm the remaining cooldown is enforced.
+
+## Faster dashes and surface sliding (2026-11-05)
+
+- User playtesting confirmed the preceding connection-anchor fix worked, then
+  requested twice-faster travel and smooth movement along floors/walls. Lunging
+  Combo now travels four blocks over three ticks (0.15 seconds); Rip and Rush
+  travels six blocks over four ticks (0.2 seconds). Their distances, costs,
+  cooldowns, follow-up windows, and status/damage tuning are retained.
+- The shared server/owner collision solver now moves to first contact, removes
+  blocked normal components, and spends the remaining tick fraction along the
+  surface tangent at unchanged speed. Floors, walls, and ceilings permit glancing
+  slides without prematurely completing the stage. Full blockage still stops
+  movement. Steering stays captured, gravity stays suspended, and normal momentum
+  cleanup/interruption rules remain. Sliding direction persists through the stage.
+- Rush checks hits per actual movement segment, so a bent path does not become
+  one broad diagonal hit sweep. Its existing per-enemy attempt limit, defenses,
+  shred application, and authoritative ownership are preserved.
+- `scripts/Dev.ps1 test` passed all **62 required dedicated GameTests**, including
+  the new `combo_sliding` fixture. It checks both faster speeds/distances through
+  full connection ticks with downward ground aim, floor/wall corners, glancing
+  ceiling contact, actual sliding-path Rush hits, untouched off-path enemies,
+  and owner prediction using the same collision solver. Existing direct-impact,
+  3D movement, control/knockback, packet handoff, lifecycle, and resource tests pass.
+  Evidence: ignored `.local/dash-sliding-tests-final.log`.
+- `scripts/Dev.ps1 build`, both geometry checks, and `git diff --check` passed.
+  Build evidence: ignored `.local/dash-sliding-build-final.log`. The built JAR
+  includes updated movement/description resources and excludes GameTest fixtures.
+- No client was launched. Manual check: compare both faster dashes on a flat
+  floor with level/downward aim, glance along walls/corners, aim upward/downward
+  in open space, and verify direct head-on stops plus root/freeze/knockback
+  interruptions. Retest rendered feel and owner/observer latency in-client.
+
+## Dash connection-tick rewind (2026-11-05)
+
+- User playtesting found smooth predicted motion followed by a return toward the
+  starting position. The new `combo_connection_movement` regression reproduced
+  the server-side cause through the full native `connection.tick()`: the first
+  lunge step should travel 0.6667 blocks but ended at zero displacement. Evidence:
+  ignored `.local/dash-connection-repro.log`; the prior 60 fixtures still passed.
+- In pinned 26.1.2, `connection.tickPlayer()` caches `firstGood`, calls
+  `ServerPlayer.doTick()`, then restores the cached coordinates. Each
+  authoritative dash step now calls `connection.resetPosition()` after native
+  movement, committing the new position to that cache without sending a packet.
+  The existing smooth client path and dash gameplay rules are retained.
+- The regression passes for both the four-block/six-tick lunge and
+  six-block/eight-tick dash, checking each step after a complete connection tick,
+  matching cached coordinates, no increment in native teleport IDs, retention of
+  the endpoint through a later connection tick, rejection of late starting-point
+  packets, and ordinary walking after endpoint acknowledgement.
+- `scripts/Dev.ps1 test` passed all **61 required dedicated GameTests**. The
+  earlier tests invoked `doTick()` or posted player-tick events directly, which
+  omitted the outer restore; this coverage gap is now documented in the workflow.
+  Evidence: `.local/dash-connection-tests-final.log` (ignored).
+- `scripts/Dev.ps1 build`, both geometry checks, and `git diff --check` passed.
+  Build evidence: `.local/dash-connection-build-final.log` (ignored).
+- No client was launched. Manual check: repeat the same open-ground dashes that
+  returned toward their origin, then walk immediately afterward; also recheck
+  upward/downward travel, terrain stops, and interruptions. The reproduced server
+  rewind is fixed; the resulting rendered behavior still needs user verification.
+
+## Predicted dash movement (2026-11-05)
+
+- User playtesting reported choppy Lunging Combo and Rip and Rush movement with
+  the initial per-tick teleport implementation. That path is replaced by
+  owner-only start/stop trajectories, native client collision movement with
+  ordinary frame interpolation, and separate authoritative server collision/hits.
+  Distances, travel times, costs, follow-up windows, and interruptions retain
+  their existing tuning and server ownership.
+- Normal dash travel sends no native teleport stream. The owner acknowledges
+  the completed sequence after reaching the server endpoint. Late predicted
+  position packets cannot rewind the server; matching acknowledgements reset
+  vanilla's movement anchor. A mismatched endpoint or missing acknowledgement
+  after 40 ticks uses one correction preserving velocity. Client prediction is
+  scoped to the player/dimension; removed entities release the server packet hold.
+- `scripts/Dev.ps1 build` passed with both geometry checks; all **60 required
+  dedicated GameTests** passed through `scripts/Dev.ps1 test`; `git diff --check`
+  passed. Evidence: ignored `.local/dash-prediction-build.log` and
+  `.local/dash-prediction-tests.log`. Production JAR inspection confirms the new
+  trajectory/prediction/client mixin classes and excludes test fixtures.
+- New coverage exercises trajectory/acknowledgement codecs, distributing starting
+  error over a constant predicted path, endpoint convergence, immediate knockback
+  handoff, stale/duplicate transitions and acknowledgements, no native teleport
+  increments through normal travel, rejection of late rewind packets, ordinary
+  walking after acknowledgement, mismatched endpoint recovery retaining impulse,
+  and acknowledgement timeout recovery. Existing movement, hit/bleed/shred,
+  lifecycle, gravity-save, combo, and infinite-resource fixtures remain passing.
+- The prediction model and server path were tested without a renderer. Client
+  code compiled, but physical-client mixin application, rendered smoothness,
+  camera feel, remote-player interpolation, and real latency are unverified.
+  No client was launched. Manual checks: compare both dashes on open ground,
+  upward/downward aim and terrain stops, turn/hold movement during travel, resume
+  walking immediately afterward, and interrupt with root/freeze/native knockback
+  or Blast Trap. Check owner and observer views under actual network latency.
+
+## Infinite class-resource debug command (2026-11-05)
+
+- Operator-only, self-targeted `/covenant resource infinite` toggles resource
+  requirements/spending off; append `true` or `false` for an explicit setting.
+  `/covenant resource` reports the state. Class selection and all non-resource
+  activation checks remain authoritative. Stored/HUD balances and ordinary
+  recovery/decay continue normally.
+- The flag lives only in `SkillRuntime`, survives class switches on the same
+  entity, and is neither saved nor copied on replacement/respawn. Disabling it
+  during a pending cast restores the resource check at completion.
+- `scripts/Dev.ps1 build`, including both geometry checks, and `git diff --check`
+  passed. `scripts/Dev.ps1 test` passed all 59 required dedicated GameTests.
+  Evidence: `.local/infinite-resource-build.log` and
+  `.local/infinite-resource-tests-final.log` (ignored).
+- The new fixture checks permission/console rejection, toggle and explicit
+  on/off semantics, all three classes at zero balance and above-capacity cost,
+  unchanged saved balances, player isolation, save/load and death-copy reset,
+  instant cooldown retention, zero-resource cast completion and staged combos,
+  and restoring resource rejection when disabled during a cast.
+- Manual client smoke check: toggle on, activate a learned skill at zero resource,
+  inspect the state with `/covenant resource`, then toggle off and retry after its
+  cooldown. No client was launched for this command change.
+
+## Combo skills and paid whiffs (2026-11-05)
+
+- Lunging Combo and Rip and Rush now execute their three-stage prototypes.
+  Cleave, Rend, and all combo attacks accept empty targets/areas as paid whiffs;
+  normal resource spending, progression, and cooldown rules still apply.
+- `scripts/Dev.ps1 test` passed **58 required dedicated GameTests**, including
+  seven new combo fixtures and updated Cleave/Rend regressions. Evidence:
+  ignored `.local/combo-tests-final.log`. This loads the new common mixins and
+  native status on a dedicated server; client rendering is not exercised.
+- `scripts/Dev.ps1 build` passed with JDK 25, including both geometry checks;
+  `git diff --check` passed. Evidence: ignored `.local/combo-build-final.log`.
+  Production JAR inspection confirmed combo classes/mixins and excluded all
+  test classes and fixtures. Saved profile, item-page, resource, cooldown, and
+  loadout formats and existing IDs are retained; the new native harmful-status
+  ID is `covenant:armor_shred`. No migration of existing saves is required.
+- Combo fixtures cover independent interleaving and windows, current per-stage
+  costs, stage-one cooldown snapshots, empty attack completion, resource/root
+  rejection without deadline refresh, exact timeout boundaries, expiration during
+  real aura freeze, native player ticking, movement-packet position rejection,
+  captured 3D direction, horizontal/upward/downward travel, short wall stops,
+  restored gravity/fall tracking, effective/resisted native knockback, and the
+  actual Blast Trap effect path preserving its explicit impulse.
+- Native damage checks cover circular Rend and normal shared stacks, dash and
+  attack damage coefficients, shared shred without toughness changes or strength
+  stacking, retaining a longer refresh, cleansing and native immunity hooks,
+  all-owner bleed consumption, absorption, lethal-hit credit, and preservation
+  of bleeds on invulnerable finishers. Speed checks cover the +30% cap, duration
+  snapshots, weaker/shorter replacement, no refresh on zero consumption, expiry,
+  and binding cleanup after combo completion. A damaging callback cannot re-enter
+  and double-spend/advance the combo stage.
+- Lifecycle fixtures cover dependent unlearning, duplicate/unchanged/rejected
+  assignments, class changes, logout/dimension events, actual death and native
+  replacement copying, persistent cooldown serialization, paused target-owned
+  shred serialization, target death clearing, and autosaving during movement
+  without persisting the temporary native gravity flag. These are controlled
+  server fixtures, not a live multi-client or cross-process movement test.
+- Manual checks: bind both combos and interleave them, try empty attacks, test
+  wall/floor/ceiling travel and interruptions, and check the independent HUD
+  countdown/action lines with Fortitude, air/mount indicators, GUI scales, and
+  F1. Assess movement feel and reconciliation under actual client latency.
+  Icons/circular cooldown displays remain deferred; no client was launched.
+
 ## Eleven auras (2026-11-05)
 
 - All eleven aura skills are executable: Dodge, Swiftness, Ripping, Fortitude,
