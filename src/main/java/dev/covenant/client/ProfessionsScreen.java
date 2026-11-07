@@ -95,7 +95,8 @@ final class ProfessionsScreen extends Screen {
             var node = entry.node(); int rank = draft().desired.getOrDefault(node.id(), 0);
             int old = track().rank(node.id());
             entry.button().setMessage(node.name().copy().append("  " + rank + "/" + node.ranks().size() + (rank > old ? " *" : "")));
-            entry.button().active = canAdd(node);
+            // Keep pending ranks hit-testable for undo even when another purchase is blocked.
+            entry.button().active = canAdd(node) || rank > old;
             var tip = node.name().copy().withStyle(ChatFormatting.GOLD).append("\n").append(node.description().copy().withStyle(ChatFormatting.GRAY));
             tip.append("\n").append(text(node.implemented() ? "implemented" : "planned"));
             for (int index = 0; index < node.ranks().size(); index++) {

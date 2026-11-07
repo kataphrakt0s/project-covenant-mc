@@ -23,17 +23,19 @@ zero. The first expanded foundation adds paid-cost allocations, a server-datapac
 catalogue, owner-synced four-tab Professions menu, atomic per-tab Apply, and a
 Profession Respec item. Held use for two seconds out of combat refunds all four
 professions together while preserving XP/levels. Logging's Offensive Mastery is
-the first usable ability; the other sixteen authored nodes remain visibly planned
-and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
+usable alongside all four Crafting nodes; the other twelve authored nodes remain
+visibly planned and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
 XP now use confirmed server outcomes, the provisional shared curve and reward
 table, persistent chunk-owned placed-ore exclusions, and bounded tree recognition.
-Gathering abilities and Workbench/itemization gameplay remain deferred.
+Gathering abilities remain deferred. The shared, persistent Covenant Workbench
+now supports Add/Upgrade/Reroll/Remove and ten-input/twelve-output salvage,
+Crafting access/XP, and Recovery/Focused Recovery. It uses a netherite-block
+placeholder model and the agreed ungated recipe. See [ITEMIZATION.md](docs/ITEMIZATION.md).
 Additional profession-level recipe milestones are outside the
 progression slice; Workbench and respec recipes remain ungated. See
 [PROFESSIONS.md](docs/PROFESSIONS.md) and
 [Profession Progression](<Project-Covenant/Profession Progression.md>).
-The planned itemization includes Covenant-owned equipment rarity with server
-datapack definitions and
+Itemization includes Covenant-owned equipment rarity with server datapack definitions and
 item/tag-based opt-in rules for modpack developers; see
 [Affixes and Rarity](<Project-Covenant/Affixes and Rarity.md>).
 Use fresh saves: prototype profile/loadout migration is deliberately unsupported.
@@ -78,8 +80,9 @@ an immutable, persistent, owner-synced NeoForge player attachment with death cop
 `covenant:affix_page` is an immutable persistent/synced item-stack data component;
 each page-bearing stack has maximum size 1. Equipment modifiers stay on items,
 separate from permanent character progression. Open namespaced categories use item
-tags for compatibility. No acquisition, random rolling,
-or accessory-mod integration exists yet.
+tags for compatibility. Fresh entity-table equipment and vanilla chest loot now
+receive rolled affixes, with configurable bonus equipment; previously owned
+equipment is never initialized on ordinary drops. Accessory-mod integration remains deferred.
 See `docs/RPG_DATA.md` for APIs, format contracts, and copy/split semantics.
 
 The initial class identities are **Stalker** (bow/ranged precision and distance),
@@ -131,12 +134,14 @@ IDs with completion. A native transient flat adjustment preserves equipment/page
 calculations without editing saved bases, profiles, or pages; it disappears on
 reload/reconnect or player replacement. Existing class commands are unchanged.
 
-Operator-only `/covenant affix inspect|apply|remove|clear` commands test the existing
-main-hand stack component. Apply uses a loaded compatibility-tag category and one
-flat supported-stat modifier; existing pages must be removed first. Remove/clear
-are aliases that erase the entire page while preserving all other item components,
-including its current stack limit. Attachment does not record the previous stack
-limit, so it cannot be reconstructed safely. No new saved fields are introduced.
+Operator-only `/covenant affix` commands prepare main-hand equipment and supply
+non-Common components. `set <family> <rarity> <tier> <random|min|max>` adds or
+replaces a family, initializing fresh equipment with matching rarity/full Potential.
+`rarity`, `potential <amount>|full`, `remove <family>`, `clear`, and `reset` support
+further setup. Edits bypass costs/profession gates, award no XP, and enforce current
+equipment limits. Clear keeps rarity/Potential and page identity; reset removes
+both Covenant components while preserving other data and the current stack limit.
+Tooltips replace the retired inspect command. See `docs/ITEMIZATION.md` for syntax.
 
 The basic skill foundation uses a persistent, death-copied, owner-synced
 `covenant:skill_state` attachment for independent class resource balances and skill

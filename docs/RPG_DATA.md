@@ -4,8 +4,8 @@ The server-authoritative foundation now includes class selection, combat XP and
 skill-point progression. See [PROGRESSION.md](PROGRESSION.md) for the progression
 format, APIs and data balance. [PROFESSIONS.md](PROFESSIONS.md) covers profession
 paid allocations, catalogue, menu, respec, the first effect and natural activity
-sources. Remaining ability effects are deferred. Page acquisition,
-rolling/loot and accessory integrations remain deferred.
+sources. Remaining gathering effects and accessory integrations are deferred.
+[ITEMIZATION.md](ITEMIZATION.md) covers implemented Workbench operations, loot and salvage.
 Effective stats use native equipment attributes; see [RPG_STATS.md](RPG_STATS.md).
 Skills use bounded intent packets and event-driven combat; there are no global
 enemy progression scans.
@@ -123,7 +123,7 @@ untouched. The component contains:
 - A namespaced equipment category.
 - An ordered list of independent base RPG modifiers.
 - An ordered list of independent affixes, each with definition ID, rarity ID, positive tier,
-  and its own modifier list. IDs/rarities are open identifiers; no random generation exists yet.
+  and its own modifier list. IDs/rarities are open identifiers; itemization now supplies rolled snapshots.
 - Progression metadata: nonnegative upgrade count and experience, both defaulting to zero.
   No upgrade mechanics or costs are defined yet.
 
@@ -158,18 +158,28 @@ contributions when equipment or its components change; no custom aggregation cac
 These commands require vanilla gamemaster permission (normally operator level 2), target the
 executing player's main hand, and reject an empty hand or non-player source:
 
-- `/covenant affix inspect`: shows category, page UUID, every independent base and nested affix
-  modifier (stat, operation, amount), and existing progression metadata. Missing/empty pages
-  receive distinct feedback. Unknown saved stat/category IDs are displayed without alteration.
-- `/covenant affix apply <category> <stat> <value>`: calls the existing attachment API to create
-  a page with one flat `add` modifier, no affixes, and zero progression. Category IDs come from
-  loaded `affix_compatible/` item tags, including datapack additions. Stat IDs use the fifteen
-  supported entries in `RPG_STATS.md`. Both arguments offer tab completion. The item must match
-  the category tag, have count one, and have no page. Values are finite signed doubles in the
-  stat's native units; negative reductions are valid and effective values retain native clamps.
-- `/covenant affix remove` and `/covenant affix clear`: aliases that erase the whole page,
-  including identity, base modifiers, affixes, and progression. No page is a harmless no-op.
-  Item type/count, damage, names, enchantments, other components, and current stack limit remain.
+- `/covenant affix set <family> <rarity> <tier> <random|min|max>` adds or replaces one
+  family with a normal affix snapshot. Fresh equipment initializes at the requested affix
+  rarity and full Potential; initialized equipment retains its quality. Category is inferred
+  from live itemization participation, including explicit item opt-ins without category tags.
+- `/covenant affix rarity <rarity>` initializes empty equipment or changes initialized rarity,
+  preserving affixes/rolls/identity and remaining Potential. Reject incompatible limits.
+- `/covenant affix potential <amount>` or `potential full` sets remaining Potential within
+  the initialized equipment rarity's current starting budget, including zero.
+- `/covenant affix remove <family>` removes that family only, including unknown saved IDs.
+  `clear` empties affixes and legacy raw modifiers, retaining page identity, category,
+  progression metadata, equipment rarity and Potential. Empty cleanup is a harmless no-op.
+- `/covenant affix reset` removes the page and equipment-quality components entirely. Item
+  type/count, damage, names, enchantments, other components, and current stack limit remain.
+- `/covenant affix component <family> <rarity> [count]` supplies 1–64 matching non-Common
+  components, default one. It needs no held equipment. Native inventory insertion merges
+  matching identities and drops overflow beside the player; Common uses ordinary lapis.
+
+Setup bypasses ingredient/Potential spending and profession access, grants no XP, and checks
+family compatibility, unique families, equipment rarity/tier ceilings and prefix/suffix limits
+before mutation. Family/rarity completion reads the live catalogue; remove completion reads the
+held page, including removed definitions. Existing rolls remain snapshots across reloads.
+The old `apply` and `inspect` commands are retired; item tooltips provide inspection.
 
 Commands notify the native inventory/menu after mutation. Equipment contributions refresh on
 the normal living-entity equipment update, including removing a page from a held weapon. Armor
@@ -245,10 +255,14 @@ These tests do not replace real-client login/reconnect, dimension travel, restar
 multiplayer trade, or creative-mode observations. Additional stat checks and combat/integration
 boundaries are documented in `RPG_STATS.md`; unrelated mods' custom inventories remain untested.
 
-`affix_commands` exercises command-created pages, category/stat completion, invalid/unauthorized
-calls, exact underlying-item preservation on remove/clear, a real chest block entity and its
-serialization, native drop/pickup, individual stack ownership, and equipment recalculation.
-`affix_restart` additionally checks an unchanged native player file across separate server
+`affix_commands` exercises initialized command gear, live family/rarity completion, all roll
+modes, invalid/unauthorized calls, atomic rejection, capacity/downgrade limits, free edits at
+zero Potential, no XP, cleanup distinctions, component identity/count/overflow, exact underlying
+item preservation, a real chest block entity and serialization, native drop/pickup, individual
+stack ownership, and equipment recalculation. The isolated itemization reload test additionally
+checks newly loaded family completion, family allowlists, explicit item opt-in, live bounds and
+Potential, and reset's preserved singleton limit. `affix_restart` checks the page, rolled affix,
+equipment rarity and spent Potential in an unchanged native player file across separate server
 processes; see the two-run procedure in `DEVELOPMENT.md`. GameTest deletes its world on launch,
 so this fixture retains/restores that file outside the disposable world. A complete retained-world
 restart and rendered client command/inventory behavior still require manual observation.

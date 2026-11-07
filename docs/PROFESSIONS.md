@@ -11,10 +11,11 @@ Hold G and choose radial slot 3, **Professions**. Mining, Logging, Farming and
 Crafting each show their own level, XP, available points and authored nodes.
 Left-click adds a pending rank; right-click undoes pending ranks. Each tab keeps
 its draft. Apply submits only the displayed track, out of combat. Closing the
-screen discards drafts. The world keeps running. Sixteen planned abilities stay
+screen discards drafts. The world keeps running. Twelve planned gathering abilities stay
 visible and unavailable; their descriptions describe future behavior.
 
-Only `covenant:logging/offensive_mastery` is purchasable. Its five provisional
+`covenant:logging/offensive_mastery` is purchasable alongside all four Crafting
+nodes. Its five provisional
 ranks cost one point each at levels 5/8/11/14/17, granting a total outgoing
 player-damage bonus of 2/4/6/8/10%. Native attacks, arrows and attributed skill
 damage use the native incoming-damage event. Owned-creature damage is excluded;
@@ -25,15 +26,17 @@ Natural activity XP is implemented. The shared curve is provisionally
 100 times the target level per transition, from 100 to 2,000 XP, totaling 21,000
 for level 20. Enchanting rewards are 20/50/100 XP for the first/second/third
 options, regardless of displayed level requirement. Affix-operation rewards
-are planned at 20/40/60/80/100 XP for
+are implemented at 20/40/60/80/100 XP for
 Common through Legendary affixes, shared by all four operations and all
-numerical tiers. Planned salvage XP requires at least one Covenant affix at
+numerical tiers. Salvage XP requires at least one Covenant affix at
 consumption; unaffixed gear gives zero XP even if its rarity was initialized.
-Planned salvage rewards are 10/20/30/40/50 XP for affixed Common-through-Legendary
+Implemented salvage rewards are 10/20/30/40/50 XP for affixed Common-through-Legendary
 equipment. All XP amounts remain provisional. Additional profession-level
 recipe milestones are deferred beyond the progression slice; Workbench and
 respec recipes remain ungated.
-Gathering abilities, Workbench, rarity, loot and affix gameplay remain deferred.
+Gathering abilities remain deferred. The Workbench, rarity, loot, affix operations
+and salvage are implemented; see [ITEMIZATION.md](ITEMIZATION.md) for the loop,
+four Crafting nodes, data formats and validation boundaries.
 
 ## Natural activity XP
 

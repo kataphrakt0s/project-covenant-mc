@@ -31,6 +31,8 @@ public final class CovenantClient {
     public CovenantClient(IEventBus modBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.CLIENT, SkillClientConfig.SPEC);
         modBus.addListener(CovenantClient::registerRenderers);
+        modBus.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) ->
+                event.register(dev.covenant.rpg.equipment.Workbench.MENU.get(), WorkbenchScreen::new));
         modBus.addListener(ResourceHud::register);
         modBus.addListener(ProgressionHud::register);
         modBus.addListener(ClientDash::register);

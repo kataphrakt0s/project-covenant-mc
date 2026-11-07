@@ -20,7 +20,7 @@ The former **Affix Pages** concept is retired. There are no separate Affix Page 
 
 ## Affix structure
 
-Equipment will use the planned **Covenant equipment rarity system**, with
+Equipment uses the implemented **Covenant equipment rarity system**, with
 datapack-defined rarities and item/tag-based opt-in rules for modpack developers.
 This is separate from a rarity label on an individual affix. Detailed rarity
 definitions and assignment behavior belong to [[Affixes and Rarity]].
@@ -50,7 +50,7 @@ Covenant affixes are classified as either **Prefixes** or **Suffixes**. Equipmen
 - Rarity definitions supply the built-in default capacities.
 - Crafting cannot exceed either category's capacity.
 
-The planned, configurable starting limits are:
+The implemented, configurable starting limits are:
 
 | Equipment rarity | Prefix slots | Suffix slots |
 |---|---:|---:|
@@ -61,7 +61,7 @@ The planned, configurable starting limits are:
 | Legendary | 3 | 3 |
 
 The built-in starting ceiling is therefore six affixes on Legendary equipment.
-These are planned limits, not implemented crafting validation.
+These limits are validated by the server during crafting.
 
 ### Affix eligibility
 
@@ -82,9 +82,9 @@ regardless of that affix's rarity, numerical tier, or prefix/suffix category.
 For example, different rarity or tier variants of a Health affix cannot occupy
 multiple slots on the same item. Upgrade or Reroll the existing affix to improve
 it; Add must reject another member of the same family without spending costs.
-This is a planned per-item restriction, not a limit across equipped items.
+This is a server-enforced per-item restriction, not a limit across equipped items.
 
-### Initial affix pool (planned)
+### Initial affix pool (implemented prototype)
 
 The first pool contains **ten families**, using existing supported stats:
 
@@ -104,7 +104,7 @@ respective coefficients; Skill Duration increases its coefficient.
 Class-resource affixes such as Mana Capacity are deferred from the initial
 pool. The ten families use broad default equipment eligibility, with datapack
 restrictions available. Their provisional starting ranges are specified below.
-These are selected content values, not implemented or playtested affix rolls.
+These are implemented provisional rolls; final balance remains for playtesting.
 
 | Family | Tier 1 base range | Six maximum Legendary Tier 5 affixes |
 |---|---|---|
@@ -288,8 +288,7 @@ Equipment rarity also supplies a configurable numerical affix-tier ceiling:
 
 Crafting must satisfy both this ceiling and the crafter's unlocked tier; use
 the lower of the two. Common equipment permits value rerolls within Tier 1
-but has no room for a numerical tier upgrade. These are planned limits, not
-implemented validation.
+but has no room for a numerical tier upgrade. These limits are validated by the server.
 
 ## Crafting Potential
 
@@ -358,7 +357,7 @@ by purchasing Basic Affix Crafting, with a small initial affix pool:
    other affixes; do not restore Potential. The normal successful-operation XP
    reward still applies using the removed affix's rarity.
 
-All four are selected vertical-slice scope, not implemented operations.
+All four operations are implemented; see [Itemization](../docs/ITEMIZATION.md).
 
 Tier 1 additions and one-tier upgrades are **provisional first-pass rules**
 until random bonus successes are designed. Bonus-success chances and outcomes
@@ -461,8 +460,19 @@ crossbow, and shield; existing eligible loot retains its base item. See
   Generic salvage materials mainly support ordinary crafting for now.
 - Crafting level may impose an additional requirement for applying particularly powerful affixes.
 
-Remaining component content and final affix balance remain open. See [[Salvaging]] for the
+Initial components are implemented; further content and final affix balance remain open. See [[Salvaging]] for the
 Apotheosis-inspired stockpile-and-spend direction and chosen Covenant defaults.
+
+## Debug equipment setup
+
+Operator-only `/covenant affix` commands now prepare valid test equipment and
+supply non-Common family/rarity components. Setup bypasses profession access and
+crafting costs, grants no XP, and preserves normal equipment limits. Set a family,
+rarity, numerical tier and random/min/max roll; separately edit equipment rarity
+or remaining Potential. Remove/clear preserve rarity and Potential; reset returns
+the equipment to uninitialized Covenant state while preserving other item data.
+Tooltips provide inspection. See [Itemization](../docs/ITEMIZATION.md#debug-commands)
+for syntax, initialization and invalid-downgrade rules.
 
 ## Apotheosis and other mod compatibility
 

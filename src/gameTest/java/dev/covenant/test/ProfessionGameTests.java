@@ -185,7 +185,7 @@ final class ProfessionGameTests {
         try (var reader = helper.getLevel().getServer().getResourceManager().getResourceOrThrow(ProfessionData.FILE).openAsReader()) {
             var original = JsonParser.parseReader(reader).getAsJsonObject();
             var data = ProfessionData.parse(original);
-            check(data.abilities().size() == 17 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 1, "Seventeen authored nodes; only wired runtime behavior can be purchased");
+            check(data.abilities().size() == 17 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 5, "Seventeen authored nodes; Logging mastery and four wired Crafting nodes can be purchased");
             check(data.activityRewards().get(ProfessionData.id("farming/breeding")) == 100
                     && data.activityRewards().get(ProfessionData.id("crafting/enchant_option_3")) == 100,
                     "Agreed gathering and enchanting rewards are authored");

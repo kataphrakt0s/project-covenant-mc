@@ -1,0 +1,9 @@
+{
+  "setup_ticks": 0,
+  "type": "minecraft:function",
+  "max_ticks": 100,
+  "function": "covenant_test:workbench_common",
+  "structure": "covenant_test:empty",
+  "environment": "minecraft:default",
+  "required": true
+}

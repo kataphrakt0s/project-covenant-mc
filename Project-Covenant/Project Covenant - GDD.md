@@ -124,7 +124,7 @@ See [[Statistics]], [[Attributes]], [[Stat Calculation Pipeline]], [[Equipment]]
 
 ## Crafting and equipment customization
 
-Ordinary vanilla crafting remains unchanged. The Crafting profession covers meaningful specialized crafting activities, including Enchanting, affix manipulation, equipment crafting, and salvaging. Covenant-specific workstations are planned for advanced equipment crafting and salvaging so players can tune their gear. Exact station roster, recipes, materials, and release timing remain to be designed.
+Ordinary vanilla crafting remains unchanged. The Crafting profession covers meaningful specialized crafting activities, including Enchanting, affix manipulation, equipment crafting, and salvaging. The first Covenant Workbench now implements Add, Upgrade, Reroll, Remove and shared-storage salvaging, with affixed loot and profession integration; see [Itemization](../docs/ITEMIZATION.md). Further stations and content remain future work, and the prototype tuning is provisional.
 
 See [[Crafting]], [[Crafting Profession]], [[Affix Pages]], and [[Affixes and Rarity]].
 

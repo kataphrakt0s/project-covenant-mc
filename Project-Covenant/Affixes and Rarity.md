@@ -1,6 +1,6 @@
 # Affixes and Rarity
 
-## Covenant equipment rarity (planned)
+## Covenant equipment rarity (implemented prototype)
 
 Introduce a **Covenant-owned equipment rarity system**, authored through server
 datapacks. Modpack developers and other mods can opt equipment into the system
@@ -9,8 +9,8 @@ Covenant to enumerate every modded material in code.
 
 Rarity definitions and equipment participation rules are separate authoring
 concerns. Use stable namespaced identifiers so packs can extend and override
-the supplied content. This is new planned itemization, not an implemented
-equipment rarity system; the current per-affix rarity ID is a separate concept.
+the supplied content. This itemization is implemented; see
+[Itemization](../docs/ITEMIZATION.md). The per-affix rarity ID remains a separate concept.
 
 ### Built-in rarity ladder
 
@@ -34,7 +34,7 @@ target tier; the effective ceiling is the lower of those two limits.
 
 ### Affix roll quality
 
-Affix rarity also controls the planned roll-quality model: **1/2/3/4/5
+Affix rarity also controls the implemented roll-quality model: **1/2/3/4/5
 independent samples, keeping the strongest**, for Common through Legendary,
 from a shared base range for each family/numerical tier. Epic then gains
 **5%** and Legendary **15%** additional bonus magnitude, using multipliers
@@ -42,7 +42,7 @@ from a shared base range for each family/numerical tier. Epic then gains
 scale the whole effective stat. Use the individual affix's rarity, not the
 equipment's rarity. These boosts are provisional; later loot rarity should
 reflect their added power, while equal prototype loot weights remain unchanged.
-See [[Affix System and Equipment Customization]] for the full planned contract.
+See [[Affix System and Equipment Customization]] for the full prototype contract.
 
 ### Item ownership
 
@@ -66,8 +66,7 @@ Once initialized, the item **retains that rarity through subsequent Add,
 Upgrade, Reroll, and Remove operations**, including removal of the starting
 affix or every affix. Removing affixes does not return the item to the
 uninitialized state. Choosing a Common starting affix therefore commits that
-item to Common rarity under these crafting rules. These are planned rules,
-not implemented itemization.
+item to Common rarity under these crafting rules. These are implemented prototype rules.
 
 ### Initial Crafting Potential
 

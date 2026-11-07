@@ -1596,7 +1596,8 @@ Retained-world restart, rendered feedback and live multiplayer remain manual.
    pending casts must cancel. Use `stats set covenant:mana_capacity 2` for a 200-unit
    temporary maximum and `stats set covenant:focus_regeneration 1.25` for its limit.
    `stats reset` removes all temporary stat overrides. Equipment testing uses the
-   existing `affix apply` command with the five resource attribute IDs.
+   authored families through `affix set`, including `covenant:resource_cost`;
+   resource attributes without an authored affix family use `stats set`.
 6. Reaver Rend: learn and bind Rend, seed Rage if needed, and strike the enemy
    under the crosshair at ordinary melee reach. Confirm the instant initial hit,
    20 Rage cost, two-second cooldown, and small red bleed particles once per second.

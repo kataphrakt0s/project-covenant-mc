@@ -2,6 +2,88 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Affix debug commands (2026-11-07)
+
+- Replaced raw-stat apply/inspect with operator-only main-hand `set`, `rarity`,
+  `potential`, family-specific `remove`, `clear`, `reset`, and non-Common
+  `component` supply. Setup is free and grants no XP, while preserving valid
+  itemization limits and unrelated item components. See
+  [ITEMIZATION.md](ITEMIZATION.md#debug-commands) for syntax and cleanup rules.
+- `scripts/Dev.ps1 verify`: **BUILD SUCCESSFUL**, **All 114 required tests passed :)**. A second
+  verification with `COVENANT_AFFIX_RESTART_CHECK=verify` also passed all 114,
+  checking the native player file from the first process for unchanged page
+  identity, affix family/rarity/tier/amount, equipment rarity and spent Potential.
+  Evidence: ignored `.local/affix-debug-verify.log` and
+  `.local/affix-debug-restart-verify.log`.
+- Refreshed command tests cover permissions/non-player rejection, empty/stacked
+  inputs, live definition completion, normal random sampling and exact min/max
+  values including negative reductions, add/replace behavior, independent prefix
+  and suffix capacities, rarity/tier/Potential downgrade rejection, zero-Potential
+  edits, no ingredient/XP changes, cleanup and legacy/unknown definitions,
+  enchantment/name/durability preservation, native chest serialization and
+  drop/pickup, equipment recalculation, and component identity/count/overflow.
+  Command-created gear passes through real Workbench operations with ordinary
+  profession checks, ingredients, Potential spending and XP. The isolated reload
+  fixture verifies new families/allowlists, explicit item participation without
+  category tags, changed roll bounds/Potential, and singleton preservation on reset.
+- Production JAR inspection includes the new command class and excludes test/local
+  files; feedback translations resolve and `git diff --check` passes. Manual
+  checks remain: chat completion/feedback, rendered tooltips and actual Workbench
+  interaction, real-client reconnects and a retained-world restart. No client
+  launch, deployment, remote update, or pack compatibility test was performed.
+
+## Itemization and Covenant Workbench (2026-11-07)
+
+- Implemented the complete find/salvage/customize prototype: ten affix families,
+  five datapack-defined rarities, per-stack Potential, fresh affixed loot and
+  bonus equipment, family/rarity components, four Workbench operations, ten
+  queued salvage inputs/twelve result slots, shared persistent storage and four
+  Crafting nodes with operation/salvage XP. Generic refunds initially cover
+  iron/diamond gear. Station art references Minecraft's netherite block.
+  See [ITEMIZATION.md](ITEMIZATION.md) for exact boundaries.
+- `scripts/Dev.ps1 verify`: **BUILD SUCCESSFUL**, **All 114 required tests
+  passed :)**, including three geometry/layout checks and eight new itemization
+  GameTests. Evidence: ignored `.local/itemization-verify.log`.
+- New tests cover costs, failed initialization/duplicate/capacity rejection,
+  all operations and numerical tier access, material identity, native equipped
+  bonuses, irreversible Potential/rarity, classless operation XP, specialization
+  yields, maximum-output batch stopping/continuation, zero-output/empty-affix
+  rewards, two embedded players' stale/replayed menus through native packet
+  dispatch, output/hidden-slot restrictions, block-entity/item serialization
+  and single removal drops, registered loot generation and chest unpack/reopen.
+  An isolated native reload batch checks prospective costs, unchanged saved
+  rolls/Potential/progression, explicit item opt-in without a tag, old-preview
+  rejection and retention of the live catalogue after invalid reload.
+- Dedicated startup/resource loading passed without loot-modifier, recipe or
+  itemization errors. NeoForge 26.1.2 loads modifier definitions directly; the
+  obsolete global-modifier-list manifest is absent. Production JAR inspection
+  confirms itemization classes/data/assets and excludes test/local files.
+- Manual checks remain: rendered layout/tooltips/selectors across GUI scales,
+  mixed-plank station recipe, loot/crafting pacing, two real clients with
+  latency, and retained-world unload/reconnect/restart. Serialization tests do
+  not establish a retained-world restart. No client launch, deployment, remote
+  update or pack compatibility test was performed. `git diff --check` passes.
+
+## Pending tree rank undo (2026-11-07)
+
+- Skills and Professions now keep nodes active while they have unapplied ranks,
+  even when another purchase is blocked by the point budget, rank cap or unlock
+  requirements. Resolved 26.1.2.126 `AbstractWidget` source confirms that inactive
+  widgets fail `isMouseOver` and request the blocked cursor, which prevented both
+  screens' right-click undo handlers from finding these nodes. Left-click
+  purchases still use their existing eligibility checks; committed ranks retain
+  their respec requirement and pending prerequisite cleanup is unchanged.
+- `scripts/Dev.ps1 build` passes, including radial, skill-tree and profession-tree
+  layout checks. Evidence: ignored `.local/tree-undo-build.log`.
+  `git diff --check` passes. Dedicated GameTests were not rerun for this client-only
+  widget change; rendered interaction has not been observed.
+- Manual checks: spend the last available skill point and right-click it before
+  Apply; repeat at a skill's rank cap and Logging Offensive Mastery's next-rank
+  level gate or rank cap. Confirm each click removes one pending rank, restores
+  its points, and cannot remove committed ranks after Apply. Also check undoing
+  a pending prerequisite removes its pending dependents. No client launch or
+  deployment was performed.
+
 ## Stalker mobility and arrow skills (2026-11-06)
 
 - Added playable Rank 1 Disengage, Arcane Arrow and Multishot using the existing

@@ -52,6 +52,14 @@ public final class RpgGameTests {
             DeferredRegister.create(Registries.TEST_FUNCTION, "covenant_test");
 
     static {
+        FUNCTIONS.register("itemization_rules", () -> ItemizationGameTests::rules);
+        FUNCTIONS.register("itemization_reload", () -> ItemizationReloadGameTests::run);
+        FUNCTIONS.register("workbench_common", () -> ItemizationGameTests::common);
+        FUNCTIONS.register("workbench_upgrades", () -> ItemizationGameTests::upgrades);
+        FUNCTIONS.register("workbench_salvage", () -> ItemizationGameTests::salvageBatch);
+        FUNCTIONS.register("workbench_menus", () -> ItemizationGameTests::menus);
+        FUNCTIONS.register("workbench_storage", () -> ItemizationGameTests::storage);
+        FUNCTIONS.register("itemization_loot", () -> ItemizationGameTests::loot);
         FUNCTIONS.register("stalker_activation", () -> StalkerGameTests::activation);
         FUNCTIONS.register("stalker_disengage", () -> StalkerGameTests::disengage);
         FUNCTIONS.register("stalker_movement_lifecycle", () -> StalkerGameTests::movementLifecycle);

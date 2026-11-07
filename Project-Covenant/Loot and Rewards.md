@@ -4,12 +4,12 @@ Rewards support character progression, profession mastery, and crafting agency. 
 
 Character XP is primarily combat-earned, with occasional rewards for significant discoveries and encounter milestones. Profession XP is awarded separately for meaningful activity-specific actions. Vanilla XP orbs do not contribute to either Covenant progression track.
 
-## Affixed equipment prototype (planned)
+## Affixed equipment prototype (implemented)
 
 For the prototype, **100% of eligible equipment generated in mob drops and
 chest loot receives Covenant affixes**. This supplies the initial non-Common
 affixes and family components recovered through salvaging. Apply this to
-existing vanilla and opted-in modded equipment using the planned Covenant
+existing vanilla and opted-in modded equipment using the implemented Covenant
 rarity system.
 
 Also **increase the amount of equipment that appears**, through additional
@@ -24,6 +24,13 @@ player-killed hostile mob**. Roll once per qualifying mob death, in addition
 to ordinary loot, with at most one bonus piece from this rule. The bonus piece
 receives Covenant affixes under the 100% prototype rate. Keep the chance and
 quantity configurable.
+
+For this bonus, **player-killed follows Minecraft's native player kill credit**,
+independently of Covenant combat-XP contribution tracking or class selection.
+Classless players and spawner mobs qualify. Environmental deaths qualify while
+Minecraft still credits a player; deaths without that credit receive no bonus.
+Roll once per qualifying death for a shared world drop, never once per
+contributor. This rule is implemented through native loot-context player credit.
 
 The provisional vanilla chest bonus is **one guaranteed additional affixed
 equipment piece when the chest's loot is first generated**. Apply it once per
@@ -58,9 +65,11 @@ leggings, iron boots, bow, crossbow, and shield**. This twelve-item pool applies
 to additional equipment rolls; existing eligible mob/chest loot retains its
 base item when affixed. Pack authors can change the pool through data.
 
-Remaining source conditions and detailed pool weighting remain under design.
-These are planned prototype defaults, not implemented loot generation or final
-balance.
+Further source coverage and final pool weighting remain future content.
+For the first implementation, the twelve bonus equipment types have equal
+weights. Chest bonuses target vanilla `minecraft:chests/` loot tables; ordinary
+player storage and later reopenings do not generate bonus equipment.
+These are implemented prototype defaults, not final balance. See [Itemization](../docs/ITEMIZATION.md).
 
 See [[Affixes and Rarity]], [[Affix System and Equipment Customization]], and
 [[Salvaging]].

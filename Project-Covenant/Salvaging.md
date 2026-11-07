@@ -54,7 +54,7 @@ queued, and retain all completed rewards. Do not roll the blocked item or spill
 outputs. Players can collect results and press Salvage again to continue;
 collecting results does not automatically resume processing.
 
-This is planned workstation storage/UI, not an implemented menu or block entity.
+This workstation storage and menu are implemented; see [Itemization](../docs/ITEMIZATION.md).
 
 ## Eligible equipment
 
@@ -69,6 +69,12 @@ Eligibility should be configurable using item identifiers, tags, and optional mo
 Apotheosis and other mods retain their own salvaging systems. Covenant Salvaging is an additional system and must not override or interfere with those mechanics.
 
 ## Salvage outcome rules
+
+The first implementation authors generic refunds **only for iron and diamond
+equipment**, returning one iron ingot or one diamond on a successful generic
+roll. Other affix-eligible equipment remains salvageable for eligible affix
+components, with no generic refund until a datapack supplies a mapping. This is
+an agreed initial content boundary, not a restriction on future material tables.
 
 - The input equipment is always consumed when a salvage operation is performed.
 - **Enchantments are destroyed with the equipment.** Salvaging returns no
@@ -110,8 +116,7 @@ specialization bonuses. Generic outputs are partial material refunds; audit
 their quantities against crafting costs to keep generic recycling lossy.
 The remaining material-mapping coverage and final balance remain under design.
 The default one-material quantity does not scale with equipment category,
-rarity, or power; durability rules are also unchanged. These are planned rules,
-not implemented salvage rolls.
+rarity, or power; durability rules are also unchanged. These rules and rolls are implemented with provisional tuning.
 
 ## Specializations
 
@@ -154,7 +159,7 @@ component's chance. Rank III averages 3.6 components per eligible affix.
 The eventual direction is high-end **salvaging** producing around four or more
 components; further progression or tuning toward that target remains future work.
 
-These are planned specialization effects, not implemented salvage logic.
+These specialization effects are implemented with provisional tuning.
 
 ## Component economy
 
@@ -260,9 +265,7 @@ rarities, affix count, and the number of recovered components.
 | Epic | 40 |
 | Legendary | 50 |
 
-These are agreed provisional rewards for future implementation and playtesting.
-Keep the per-rarity amounts data-driven. This is planned behavior, not
-implemented XP acquisition.
+These are implemented provisional, data-driven rewards for playtesting.
 
 ## Multiplayer and economy considerations
 

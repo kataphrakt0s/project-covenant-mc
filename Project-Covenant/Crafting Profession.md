@@ -31,8 +31,7 @@ retains the salvaged affix's own rarity, not the equipment's initialized rarity.
 The first playable Workbench includes **Add, Upgrade, Reroll, and Remove** under
 this purchase, with a small initial affix pool. All four operations belong to
 the vertical slice; their prototype ingredient costs are specified below,
-and stat ranges are provisional. These are planned operations, not implemented menus
-or item mutations.
+and stat ranges are provisional. These operations and menus are implemented; see [Itemization](../docs/ITEMIZATION.md).
 
 The selected initial pool has ten families. **Prefixes:** Health, Attack
 Damage, Armor, Attack Speed, and Dodge. **Suffixes:** Movement Speed, Resource
@@ -155,8 +154,7 @@ existing timer rounding. Preserve supported effects' duration snapshots and
 lifecycle rules; revisit these values during gameplay tuning.
 
 All ten initial families now have provisional starting ranges. See the summary
-table in [[Affix System and Equipment Customization]]; no rolled acquisition
-or Workbench gameplay is implemented by these design decisions.
+table in [[Affix System and Equipment Customization]]; rolled acquisition and Workbench gameplay are now implemented; rendered presentation remains for playtesting.
 
 Higher affix crafting tiers become accessible at the following Crafting levels:
 
@@ -240,8 +238,7 @@ Vanilla enchantments alone do not qualify; normal eligible salvage material
 returns remain available. For affixed gear, the provisional reward is
 **10 / 20 / 30 / 40 / 50 Crafting XP** for Common / Uncommon / Rare / Epic /
 Legendary equipment respectively. Keep the amounts data-driven. These are agreed
-starting values for future implementation and playtesting, not implemented XP
-acquisition. See [[Salvaging]].
+implemented starting values that remain provisional for playtesting. See [[Salvaging]].
 
 Adding a non-Common affix consumes matching components at provisional costs of
 **3 for Uncommon, 3 for Rare, 4 for Epic, and 5 for Legendary**. For the
@@ -305,7 +302,7 @@ lazuli**. Allow any planks through the native planks ingredient tag, including
 mixed plank types. Crafting the station has no profession-level or purchased
 ability requirement; profession unlocks gate its operations. This ordinary
 recipe grants no Crafting profession XP. The recipe is agreed prototype
-content, not an implemented block/item/recipe.
+content, now implemented with a netherite-block placeholder model.
 
 For the **prototype**, Affix Crafting uses **one equipment slot**, operation
 and affix selectors, a visible material/Potential cost preview, and an explicit
@@ -400,8 +397,7 @@ and a low-tier Reroll of the same rarity therefore pay the same XP.
 | Epic | 80 |
 | Legendary | 100 |
 
-These are agreed provisional rewards for future implementation and playtesting,
-not implemented XP acquisition. Keep the per-rarity amounts data-driven.
+These are implemented provisional rewards for playtesting. Keep the per-rarity amounts data-driven.
 
 Vanilla crafting, enchanting, equipment use, and ordinary stations remain available at Crafting Level 0.
 

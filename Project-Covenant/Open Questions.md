@@ -30,9 +30,9 @@ record settled rules; the remaining questions below do not reopen them.
 
 The first implementation chunk now provides menu/drafts/Apply, paid-cost saved
 allocations, catalogue/reload handling, provisional curve and all-four respec.
-Only Logging's Offensive Mastery currently has a purchasable runtime effect.
+Logging's Offensive Mastery and all four Crafting nodes have purchasable runtime effects.
 Natural activity XP is now implemented for ore/log/crop harvests, credited
-breeding and enchanting-table use. The other sixteen nodes remain deferred; see
+breeding and enchanting-table use. The other twelve gathering nodes remain deferred; see
 [Profession foundation](../docs/PROFESSIONS.md). No tuning became final through
 implementation.
 
@@ -141,6 +141,9 @@ crop** and **100 XP per successful credited breeding**. See
   and chest loot use a configurable **100% affix rate** for eligible equipment
   in the prototype, plus configurable bonus equipment; see [[Loot and Rewards]].
   The mob bonus starts at a 25% chance for one piece per player-killed hostile mob.
+  Native Minecraft player kill credit is settled: classless players and spawner
+  mobs qualify, environmental deaths qualify while native player credit remains,
+  and each qualifying death rolls once for a shared drop. See [[Loot and Rewards]].
   Vanilla loot chests get one guaranteed bonus affixed piece on first loot
   generation, not on reopening; both bonuses are configurable and disableable.
   Initial Potential budgets are provisionally 20/30/40/50/60, with each
@@ -210,7 +213,8 @@ crop** and **100 XP per successful credited breeding**. See
   and lifecycle rules; revisit these values in gameplay tuning.
 - Future affix locking, extraction, and replacement features beyond the
   prototype's four selected operations.
-- Remaining generic salvage material mappings and final output balance,
+- Further generic salvage material mappings beyond the implemented iron/diamond
+  table, final output balance,
   and high-end salvage tuning toward four-plus components. Refinement
   is excluded from the current prototype. Focused Recovery
   adds 80 percentage points per rank for 200/280/360% totals. Non-Common Add

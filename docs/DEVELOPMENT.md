@@ -138,13 +138,21 @@ restores normal calculations immediately. Save/reconnect also clears overrides;
 normal profile/page data remains intact. See `RPG_STATS.md` for IDs, ranges, and
 the command contract.
 
-For Affix Page debugging, hold a single iron sword and use operator level 2:
-`/covenant affix apply covenant:main_hand minecraft:max_health 6`, then
-`/covenant affix inspect`. The normal equipment update should give 26 max health
-without healing. Move it through inventory/chest/drop and re-equip, then use
-`/covenant affix remove` or `clear` while holding it. Existing pages must be removed
-before applying another. Category/stat arguments support tab completion. See
-`RPG_DATA.md` for validation rules and the preserved stack-limit limitation.
+For affix debugging, hold a single iron sword and use operator level 2:
+`/covenant affix set covenant:health covenant:legendary 5 max`. With the shipped
+catalogue this initializes Legendary equipment with 60 Potential and +3.45 health.
+Check the tooltip and equipped bonus, move it through inventory/chest/drop and
+re-equip, then replace the roll with `set covenant:health covenant:common 1 min`.
+Equipment rarity/Potential stay unchanged. `potential 0` prepares exhausted gear;
+`potential full` refills it. `remove covenant:health` removes one family; `clear`
+empties bonuses while keeping quality/page identity; `reset` removes both Covenant
+components. `rarity covenant:rare` initializes empty Rare gear or changes existing
+rarity, rejecting incompatible affixes, tiers, occupied slots, or Potential.
+`component covenant:health covenant:legendary 5` supplies Workbench ingredients
+without profession XP; counts are 1–64, default 1, and overflow drops beside you.
+Common uses `/give @s minecraft:lapis_lazuli`. All setup edits are free, grant no
+XP, and offer family/rarity completion. Tooltips replace `inspect`; raw-stat
+`apply` is retired. See [ITEMIZATION.md](ITEMIZATION.md) for the complete contract.
 
 The dedicated `affix_restart` fixture seeds a command-created item in a native
 player file on a normal `scripts/Dev.ps1 test` run. After that server exits cleanly,
@@ -207,8 +215,9 @@ Radial slot 3 opens the classless Professions window. Use operator
 `/covenant profession level covenant:logging 17` to test the five Offensive
 Mastery ranks; `/covenant profession xp covenant:logging 1500` exercises ordinary
 XP awards. Native ore/log/mature-crop harvesting, credited breeding and
-enchanting-table use now award profession XP. Other nodes are
-planned and cannot be purchased. All tuning is provisional.
+enchanting-table use now award profession XP. All four Crafting nodes are also
+purchasable and drive the Workbench; other gathering nodes remain planned and
+unavailable. All tuning is provisional. See [ITEMIZATION.md](ITEMIZATION.md).
 
 Manually check per-tab drafts, right-click undo, Apply's combat gate, close
 discard, resized layouts/tooltips, and the two-second Profession Respec hold.
@@ -217,6 +226,16 @@ that all four tracks refund together with XP/levels retained. See
 [PROFESSIONS.md](PROFESSIONS.md) for data formats and scope.
 
 ## Validation protocol
+
+For itemization smoke checks, craft or `/give @s covenant:workbench`, then use
+`/covenant profession level covenant:crafting 20` for earned test points and buy
+the four Crafting nodes in Professions. Check the Crafting tab selectors/costs,
+all four operations, affix tooltips and equipped bonuses. Vanilla loot chests
+and player-credited hostile kills supply affixed gear. Queue salvage, inspect
+the action tooltip, fill results to check batch stopping, and collect to continue
+with another explicit click. Leave gear/results inside, close/reopen, and restart
+the world. With two clients, check shared contents, actor-specific costs/ranks
+and old-preview rejection. These client checks remain manual.
 
 - `scripts/Dev.ps1 verify` runs both the production build/checks and dedicated
   GameTests in one command. Require the final server log's explicit required-test

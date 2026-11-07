@@ -18,7 +18,7 @@ The prototype uses one physical Covenant Workbench with separate Affix Crafting
 and Salvaging interfaces and persistent shared storage. Their agreed interaction
 and cost rules are recorded in [[Crafting Profession]] and [[Salvaging]];
 remaining recipes, material tables, and balance values are still under design.
-These are planned systems, not implemented workstation gameplay. Vanilla
+These are implemented prototype systems; see [Itemization](../docs/ITEMIZATION.md). Vanilla
 crafting stations continue to function normally.
 
 The agreed Workbench prototype recipe is **shapeless** in a vanilla crafting

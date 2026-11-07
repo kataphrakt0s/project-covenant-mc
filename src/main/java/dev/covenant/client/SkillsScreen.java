@@ -138,7 +138,8 @@ final class SkillsScreen extends Screen {
             button.learned = pending.rank(node.id()) > 0;
             boolean enabled = canAdd(node);
             button.locked = !enabled;
-            button.active = enabled;
+            // Native hit-testing ignores inactive widgets, including our right-click undo.
+            button.active = enabled || draft.getOrDefault(node.id(), 0) > baseline.getOrDefault(node.id(), 0);
             button.setTooltip(Tooltip.create(nodeTooltip(node)));
         }
         for (int i = 0; i < slots.size(); i++) {

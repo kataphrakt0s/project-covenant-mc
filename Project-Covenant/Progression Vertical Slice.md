@@ -10,14 +10,32 @@ The combat slice and first expanded profession foundation are implemented.
 Professions now have their own radial entry, four-tab drafts/Apply, paid-cost
 saved allocations, server-datapack catalogue, provisional shared XP curve,
 operator testing commands and all-four held-use respec. Logging's Offensive
-Mastery is the first functional profession ability. The other sixteen authored
-nodes, gathering abilities, Workbench and itemization remain planned. Natural
+Mastery and all four Crafting nodes are functional. The other twelve gathering
+nodes remain planned. Workbench itemization, loot and salvage now close the
+find/salvage/customize loop; see [Itemization](../docs/ITEMIZATION.md). Natural
 ore/log/crop harvest XP, credited breeding and enchanting-table XP are now
 implemented, with chunk-saved placed-ore exclusion and bounded tree recognition.
 See [Profession foundation](../docs/PROFESSIONS.md). This implementation
 does not finalize tuning or resolve the remaining questions in [[Open Questions]].
 
 ## Included systems
+
+### Implemented itemization slice
+
+The itemization prototype delivers the complete find/salvage/customize
+loop: initial affixed loot, component recovery, and Workbench Add, Upgrade,
+Reroll, and Remove, including their Crafting progression integration. Retain the
+settled system rules below rather than delivering only Common-affix crafting.
+Use Minecraft's netherite block texture as the Covenant Workbench placeholder.
+See [[Milestone 3 - Itemization and Crafting]]. The first generic refund table
+covers only iron and diamond gear; other eligible equipment can yield affix
+components without a generic material refund. Rendered presentation and final
+balance remain for playtesting.
+
+The mob bonus uses Minecraft's native player kill credit, without a class
+requirement: classless players and spawner mobs qualify, and environmental
+deaths qualify while native player credit remains. Roll once per qualifying
+hostile death for shared dropped equipment, not once per XP contributor.
 
 ### Save compatibility scope
 
@@ -404,7 +422,7 @@ recipe** producing one station from **one crafting table, four planks, two
 iron ingots, and two lapis lazuli**. Accept any/mixed plank types via the
 native planks ingredient tag. Crafting the station has no profession-level
 or purchased-ability requirement and grants no profession XP; profession
-unlocks gate the operations. This is agreed content, not an implemented recipe.
+unlocks gate the operations. This recipe and station are implemented.
 
 The first playable Covenant Workbench includes **Add, Upgrade, Reroll, and
 Remove** affix operations under Basic Affix Crafting, with a small initial
@@ -488,8 +506,8 @@ affix on Legendary equipment still pays the Common affix-operation reward.
 The prototype uses **one XP reward per affix rarity, shared across all four
 operations and all numerical tiers**: provisionally **20 / 40 / 60 / 80 / 100
 Crafting XP** for Common / Uncommon / Rare / Epic / Legendary respectively.
-Keep these amounts data-driven. This is agreed prototype tuning for future
-implementation and playtesting, not implemented XP acquisition.
+These amounts are implemented in server datapack definitions and remain
+provisional for playtesting.
 
 For the prototype, the Affix Crafting interface uses **one equipment slot**,
 operation and affix selectors, a visible material/Potential cost preview, and
@@ -676,8 +694,8 @@ changes do not reset remaining Potential. Bonus rolls use a configurable pool
 of iron sword/axe/pickaxe/shovel/hoe, the four iron armor pieces, bow, crossbow,
 and shield. This pool governs extra gear; existing eligible loot retains its
 base item. Remaining source conditions and detailed pool weighting remain
-under design. This is planned loot
-support, not implemented generation or final balance. See [[Loot and Rewards]].
+future content. This loot support is implemented with provisional tuning.
+See [[Loot and Rewards]].
 
 Salvaging's configurable prototype base generic-material recovery chance is
 **50% per salvaged item**, independent of the eligible affixes' component rolls.
@@ -708,8 +726,7 @@ affixes removed; vanilla enchantments alone do not qualify. Normal eligible
 salvage material returns remain available. For affixed gear, provisional salvage
 rewards are **10 / 20 / 30 / 40 / 50 Crafting XP** for Common / Uncommon / Rare /
 Epic / Legendary equipment respectively. Keep these amounts data-driven; they
-are agreed starting values for future implementation and playtesting, not
-implemented XP acquisition. Remaining item-specific output
+are implemented starting values, provisional for playtesting. Further item-specific output
 tables remain under design; check those tables
 against crafting costs for material duplication. The multi-component crafting cost
 and yield direction takes inspiration from Apotheosis; these numbers and the
@@ -853,7 +870,7 @@ client validation work, not verified rendering.
 - Do not introduce a second character attribute-point economy.
 - Do not hardcode a dimension compatibility list.
 - Do not require every future profession ability, recipe, or custom workstation to exist in this slice.
-- Specialized Covenant workstations for advanced affix crafting and salvaging are planned; exact roster and delivery milestone remain open.
+- One shared Covenant Workbench implements affix crafting and salvaging. A future expanded workstation roster remains outside this slice.
 
 ## Acceptance criteria
 
@@ -900,8 +917,8 @@ client validation work, not verified rendering.
 Stages 1–5 are implemented in the combat/shared foundation. See
 [PROGRESSION.md](../docs/PROGRESSION.md) for the shipped scope and data format,
 and [VALIDATION.md](../docs/VALIDATION.md) for evidence and manual boundaries.
-The profession menu/allocation foundation and natural activity XP are also
-implemented. Remaining profession abilities and Workbench/itemization follow
+The profession menu/allocation foundation, natural activity XP and
+Workbench/itemization are also implemented. Remaining gathering abilities follow
 the settled linked profession notes;
 non-arrow ranks above 1 remain unavailable until their upgrades are designed.
 

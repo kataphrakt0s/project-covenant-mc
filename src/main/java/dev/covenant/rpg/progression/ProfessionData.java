@@ -63,7 +63,11 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
             }
         }
         /** Availability is owned by runtime code, never enabled by trusting a datapack/client flag. */
-        public boolean implemented() { return id.equals(OFFENSIVE_MASTERY); }
+        public boolean implemented() { return id.equals(OFFENSIVE_MASTERY)
+                || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.BASIC)
+                || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.SALVAGING)
+                || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.RECOVERY)
+                || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.FOCUSED); }
         public Component name() { return Component.translatable("profession_ability." + id.getNamespace() + "." + id.getPath().replace('/', '.')); }
         public Component description() { return Component.translatable("profession_ability." + id.getNamespace() + "." + id.getPath().replace('/', '.') + ".description"); }
     }

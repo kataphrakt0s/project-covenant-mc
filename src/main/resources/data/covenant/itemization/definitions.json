@@ -1,0 +1,507 @@
+{
+  "_comment": "Provisional slice tuning. Ranges are positive bonus magnitudes; reduction negates the roll. Costs are counts, probabilities are fractions, component_rate is expected yield. Selectors combine items/tags/categories as a union. Participation order breaks category ties; refund order breaks mapping ties.",
+  "rarities": [
+    {
+      "id": "covenant:common",
+      "order": 0,
+      "prefixes": 1,
+      "suffixes": 1,
+      "tier": 1,
+      "potential": 20,
+      "samples": 1,
+      "magnitude": 1,
+      "add_cost": 0,
+      "reroll_cost": 0,
+      "operation_xp": 20,
+      "salvage_xp": 10,
+      "weight": 1
+    },
+    {
+      "id": "covenant:uncommon",
+      "order": 1,
+      "prefixes": 1,
+      "suffixes": 1,
+      "tier": 2,
+      "potential": 30,
+      "samples": 2,
+      "magnitude": 1,
+      "add_cost": 3,
+      "reroll_cost": 1,
+      "operation_xp": 40,
+      "salvage_xp": 20,
+      "weight": 1
+    },
+    {
+      "id": "covenant:rare",
+      "order": 2,
+      "prefixes": 2,
+      "suffixes": 2,
+      "tier": 3,
+      "potential": 40,
+      "samples": 3,
+      "magnitude": 1,
+      "add_cost": 3,
+      "reroll_cost": 1,
+      "operation_xp": 60,
+      "salvage_xp": 30,
+      "weight": 1
+    },
+    {
+      "id": "covenant:epic",
+      "order": 3,
+      "prefixes": 2,
+      "suffixes": 2,
+      "tier": 4,
+      "potential": 50,
+      "samples": 4,
+      "magnitude": 1.05,
+      "add_cost": 4,
+      "reroll_cost": 2,
+      "operation_xp": 80,
+      "salvage_xp": 40,
+      "weight": 1
+    },
+    {
+      "id": "covenant:legendary",
+      "order": 4,
+      "prefixes": 3,
+      "suffixes": 3,
+      "tier": 5,
+      "potential": 60,
+      "samples": 5,
+      "magnitude": 1.15,
+      "add_cost": 5,
+      "reroll_cost": 3,
+      "operation_xp": 100,
+      "salvage_xp": 50,
+      "weight": 1
+    }
+  ],
+  "families": [
+    {
+      "id": "covenant:health",
+      "stat": "minecraft:max_health",
+      "prefix": true,
+      "operation": "add",
+      "reduction": false,
+      "ranges": [
+        {
+          "min": 0.3,
+          "max": 0.6
+        },
+        {
+          "min": 0.6,
+          "max": 1.2
+        },
+        {
+          "min": 0.9,
+          "max": 1.8
+        },
+        {
+          "min": 1.2,
+          "max": 2.4
+        },
+        {
+          "min": 1.5,
+          "max": 3.0
+        }
+      ]
+    },
+    {
+      "id": "covenant:attack_damage",
+      "stat": "minecraft:attack_damage",
+      "prefix": true,
+      "operation": "add",
+      "reduction": false,
+      "ranges": [
+        {
+          "min": 0.2,
+          "max": 0.4
+        },
+        {
+          "min": 0.4,
+          "max": 0.8
+        },
+        {
+          "min": 0.6,
+          "max": 1.2
+        },
+        {
+          "min": 0.8,
+          "max": 1.6
+        },
+        {
+          "min": 1.0,
+          "max": 2.0
+        }
+      ]
+    },
+    {
+      "id": "covenant:armor",
+      "stat": "minecraft:armor",
+      "prefix": true,
+      "operation": "add",
+      "reduction": false,
+      "ranges": [
+        {
+          "min": 0.15,
+          "max": 0.35
+        },
+        {
+          "min": 0.3,
+          "max": 0.7
+        },
+        {
+          "min": 0.45,
+          "max": 1.05
+        },
+        {
+          "min": 0.6,
+          "max": 1.4
+        },
+        {
+          "min": 0.75,
+          "max": 1.75
+        }
+      ]
+    },
+    {
+      "id": "covenant:attack_speed",
+      "stat": "minecraft:attack_speed",
+      "prefix": true,
+      "operation": "multiply_base",
+      "reduction": false,
+      "ranges": [
+        {
+          "min": 0.02,
+          "max": 0.04
+        },
+        {
+          "min": 0.04,
+          "max": 0.08
+        },
+        {
+          "min": 0.06,
+          "max": 0.12
+        },
+        {
+          "min": 0.08,
+          "max": 0.16
+        },
+        {
+          "min": 0.1,
+          "max": 0.2
+        }
+      ]
+    },
+    {
+      "id": "covenant:dodge",
+      "stat": "covenant:dodge",
+      "prefix": true,
+      "operation": "add",
+      "reduction": false,
+      "ranges": [
+        {
+          "min": 0.01,
+          "max": 0.02
+        },
+        {
+          "min": 0.02,
+          "max": 0.04
+        },
+        {
+          "min": 0.03,
+          "max": 0.06
+        },
+        {
+          "min": 0.04,
+          "max": 0.08
+        },
+        {
+          "min": 0.05,
+          "max": 0.1
+        }
+      ]
+    },
+    {
+      "id": "covenant:movement_speed",
+      "stat": "minecraft:movement_speed",
+      "prefix": false,
+      "operation": "multiply_base",
+      "reduction": false,
+      "ranges": [
+        {
+          "min": 0.005,
+          "max": 0.01
+        },
+        {
+          "min": 0.01,
+          "max": 0.02
+        },
+        {
+          "min": 0.015,
+          "max": 0.03
+        },
+        {
+          "min": 0.02,
+          "max": 0.04
+        },
+        {
+          "min": 0.025,
+          "max": 0.05
+        }
+      ]
+    },
+    {
+      "id": "covenant:resource_cost",
+      "stat": "covenant:resource_cost",
+      "prefix": false,
+      "operation": "add",
+      "reduction": true,
+      "ranges": [
+        {
+          "min": 0.005,
+          "max": 0.01
+        },
+        {
+          "min": 0.01,
+          "max": 0.02
+        },
+        {
+          "min": 0.015,
+          "max": 0.03
+        },
+        {
+          "min": 0.02,
+          "max": 0.04
+        },
+        {
+          "min": 0.025,
+          "max": 0.05
+        }
+      ]
+    },
+    {
+      "id": "covenant:cooldown",
+      "stat": "covenant:cooldown",
+      "prefix": false,
+      "operation": "add",
+      "reduction": true,
+      "ranges": [
+        {
+          "min": 0.005,
+          "max": 0.01
+        },
+        {
+          "min": 0.01,
+          "max": 0.02
+        },
+        {
+          "min": 0.015,
+          "max": 0.03
+        },
+        {
+          "min": 0.02,
+          "max": 0.04
+        },
+        {
+          "min": 0.025,
+          "max": 0.05
+        }
+      ]
+    },
+    {
+      "id": "covenant:cast_time",
+      "stat": "covenant:cast_time",
+      "prefix": false,
+      "operation": "add",
+      "reduction": true,
+      "ranges": [
+        {
+          "min": 0.01,
+          "max": 0.02
+        },
+        {
+          "min": 0.02,
+          "max": 0.04
+        },
+        {
+          "min": 0.03,
+          "max": 0.06
+        },
+        {
+          "min": 0.04,
+          "max": 0.08
+        },
+        {
+          "min": 0.05,
+          "max": 0.1
+        }
+      ]
+    },
+    {
+      "id": "covenant:skill_duration",
+      "stat": "covenant:skill_duration",
+      "prefix": false,
+      "operation": "add",
+      "reduction": false,
+      "ranges": [
+        {
+          "min": 0.005,
+          "max": 0.01
+        },
+        {
+          "min": 0.01,
+          "max": 0.02
+        },
+        {
+          "min": 0.015,
+          "max": 0.03
+        },
+        {
+          "min": 0.02,
+          "max": 0.04
+        },
+        {
+          "min": 0.025,
+          "max": 0.05
+        }
+      ]
+    }
+  ],
+  "participation": [
+    {
+      "category": "covenant:main_hand",
+      "tags": [
+        "covenant:affix_compatible/main_hand"
+      ]
+    },
+    {
+      "category": "covenant:off_hand",
+      "tags": [
+        "covenant:affix_compatible/off_hand"
+      ]
+    },
+    {
+      "category": "covenant:head_armor",
+      "tags": [
+        "covenant:affix_compatible/head_armor"
+      ]
+    },
+    {
+      "category": "covenant:body_armor",
+      "tags": [
+        "covenant:affix_compatible/body_armor"
+      ]
+    },
+    {
+      "category": "covenant:leg_armor",
+      "tags": [
+        "covenant:affix_compatible/leg_armor"
+      ]
+    },
+    {
+      "category": "covenant:foot_armor",
+      "tags": [
+        "covenant:affix_compatible/foot_armor"
+      ]
+    },
+    {
+      "category": "covenant:ring",
+      "tags": [
+        "covenant:affix_compatible/ring"
+      ]
+    },
+    {
+      "category": "covenant:necklace",
+      "tags": [
+        "covenant:affix_compatible/necklace"
+      ]
+    },
+    {
+      "category": "covenant:accessory",
+      "tags": [
+        "covenant:affix_compatible/accessory"
+      ]
+    },
+    {
+      "category": "covenant:trinket",
+      "tags": [
+        "covenant:affix_compatible/trinket"
+      ]
+    }
+  ],
+  "refunds": [
+    {
+      "items": [
+        "minecraft:iron_sword",
+        "minecraft:iron_axe",
+        "minecraft:iron_pickaxe",
+        "minecraft:iron_shovel",
+        "minecraft:iron_hoe",
+        "minecraft:iron_helmet",
+        "minecraft:iron_chestplate",
+        "minecraft:iron_leggings",
+        "minecraft:iron_boots"
+      ],
+      "output": "minecraft:iron_ingot",
+      "count": 1
+    },
+    {
+      "items": [
+        "minecraft:diamond_sword",
+        "minecraft:diamond_axe",
+        "minecraft:diamond_pickaxe",
+        "minecraft:diamond_shovel",
+        "minecraft:diamond_hoe",
+        "minecraft:diamond_helmet",
+        "minecraft:diamond_chestplate",
+        "minecraft:diamond_leggings",
+        "minecraft:diamond_boots"
+      ],
+      "output": "minecraft:diamond",
+      "count": 1
+    }
+  ],
+  "bonus_pool": [
+    "minecraft:iron_sword",
+    "minecraft:iron_axe",
+    "minecraft:iron_pickaxe",
+    "minecraft:iron_shovel",
+    "minecraft:iron_hoe",
+    "minecraft:iron_helmet",
+    "minecraft:iron_chestplate",
+    "minecraft:iron_leggings",
+    "minecraft:iron_boots",
+    "minecraft:bow",
+    "minecraft:crossbow",
+    "minecraft:shield"
+  ],
+  "settings": {
+    "potential_cost": 5,
+    "common_add": 3,
+    "common_reroll": 1,
+    "generic_chance": 0.5,
+    "component_rate": 1.2,
+    "affix_chance": 1,
+    "mob_bonus_chance": 0.25,
+    "chest_bonus": 1,
+    "recovery": [
+      0.7,
+      0.85,
+      1
+    ],
+    "focused_recovery": [
+      0.8,
+      1.6,
+      2.4
+    ],
+    "tier_levels": [
+      1,
+      5,
+      10,
+      15,
+      20
+    ]
+  }
+}

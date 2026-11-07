@@ -24,7 +24,9 @@ public final class AffixPages {
     public static AffixPage attach(ServerLevel level, ItemStack stack, EquipmentCategory category,
             List<RpgModifier> modifiers, List<Affix> affixes) {
         requireServerThread(level);
-        if (stack.getCount() != 1 || stack.has(RpgData.AFFIX_PAGE.get()) || !category.supports(stack)) {
+        boolean supported = category.supports(stack) || ItemizationData.get(level.getServer()).participation().stream()
+                .anyMatch(rule -> rule.category().equals(category) && rule.selector().matches(stack, category));
+        if (stack.getCount() != 1 || stack.has(RpgData.AFFIX_PAGE.get()) || !supported) {
             throw new IllegalArgumentException("Affix Pages require one compatible, unpaged item");
         }
         AffixPage page = new AffixPage(UUID.randomUUID(), category, modifiers, affixes, PageProgression.NONE);
