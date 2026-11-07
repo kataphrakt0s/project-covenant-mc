@@ -25,6 +25,14 @@ public final class RpgData {
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Covenant.MOD_ID);
     private static final DeferredRegister.DataComponents COMPONENTS =
             DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, Covenant.MOD_ID);
+    /** Server-only native arrow payload; does not depend on the temporary cosmetic trail. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.StalkerArrows.Shot>> STALKER_SHOT = ATTACHMENTS.register(
+            "stalker_shot", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.StalkerArrows.Shot.EMPTY)
+                    .serialize(dev.covenant.rpg.skills.StalkerArrows.Shot.CODEC.fieldOf("shot")).build());
+    /** Target-owned, saved Multishot attempts, pruned lazily on the next fan hit and cleared on death. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.StalkerArrows.Hits>> MULTISHOT_HITS = ATTACHMENTS.register(
+            "multishot_hits", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.StalkerArrows.Hits.EMPTY)
+                    .serialize(dev.covenant.rpg.skills.StalkerArrows.Hits.CODEC.fieldOf("hits")).build());
     /** Chunk-local placement exclusions; mutable changes explicitly mark the owning chunk unsaved. */
     public static final Supplier<AttachmentType<dev.covenant.rpg.progression.HarvestChunkState.PlacedOres>> PLACED_ORES = ATTACHMENTS.register(
             "placed_ores", () -> AttachmentType.builder(dev.covenant.rpg.progression.HarvestChunkState.PlacedOres::new)

@@ -196,6 +196,10 @@ public final class TrapGameTests {
         var loaded = f.target(owner.position().add(4, 0, 0));
         loaded.load(TagValueInput.create(reporter, helper.getLevel().registryAccess(), saved));
         loaded.setPos(owner.position().add(4, 0, 0));
+        // Added test instances can place this off-template target across a chunk boundary.
+        var rootChunk = new net.minecraft.world.level.ChunkPos(net.minecraft.util.Mth.floor(loaded.getX()) >> 4,
+                net.minecraft.util.Mth.floor(loaded.getZ()) >> 4);
+        boolean forcedRootChunk = helper.getLevel().setChunkForced(rootChunk.x(), rootChunk.z(), true);
         check(loaded.getEffect(Rooted.EFFECT).getDuration() == 72 && reporter.isEmpty(), "Native mob effect serialization retains root");
         var playerList = helper.getLevel().getServer().getPlayerList();
         playerList.saveAll(); var disk = playerList.loadPlayerData(owner.nameAndId()).orElseThrow(); disk.remove("UUID");
@@ -214,7 +218,10 @@ public final class TrapGameTests {
                 target.hurtServer(helper.getLevel(), target.damageSources().genericKill(), Float.MAX_VALUE);
                 check(!Rooted.contains(target), "Death clears root");
                 helper.succeed();
-            } finally { f.close(); }
+            } finally {
+                f.close();
+                if (forcedRootChunk) { helper.getLevel().setChunkForced(rootChunk.x(), rootChunk.z(), false); }
+            }
         });
     }
 

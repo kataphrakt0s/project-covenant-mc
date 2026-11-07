@@ -5,9 +5,16 @@ below are the minimum character levels required to invest the first point in eac
 skill; they are real unlock gates, not informational labels. Once a skill is
 unlocked at Rank 1, further ranks do not require additional character levels.
 Piercing Shot, Aimed Shot, Cleave, Rend, Arcane Bolt, all four Stalker traps, all
-three elemental bolts, all eleven auras, Lunging Combo, and Rip and Rush are
+three elemental bolts, all eleven auras, Lunging Combo, Rip and Rush,
+Disengage, Arcane Arrow, and Multishot are
 implemented; the remaining entries are planned skills. The breakdowns record
 agreed gameplay direction and current prototype status.
+Stalker's numerical baseline is now accepted in
+[[Project_Covenant_Stalker_Balance_Proposal]]. Disengage, Arcane Arrow, and
+Multishot are implemented with only Rank 1 purchasable and Rank 8 retained as
+the planned maximum. Higher-rank upgrades remain deferred until Rank 1
+playtesting. Existing Stalker tuning and server-datapack skill configuration
+were not changed in this batch; current behavior is in `docs/RPG_SKILLS.md`.
 The first tree pass now displays only the current class's roster, with free
 allocation and the connection rules below enforced by the server. Planned nodes
 are bindable placeholders without gameplay effects. The right-hand Keybindings
@@ -539,9 +546,24 @@ targets, stopping at blocks, with base damage coefficient 3 instead of vanilla 2
 #### Disengage
 Minimum character level: 3.
 
-Planned behavior: leap backward relative to the direction the player is facing.
+Current implementation: leap backward relative to the direction the player is facing.
 No target is required. This lets the player keep aiming at an approaching enemy
-while creating distance. Leap distance and other numerical tuning are deferred.
+while creating distance. Accepted Rank 1 baseline: 20 Focus, six-second cooldown,
+four-block backward displacement target, instant activation, and no damage.
+Capture horizontal facing on activation and leap backward with a small upward
+hop, ignoring camera pitch. This is the accepted initial movement direction.
+Activation is allowed while airborne, including after jumping or enemy knockback;
+standing on the ground is not required.
+The leap breaks an existing fall, clearing accumulated fall distance during
+travel and on completion or interruption, as Reaver's dashes do. Normal falling
+resumes afterward; a subsequent fall can still deal normal fall damage.
+Accepted provisional travel profile: four horizontal blocks over 0.3 seconds
+(six ticks), with an approximately half-block upward arc in unobstructed travel.
+Terrain and collision may shorten or flatten the leap. Shared dash prediction,
+control restrictions, interruptions and lifecycle cleanup apply; per-rank
+upgrades remain deferred.
+Bow attacks and skills that do not move the player remain usable during the
+leap. Disengage grants no invulnerability; incoming attacks can still hit normally.
 
 #### Bear Trap
 Minimum character level: 3.
@@ -678,12 +700,24 @@ leaving all eligible patches ends it immediately.
 #### Arcane Arrow
 Minimum character level: 15.
 
-Planned behavior: fire a single-target arrow that deals magic damage and briefly
+Current implementation: fire a single-target arrow that deals magic damage and briefly
 increases the target's damage taken from everyone, including teammates. Repeated
 applications, including from multiple Stalkers, refresh one shared vulnerability
 effect's duration without stacking its strength. This vulnerability stacks with
-Shock Aura's damage-taken increase. Damage, vulnerability strength, and debuff
-duration are deferred.
+Shock Aura's damage-taken increase additively: Arcane Arrow's +15% and Shock
+Aura's +10% produce +25% damage taken while both apply. Accepted Rank 1 baseline: 30 Focus,
+eight-second cooldown, four direct magic damage, and +15% damage taken for four
+seconds. Requires a held bow and uses one arrow under the existing bow-skill
+ammunition rules, including native ammunition-use exemptions such as Infinity.
+Tipped and spectral arrows retain their normal secondary effects, allowing
+one shot to apply both vulnerability and the ammunition's native effect.
+The four raw magic damage replaces ordinary arrow impact damage rather than
+adding a second damage hit. Apply or refresh vulnerability only after positive
+direct-hit damage to health or absorption hearts; a fully prevented hit applies
+no debuff. Resolve direct damage first, so the hit does not benefit from the
+vulnerability it newly applies. Native flight, armor/shield-bypassing magic projectile damage,
+and a saved/synced target-owned debuff follow `docs/RPG_SKILLS.md`; per-rank
+upgrades remain deferred.
 
 #### Poison Shot
 Minimum character level: 15.
@@ -696,10 +730,24 @@ interval, and poison duration are deferred.
 #### Multishot
 Minimum character level: 20.
 
-Planned behavior: fire several arrows simultaneously in a horizontal fan, covering
+Current implementation: fire several arrows simultaneously in a horizontal fan, covering
 enemies spread across the player's view. Each enemy can take damage at most once
-per activation, even if multiple arrows connect (no shotgunning). Arrow count,
-spread angle, and damage are deferred.
+per activation, even if multiple arrows connect (no shotgunning). Accepted Rank 1
+baseline: 30 Focus, eight-second cooldown, five arrows over a total horizontal
+spread of 30 degrees, and native arrow damage coefficient 1.5 per arrow.
+Per-rank upgrades remain deferred. The full fan uses
+one ammunition item under the existing bow-skill ammunition rules, including
+native ammunition-use exemptions. The four extra arrows are unrecoverable;
+at most the central arrow can be recovered under normal ammunition/pickup rules,
+so one activation cannot duplicate ammo.
+The first eligible arrow contact claims the target's single damage attempt
+for the whole fan, including blocked, dodged, or otherwise prevented attempts.
+Other arrows from that activation cannot retry damage or apply on-hit
+ammunition effects to that target; overlapping arrows do not repeatedly test
+defenses.
+Saved arrow payloads and target-owned fan claims preserve the limit across
+save/load. Fan arrows expire after sixty seconds of overworld game time,
+including time unloaded; expired target claims are pruned on the next fan hit.
 
 #### Flame Trap
 Minimum character level: 20.

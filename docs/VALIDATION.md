@@ -2,6 +2,41 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Stalker mobility and arrow skills (2026-11-06)
+
+- Added playable Rank 1 Disengage, Arcane Arrow and Multishot using the existing
+  skill tree, bindings, Focus, cooldowns, native arrows and server-owned movement.
+  Higher ranks, existing Stalker balance conversions and server-datapack skill
+  tuning remain deferred. See [RPG_SKILLS.md](RPG_SKILLS.md#stalker-mobility-and-arrow-skills)
+  for the agreed values, defense rules, snapshots and persistence boundaries.
+- `scripts/Dev.ps1 build` passes, including radial, skill-tree and profession-tree
+  layout checks. Final evidence: ignored `.local/stalker-build-final.log`.
+- `scripts/Dev.ps1 test` reports **All 106 required tests passed :)**, including
+  ten new Stalker tests, then saves all dimensions and exits with `BUILD SUCCESSFUL`.
+  Final evidence: ignored `.local/stalker-tests-final.log`.
+  Coverage includes activation/cost/cooldown gates, Rank 1 availability,
+  pitch-independent airborne movement, exact arc and endpoint, fall breaking,
+  native collision, owner prediction/packet roundtrip, attacks during travel,
+  root/knockback/unlearning/lifecycle cleanup, autosave gravity restoration,
+  fixed magic damage, absorption and immunity gates, additive Shock vulnerability,
+  tipped/spectral effects, Infinity and special-ammunition consumption, fan spread,
+  pickup limits, damage attempts across siblings and independent fans, actual
+  flight/cover, native arrow/target serialization, expiry, Dodge, shield behavior,
+  Fortitude-only absorption and pet exclusion.
+- Native source/tag inspection confirms armor-bypassing magic inherits shield
+  bypass through Minecraft's `bypasses_shield` tag. Arcane Arrow preserves that
+  native behavior and remains dodgeable; Multishot remains shield-blockable.
+  The root-persistence fixture now acquires/releases a test-only chunk ticket
+  for its off-template loaded target. The new flight fixture also waits for its
+  test-only chunk tickets to make its lanes visible. Gameplay forces no chunks.
+- `git diff --check` passes. Production JAR inspection includes the new gameplay
+  classes and damage resource, and excludes tests/fixtures/local files.
+  `build/libs/covenant-0.1.0-dev.jar` SHA256:
+  `B501C46BF1F351375C889C18A56C6129967E4C7B1458B7F69D89BB329BA44F2C`.
+- No client launch or deployment. Manual checks remain for leap feel, rendered
+  bow/projectile/status feedback, multiplayer latency and a retained-world
+  restart; the short checklist is in [RPG_SKILLS.md](RPG_SKILLS.md#in-game-testing).
+
 ## NeoForge 26.1.2.126 update (2026-11-06)
 
 - Updated the project loader pin from `.125` to `.126`, matching

@@ -15,7 +15,7 @@ public final class SkillNetworking {
     private SkillNetworking() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("3");
+        var registrar = event.registrar("4");
         registrar.playToServer(Apply.TYPE, Apply.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && accept(player, request)) {
                 player.sendSystemMessage(SkillLoadouts.apply(player, request.expected(), request.desired()));

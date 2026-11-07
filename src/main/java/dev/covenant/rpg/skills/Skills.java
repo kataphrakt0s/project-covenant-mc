@@ -55,6 +55,7 @@ public final class Skills {
         FrostSlows.register();
         Auras.register();
         ArmorShred.register(modBus);
+        Vulnerability.register(modBus);
         Combos.register();
         SkillControls.register();
         SkillLifecycle.register();
@@ -96,6 +97,10 @@ public final class Skills {
         if (type == null || !skill.allowedClasses().contains(type)) { return message("class"); }
         if (!player.getData(RpgData.SKILL_LOADOUT).learned().contains(skill.id())) { return message("unlearned"); }
         if (!ignoresCooldowns(player) && cooldownRemaining(player, skill) > 0) { return message("cooldown", cooldownRemaining(player, skill) / 20.0); }
+        if (skill.effect() == SkillDefinition.Effect.DISENGAGE) {
+            if (Rooted.contains(player)) { return message("rooted"); }
+            if (player.getData(RpgData.SKILL_RUNTIME).movement != null || player.isPassenger() || player.isSleeping()) { return message("busy"); }
+        }
         if (skill.effect() == SkillDefinition.Effect.BOW_SHOT) {
             var weapon = player.getMainHandItem();
             if (!(weapon.getItem() instanceof BowItem)) { return message("bow"); }
@@ -154,6 +159,7 @@ public final class Skills {
             case ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT -> SpellSkills.execute(player, skill);
             case TRAP -> Traps.accept(player, trap);
             case BOW_SHOT -> BowSkills.fire(player, skill, shot);
+            case DISENGAGE -> Combos.disengage(player);
             case CLEAVE -> MeleeSkills.cleave(player, skill);
             case REND -> MeleeSkills.rend(player, rendTarget);
         }

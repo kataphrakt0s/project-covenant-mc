@@ -94,7 +94,9 @@ public final class AuraDamage {
                 && (direct == null || !direct.hasData(RpgData.AURA_PROJECTILE_POWER))) {
             amount *= multiplier(player, source.is(DamageTypeTags.IS_FIRE));
         }
-        if (Auras.passive(event.getEntity(), Auras.Kind.SHOCK)) { amount *= 1.1; }
+        double vulnerability = (Auras.passive(event.getEntity(), Auras.Kind.SHOCK) ? .1 : 0)
+                + (event.getEntity().hasEffect(Vulnerability.EFFECT) ? Vulnerability.STRENGTH : 0);
+        amount *= 1 + vulnerability;
         if (source.is(DamageTypeTags.IS_FIRE) && Auras.passive(event.getEntity(), Auras.Kind.FLAME_CLOAK)) { amount *= .8; }
         event.setAmount((float) amount);
     }

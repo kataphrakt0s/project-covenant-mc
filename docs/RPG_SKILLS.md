@@ -1,11 +1,11 @@
 # Skills, class resources, and skill trees
 
 This foundation shares the existing class/profile and native stat/Affix Page systems.
-It adds 25 code-backed skills, persistent skill resources/cooldowns, and an
+It adds 28 code-backed skills, persistent skill resources/cooldowns, and an
 unsaved entity-local cast/combat/combo attachment. The Skills window presents
 the current class's tree with staged point/rank purchases and eight saved
-assignments. Unimplemented nodes remain visible but unavailable. Arrow skills
-have ranks 1–8; other playable skills allow Rank 1 until upgrades are authored.
+assignments. Unimplemented nodes remain visible but unavailable. Piercing Shot
+and Aimed Shot have ranks 1–8; other playable skills allow Rank 1 until upgrades are authored.
 See [PROGRESSION.md](PROGRESSION.md) for the implemented economy, XP, caps,
 support credit, balance reloads and crafted respec. A full icon action bar,
 pack dependencies and additional skill implementations remain separate work.
@@ -16,6 +16,17 @@ The roster, learning prerequisites, and agreed gameplay direction are in
 [Skill Trees Brainstorm](<../Project-Covenant/Skill Trees Brainstorm.md>).
 
 ## Implementation order
+
+The [Stalker balance proposal](<../Project-Covenant/Project_Covenant_Stalker_Balance_Proposal.md>)
+was accepted unchanged as the numerical starting baseline on 2026-11-06.
+Disengage, Arcane Arrow, and Multishot are implemented with Rank 1 purchasable,
+retaining Rank 8 as the planned maximum. Higher-rank upgrades remain deferred.
+This batch adds only the three new skills; server-datapack skill tuning and
+converting existing Stalker skills to the new balance baseline remain separate work.
+The implemented definitions below continue to describe current code; notably,
+Piercing Shot still costs 30 Focus with a two-second cooldown, while the accepted
+future baseline is 20 Focus with a three-second cooldown. Proposed rank themes
+and server-datapack configuration are not claims of implemented functionality.
 
 Implement behavior in small dependency-ordered batches, with prototype tuning
 where the brainstorm defers numbers. The combat progression foundation now
@@ -38,6 +49,62 @@ uses the existing playable roster; further skill content follows this order.
 This is a dependency guide rather than a promise to implement an entire stage in
 one pass. Rend and the bleed foundation were prioritized next for Reaver's
 dependent skills. Skills whose requirements span stages follow their latest dependency.
+
+## Stalker mobility and arrow skills
+
+All three skills are instant, server-authoritative Rank 1 activations. Existing
+Resource Cost and Cooldown multipliers apply. They use the existing eight-skill
+allocation/binding flow and unlock levels: Disengage 3, Arcane Arrow 15,
+Multishot 20, with no prerequisites. No new datapack loader is added.
+
+- **Disengage:** 20 Focus, six-second cooldown; capture horizontal facing and
+  retreat four blocks over six ticks with an approximately half-block arc.
+  Pitch and later turning do not steer it. Airborne activation replaces momentum
+  and clears accumulated fall distance during travel and on exit; normal falling
+  resumes afterward. Terrain can shorten or flatten travel. Ceiling/floor contact
+  clips the hop without increasing horizontal speed. Native collision and the
+  existing owner prediction/endpoint acknowledgement handle movement. The shared
+  motion payload now includes vertical acceleration; client and server builds must
+  match. Root/freeze, effective knockback, lifecycle changes, unlearning, rebinding,
+  mounting and sleeping stop travel without refunds. Root/freeze prevent activation;
+  a mounted/sleeping player or a second simultaneous movement is rejected. Bow
+  attacks and stationary skills stay usable; there is no invulnerability. Temporary
+  gravity suppression is excluded from saves, and there is no combo HUD row.
+- **Arcane Arrow:** 30 Focus, eight-second cooldown; one full-speed native bow
+  arrow replaces ordinary impact damage with four raw magic damage. Native damage
+  tags make it bypass armor and shields; it remains a dodgeable projectile, with
+  normal general mitigation and immunity. Bow damage enchantments and unrelated
+  melee Attack Damage do not increase its fixed base hit; applicable offensive
+  bonuses still apply.
+  Tipped/spectral ammunition keeps native secondary effects. Only positive direct
+  damage to health or native absorption applies vulnerability, after resolving the
+  initial damage. Fortitude-only absorption does not qualify. Vulnerability grants
+  +15% incoming damage from all sources for four base seconds, using Skill Duration
+  captured at launch. Reapplications share one strength and retain the longer
+  remaining/new duration. Shock Aura's +10% adds to produce +25%. The native harmful
+  effect saves/syncs, pauses while unloaded, accepts native cleansing/applicability
+  hooks without a Covenant boss exclusion, outlives owner departure, and clears on
+  target death. Successful applications record existing support credit.
+- **Multishot:** 30 Focus, eight-second cooldown; five full-speed native arrows
+  at yaw offsets -15, -7.5, 0, +7.5, +15 degrees, each with native coefficient 1.5.
+  One ammunition item and one bow durability use pay for the entire fan, following
+  existing ammunition-use exemptions. Only the central arrow may be recovered;
+  the four extras are creative-only pickups. Native ammunition effects remain.
+  Each eligible target gets one attempt per fan, claimed before damage callbacks;
+  blocked/dodged/immune attempts count. Sibling arrows cannot retry damage or
+  ammunition effects on that target, independently of hurt cooldowns. Different
+  fans can hit independently. New arrows exclude allies, pets and disallowed PvP
+  targets under the existing targeting policy.
+
+`covenant:stalker_shot` saves the Arcane Arrow duration or Multishot fan ID/deadline
+on native arrows, separately from cosmetic trails and existing combat provenance.
+`covenant:multishot_hits` saves fan attempts on targets so save/load cannot bypass
+the limit. Fan arrows expire after 1,200 overworld ticks (60 seconds), including
+time unloaded, bounding the shared-claim lifetime. Expired claims are pruned on
+the next fan hit, and target death clears them; no entity scans or ticking claim
+registry are added. Existing saved profiles, resources, cooldowns and loadouts
+retain their IDs and formats; older native arrows without the new payload are
+unchanged. Multiplayer rendering, movement feel and balance remain manual checks.
 
 ## Combo skills
 
@@ -1254,6 +1321,9 @@ stat system. Effective capacities and recovery rates are never saved as characte
 | --- | --- | --- | --- | --- | --- |
 | `covenant:piercing_shot` | Stalker | 30 Focus | 2 s | Instant | Fire one bow arrow through up to three targets, stopping at blocks, with base damage coefficient 3 instead of vanilla 2 (+50%). |
 | `covenant:aimed_shot` | Stalker | 40 Focus | 4 s | 1 s | Wind up, then fire one single-target arrow with base damage coefficient 4 (double vanilla). Aim remains adjustable; movement speed is 20% during wind-up. |
+| `covenant:disengage` | Stalker | 20 Focus | 6 s | Instant | Four-block backward hop over six ticks, with a half-block arc and fall break; works airborne. |
+| `covenant:arcane_arrow` | Stalker | 30 Focus | 8 s | Instant | Native arrow with 4 magic damage; damaging hits apply +15% damage taken for four base seconds. |
+| `covenant:multishot` | Stalker | 30 Focus | 8 s | Instant | Five-arrow/30-degree fan, coefficient 1.5 each, one ammo item and one attempt per target. |
 | `covenant:cleave` | Reaver | 20 Rage | 3 s | Instant | Deal effective native attack damage to visible non-allied living targets within 3 blocks and a 120-degree horizontal forward arc. |
 | `covenant:rend` | Reaver | 20 Rage | 2 s | Instant | Strike the crosshair target within native held-item melee reach for effective attack damage; damaging hits apply one 5-second bleed stack at 10% captured attack damage per second. |
 | `covenant:lunging_combo` | Reaver | 20 / 10 / 20 Rage | 12 s from combo end | Lunge, then instant attacks | Four-block/three-tick lunge, 125% single-target strike, then three-block/120-degree 100% cleave and shared armor shred. Fixed 2 s / 3 s follow-up windows. |
@@ -1287,9 +1357,11 @@ cancellation, spending, and cooldown persistence reuse the existing skill bounda
 | `covenant:flame_trap` | Stalker | 35 Focus | 12 s | Instant | On contact, form a 6-second, 3-block patch: 3 fire damage on entry and at most once per second per target. |
 | `covenant:blast_trap` | Stalker | 40 Focus | 15 s | Instant | On contact, explode once: up to 10 explosion damage and a low outward shove, with 3.5-block falloff and cover checks. |
 
-Both bow skills require a main-hand `BowItem` and supported arrow ammunition, use
-native arrow collision/damage/enchantment handling, honor native ammunition-use
+All bow skills require a main-hand `BowItem` and supported arrow ammunition, use
+native arrow collision/ammunition handling, honor native ammunition-use
 enchantments (including Infinity), creative/infinite arrows, and wear the bow.
+Arcane Arrow's fixed magic impact replaces native arrow damage as described above;
+the other bow skills retain native damage and enchantment handling.
 Piercing Shot uses native piercing level 2 (three total targets); a narrow Mixin
 invoker accesses the pinned private setter. Native arrow collision and saved
 piercing state remain authoritative. Aimed Shot forces piercing level 0, aims from
@@ -1419,6 +1491,25 @@ cancel pending casts on class changes. Ordinary players still choose once; opera
 can use the added `/covenant class switch <id>` testing branch.
 
 ## In-game testing
+
+For the new Stalker skills, purchase Rank 1 at their unlock levels and assign
+them through the existing Keybindings tab. Manual client checks:
+
+1. Disengage on the ground and in midair while looking up/down, then near walls
+   and low ceilings. Confirm the short backward hop feels smooth, breaks the
+   existing fall, permits shooting, and leaves normal falling afterward.
+2. Arcane Arrow against an ordinary and an armored target, then a blocking
+   player (native magic bypasses that shield). Check the vulnerability status,
+   the following burst window, and tipped/spectral ammunition feedback. With a
+   Weaver, confirm Shock combines
+   with vulnerability without duplicate status strength.
+3. Multishot against a spread-out group and a close single target. Confirm the
+   five-arrow fan, one ammo spent, one recoverable center arrow, and no shotgun
+   damage. Check movement/shooting visuals from another player's view.
+4. Reconnect or change dimension during a leap, and reload a target with an
+   active vulnerability. Confirm cleanup, saved cooldowns and remaining status
+   duration. Automated native save/load checks do not replace a retained-world
+   restart or real-client latency testing.
 
 Use a disposable world in the isolated NeoForge instance. Select a class with the
 existing `/covenant class select <id>`, or switch with the operator-only command above.

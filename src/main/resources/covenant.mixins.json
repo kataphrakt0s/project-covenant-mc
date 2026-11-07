@@ -6,6 +6,7 @@
   "mixins": [
     "PlayerHealthLoadMixin",
     "ArrowPiercingAccessor",
+    "StalkerArrowMixin",
     "BleedHurtCooldownMixin",
     "ConfirmedSkillDeathMixin",
     "RootMovementMixin",

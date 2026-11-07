@@ -42,6 +42,8 @@ public final class SkillLifecycle {
         target.removeData(RpgData.BLEED);
         target.removeEffect(Rooted.EFFECT);
         target.removeEffect(ArmorShred.EFFECT);
+        target.removeEffect(Vulnerability.EFFECT);
+        target.removeData(RpgData.MULTISHOT_HITS);
     }
 
     /** Runs after an actual validated edit; unchanged requests never reconcile or cancel activity. */

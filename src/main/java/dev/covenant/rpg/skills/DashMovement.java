@@ -19,6 +19,11 @@ public final class DashMovement {
 
     /** Visit each actual segment for dash hits; false stops immediately after a lifecycle/control callback. */
     public static Result move(Player player, Vec3 step, BiPredicate<AABB, Vec3> segment) {
+        return move(player, step, segment, true);
+    }
+
+    /** Arcing hops clip vertical motion without converting it into additional horizontal speed. */
+    public static Result move(Player player, Vec3 step, BiPredicate<AABB, Vec3> segment, boolean flattenPitch) {
         Vec3 start = player.position();
         player.resetFallDistance();
         double time = 1;
@@ -42,7 +47,7 @@ public final class DashMovement {
             // Do this before stripping wall normals, so even simultaneous contacts cannot turn
             // blocked forward speed into a full-speed strafe. Wall slides retain only the
             // original unblocked components; never renormalize after losing a horizontal axis.
-            if (blockY) { velocity = new Vec3(velocity.x, 0, velocity.z).normalize().scale(velocity.length()); }
+            if (blockY && flattenPitch) { velocity = new Vec3(velocity.x, 0, velocity.z).normalize().scale(velocity.length()); }
             velocity = new Vec3(blockX ? 0 : velocity.x, blockY ? 0 : velocity.y, blockZ ? 0 : velocity.z);
             time *= 1 - fraction;
         }

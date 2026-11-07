@@ -14,7 +14,13 @@ import net.minecraft.resources.Identifier;
  */
 public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, double cost,
         int cooldownTicks, int castTicks, Effect effect, double power, double range) {
-    public enum Effect { BOW_SHOT, CLEAVE, REND, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, TRAP, AURA, COMBO }
+    public enum Effect { BOW_SHOT, DISENGAGE, CLEAVE, REND, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, TRAP, AURA, COMBO }
+    /** Rank 1: 20 Focus, six-second cooldown, four-block backward hop over six ticks. */
+    public static final SkillDefinition DISENGAGE = define("disengage", PlayerClass.STALKER, 20, 120, 0, Effect.DISENGAGE, 0, 4);
+    /** Rank 1: 30 Focus, eight-second cooldown, four magic damage and a four-second vulnerability. */
+    public static final SkillDefinition ARCANE_ARROW = define("arcane_arrow", PlayerClass.STALKER, 30, 160, 0, Effect.BOW_SHOT, 4, 0);
+    /** Rank 1: five arrows across thirty degrees; native damage coefficient 1.5 per arrow. */
+    public static final SkillDefinition MULTISHOT = define("multishot", PlayerClass.STALKER, 30, 160, 0, Effect.BOW_SHOT, .75, 0);
     public static final SkillDefinition PIERCING_SHOT = define("piercing_shot", PlayerClass.STALKER, 30, 40, 0, Effect.BOW_SHOT, 1.5, 0);
     /** Prototype tuning: 40 Focus, 4 seconds cooldown, 1 second wind-up, double native arrow base damage. */
     public static final SkillDefinition AIMED_SHOT = define("aimed_shot", PlayerClass.STALKER, 40, 80, 20, Effect.BOW_SHOT, 2, 0);
@@ -50,7 +56,7 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     public static final SkillDefinition SHOCK_AURA = define("shock_aura", PlayerClass.WEAVER, 30, 500, 0, Effect.AURA, 0, 6);
     public static final SkillDefinition IMMOLATION_AURA = define("immolation_aura", PlayerClass.WEAVER, 40, 600, 0, Effect.AURA, 0, 6);
     public static final SkillDefinition ENCHANTING_AURA = define("enchanting_aura", PlayerClass.WEAVER, 40, 500, 0, Effect.AURA, 0, 6);
-    public static final List<SkillDefinition> ALL = List.of(PIERCING_SHOT, AIMED_SHOT, CLEAVE, REND, ARCANE_BOLT,
+    public static final List<SkillDefinition> ALL = List.of(PIERCING_SHOT, AIMED_SHOT, DISENGAGE, ARCANE_ARROW, MULTISHOT, CLEAVE, REND, ARCANE_BOLT,
             LUNGING_COMBO, RIP_AND_RUSH, BEAR_TRAP, FROST_TRAP, FLAME_TRAP, BLAST_TRAP, FIRE_BOLT, ICE_BOLT, LIGHTNING_BOLT,
             DODGE_AURA, SWIFTNESS_AURA, RIPPING_AURA, FORTITUDE_AURA, RAGING_AURA, ICY_VEINS, FLAME_CLOAK, FREEZING_AURA, SHOCK_AURA, IMMOLATION_AURA, ENCHANTING_AURA);
 

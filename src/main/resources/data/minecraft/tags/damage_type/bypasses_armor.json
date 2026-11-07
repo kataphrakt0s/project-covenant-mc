@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "covenant:arcane_arrow",
     "covenant:bleed",
     "covenant:fire_bolt",
     "covenant:ice_bolt",

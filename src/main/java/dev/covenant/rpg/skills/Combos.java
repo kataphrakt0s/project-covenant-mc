@@ -44,6 +44,7 @@ public final class Combos {
     static final class Movement {
         final Progress progress;
         Vec3 step;
+        Vec3 acceleration = Vec3.ZERO;
         final boolean noGravity;
         final float damage;
         final int shredDuration;
@@ -166,6 +167,25 @@ public final class Combos {
         display(player);
     }
 
+    /** Fixed backward hop, sharing native collision, prediction, acknowledgements and cleanup with dashes. */
+    static void disengage(ServerPlayer player) {
+        var runtime = player.getData(RpgData.SKILL_RUNTIME);
+        int ticks = 6;
+        double yaw = Math.toRadians(player.getYRot());
+        // y(n) = 4h*n*(N-n)/N^2, with h=.5: six discrete steps reach exactly .5 at tick three.
+        var step = new Vec3(Math.sin(yaw) * 4 / ticks, 2.0 * (ticks - 1) / (ticks * ticks), -Math.cos(yaw) * 4 / ticks);
+        var movement = new Movement(null, step, ticks, player.isNoGravity(), 0, 0);
+        movement.acceleration = new Vec3(0, -4.0 / (ticks * ticks), 0);
+        runtime.movement = movement;
+        runtime.awaitingDashSequence = 0;
+        player.setDeltaMovement(Vec3.ZERO);
+        player.resetFallDistance();
+        player.setNoGravity(true);
+        player.setData(RpgData.COMBO_MOVING, true);
+        sendMotion(player, new DashMotion(++runtime.motionSequence, player.level().dimension().identifier(),
+                player.position(), step, ticks, movement.noGravity, Vec3.ZERO, movement.acceleration));
+    }
+
     /** Used by movement mixins on both sides; owner display remains separate. */
     public static boolean moving(LivingEntity entity) { return entity.getData(RpgData.COMBO_MOVING); }
 
@@ -227,6 +247,12 @@ public final class Combos {
                 && (!runtime.combos.isEmpty() || runtime.rushSpeedUntil != 0)) { clear(player); }
         var movement = runtime.movement;
         if (movement == null || movement.lastTick == ClassResources.now(player)) { return; }
+        if (movement.progress == null && (!player.isAlive() || player.isSpectator()
+                || PlayerProfiles.getSelectedClass(player).orElse(null) != PlayerClass.STALKER
+                || !player.getData(RpgData.SKILL_LOADOUT).learned().contains(SkillDefinition.DISENGAGE.id())
+                || player.isPassenger() || player.isSleeping())) {
+            interruptMovement(player, false); return;
+        }
         movement.lastTick = ClassResources.now(player);
         if (Rooted.contains(player) || Auras.frozen(player)) { interruptMovement(player, false); return; }
         player.resetFallDistance();
@@ -234,17 +260,18 @@ public final class Combos {
         movement.stepping = true;
         DashMovement.Result result;
         try {
-            result = DashMovement.move(player, movement.step, movement.progress.kind == Kind.RUSH ? (body, travelled) -> {
+            result = DashMovement.move(player, movement.step, movement.progress != null && movement.progress.kind == Kind.RUSH ? (body, travelled) -> {
                 dashHits(player, movement, body, travelled);
                 return runtime.movement == movement;
-            } : null);
+            } : null, movement.progress != null);
         }
         finally { movement.stepping = false; }
         // Connection.tickPlayer restores firstGood after doTick. Commit this server-owned
         // position to that anchor so vanilla does not undo the step. No packet is sent.
         player.connection.resetPosition();
         if (runtime.movement != movement) { return; }
-        movement.step = result.nextStep();
+        if (Math.abs(result.nextStep().y - movement.step.y) > 1e-8) { movement.acceleration = Vec3.ZERO; }
+        movement.step = result.nextStep().add(movement.acceleration);
         if (--movement.ticks == 0 || movement.step.lengthSqr() < 1e-8) { interruptMovement(player, false); }
     }
 
@@ -290,7 +317,7 @@ public final class Combos {
         var movement = runtime.movement;
         if (movement == null) { return; }
         stopMovement(player, preserveImpulse);
-        completed(player, movement.progress);
+        if (movement.progress != null) { completed(player, movement.progress); }
     }
 
     private static void stopMovement(ServerPlayer player, boolean preserveImpulse) {
@@ -340,6 +367,11 @@ public final class Combos {
     }
 
     static void cancel(ServerPlayer player, SkillDefinition skill) {
+        if (skill == SkillDefinition.DISENGAGE) {
+            var movement = player.getData(RpgData.SKILL_RUNTIME).movement;
+            if (movement != null && movement.progress == null) { interruptMovement(player, false); }
+            return;
+        }
         if (skill.effect() != SkillDefinition.Effect.COMBO) { return; }
         end(player, Kind.of(skill), ClassResources.now(player));
         if (skill == SkillDefinition.RIP_AND_RUSH) { clearSpeed(player); }
@@ -351,6 +383,7 @@ public final class Combos {
     }
 
     public static void clear(ServerPlayer player) {
+        interruptMovement(player, false);
         for (var kind : KINDS) { end(player, kind, ClassResources.now(player)); }
         clearSpeed(player);
     }

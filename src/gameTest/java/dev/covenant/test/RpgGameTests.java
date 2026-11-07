@@ -52,6 +52,16 @@ public final class RpgGameTests {
             DeferredRegister.create(Registries.TEST_FUNCTION, "covenant_test");
 
     static {
+        FUNCTIONS.register("stalker_activation", () -> StalkerGameTests::activation);
+        FUNCTIONS.register("stalker_disengage", () -> StalkerGameTests::disengage);
+        FUNCTIONS.register("stalker_movement_lifecycle", () -> StalkerGameTests::movementLifecycle);
+        FUNCTIONS.register("stalker_collision_prediction", () -> StalkerGameTests::collisionAndPrediction);
+        FUNCTIONS.register("stalker_arcane", () -> StalkerGameTests::arcane);
+        FUNCTIONS.register("stalker_ammunition", () -> StalkerGameTests::ammunition);
+        FUNCTIONS.register("stalker_multishot", () -> StalkerGameTests::multishot);
+        FUNCTIONS.register("stalker_persistence", () -> StalkerGameTests::persistence);
+        FUNCTIONS.register("stalker_flight", () -> StalkerGameTests::flight);
+        FUNCTIONS.register("stalker_defenses", () -> StalkerGameTests::defenses);
         FUNCTIONS.register("profile_lifecycle", () -> RpgGameTests::profileLifecycle);
         FUNCTIONS.register("item_lifecycle", () -> RpgGameTests::itemLifecycle);
         FUNCTIONS.register("stack_safety", () -> RpgGameTests::stackSafety);

@@ -89,7 +89,17 @@ once with `/covenant class select covenant:stalker` (or `reaver` / `weaver` in t
 namespace). Selection initializes the existing profile and class resource balances.
 Its saved class ID retains the profile's persistence and owner sync guarantees.
 Classes each have a playable basic skill, and Stalker also has Aimed Shot and all
-four traps (Bear, Frost, Flame, Blast). Weaver also has Fire Bolt, Ice Bolt, and
+four traps (Bear, Frost, Flame, Blast), plus Disengage, Arcane Arrow and Multishot
+at Rank 1. Disengage makes a four-block backward hop over six ticks, works
+airborne and breaks falls while keeping stationary attacks usable. Arcane Arrow
+replaces its native arrow impact with four magic damage and applies four seconds
+of +15% damage taken after health/absorption damage; Shock adds to +25%.
+Multishot uses one ammo item for five native arrows over thirty degrees, with
+one attempt per target per fan even when blocked/dodged. Shared movement handles
+prediction and lifecycle cleanup; saved native arrow payloads and target fan
+claims preserve effects across save/load. Existing Stalker tuning and
+server-datapack skill configuration remain separate work. See `docs/RPG_SKILLS.md`
+for detailed lifetimes and boundaries. Weaver also has Fire Bolt, Ice Bolt, and
 Lightning Bolt. Fire ignites through native burning; Ice applies one saved/synced
 30% Chilled slow; Lightning is an instant aimed hit after its cast, with no status.
 All three prototype bolts cost 20 Mana, cast in 0.5 seconds, have independent
@@ -219,7 +229,7 @@ The Skills window displays only the current class's tree from
 Left/right clicks draft upgrades; Apply commits point purchases out of combat.
 Committed ranks require a respec item to refund. The server enforces all 11
 prerequisite links, unlock levels and the Ripping/Fortitude Aura exclusion.
-Unimplemented nodes remain visible and unavailable for points or bindings. Twenty-five
+Unimplemented nodes remain visible and unavailable for points or bindings. Twenty-eight
 skills have gameplay, including all eleven auras. Assigned auras grant free
 passives; instant activations commit a resource cost and cooldown. Source-aware
 transient grants handle allies/pets, overlap, expiry, and loadout/lifecycle cleanup.

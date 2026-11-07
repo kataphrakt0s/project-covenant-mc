@@ -45,7 +45,7 @@ public final class ClientDash {
         if (!prediction.ownsTravel()) { return false; }
         Vec3 requested = prediction.delta(player.position());
         if (prediction.active()) { player.setDeltaMovement(requested); }
-        var result = DashMovement.move(player, requested);
+        var result = DashMovement.move(player, requested, null, !prediction.arcing());
         prediction.advanced(result.nextStep());
         acknowledge(player);
         return true;

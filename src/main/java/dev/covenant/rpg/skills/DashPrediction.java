@@ -8,21 +8,26 @@ public final class DashPrediction {
     private Vec3 step = Vec3.ZERO, destination = Vec3.ZERO;
     private int remaining;
     private boolean active, acknowledgement;
+    private Vec3 acceleration = Vec3.ZERO;
+    private boolean arcing;
 
     /** Ignore stale/duplicate transitions. Distribute any starting position error over the short path. */
     public boolean accept(DashMotion motion, Vec3 current) {
         if (motion.sequence() <= sequence) { return false; }
         sequence = motion.sequence(); active = motion.active();
-        destination = motion.position().add(motion.step().scale(motion.ticks()));
+        acceleration = motion.acceleration(); arcing = acceleration.lengthSqr() > 0;
+        destination = motion.position().add(motion.step().scale(motion.ticks()))
+                .add(acceleration.scale(motion.ticks() * (motion.ticks() - 1) / 2.0));
         // Incoming knockback returns control immediately; exceptional correction retains that impulse.
         remaining = active ? motion.ticks() : motion.velocity().lengthSqr() > 1e-12 ? 0
                 : current.distanceToSqr(destination) > 1e-8 ? 2 : 0;
-        step = active ? destination.subtract(current).scale(1.0 / remaining) : Vec3.ZERO;
+        step = active ? motion.step().add(motion.position().subtract(current).scale(1.0 / remaining)) : Vec3.ZERO;
         acknowledgement = !active;
         return true;
     }
     public boolean ownsTravel() { return active || acknowledgement; }
     public boolean active() { return active; }
+    public boolean arcing() { return arcing; }
     public Vec3 delta(Vec3 current) {
         if (remaining == 0) { return Vec3.ZERO; }
         return active ? step : destination.subtract(current).scale(1.0 / remaining);
@@ -31,7 +36,8 @@ public final class DashPrediction {
         if (remaining == 0) { return; }
         remaining--;
         if (active) {
-            step = nextStep;
+            if (Math.abs(nextStep.y - step.y) > 1e-8) { acceleration = Vec3.ZERO; }
+            step = nextStep.add(acceleration);
             if (step.lengthSqr() < 1e-8) { remaining = 0; }
         }
     }
@@ -42,5 +48,6 @@ public final class DashPrediction {
     public void cancel() {
         active = false; acknowledgement = false; remaining = 0;
         step = Vec3.ZERO; destination = Vec3.ZERO;
+        acceleration = Vec3.ZERO; arcing = false;
     }
 }
