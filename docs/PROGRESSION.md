@@ -1,8 +1,10 @@
 # Progression implementation
 
 The combat portion of the [agreed slice](<../Project-Covenant/Progression Vertical Slice.md>)
-is playable with the existing skills. Profession content and non-arrow upgrades
-beyond Rank 1 remain deferred. Use a fresh world/player save; this changes the
+is playable with the existing skills. The [profession foundation](PROFESSIONS.md)
+adds its menu, paid allocations, respec and Logging's Offensive Mastery. Other
+profession effects and non-arrow upgrades beyond Rank 1 remain deferred.
+Use a fresh world/player save; this changes the
 prototype profile and skill-loadout formats without migration.
 
 ## Player progression
@@ -13,14 +15,16 @@ earns nothing and queues nothing. Character levels award one point each, up to
 ranks, never maintained as a second balance. Covenant XP is separate from orbs.
 
 The four profession tracks (`mining`, `logging`, `farming`, `crafting`) start at
-0/0 on login, without requiring a class. Their default cap is 20. Saved tracks
-and earned point entitlement exist, but abilities, requirements, activity
-sources and their XP curve await the user's separate handoff. No profession XP
-is automatically awarded in this build. `Progression.awardProfession` accepts
-trusted future awards once a profession curve has been configured.
+0/0 on login, without requiring a class. Their default cap is 20. Each level
+earns one point; availability subtracts the historical costs of committed
+allocations. The shipped provisional curve is 100 times the target level per
+transition (21,000 total from Level 0 to 20). Natural ore/log/crop harvests,
+credited breeding and enchanting-table completion award XP through
+`Progression.awardProfession`; operator commands support manual testing. See
+[PROFESSIONS.md](PROFESSIONS.md#natural-activity-xp) for eligibility and mappings.
 
 `covenant:character_profile` saves level, raw XP and `wither_claimed` together.
-`covenant:profession_progression` saves the independent tracks;
+`covenant:profession_progression` saves the independent tracks and paid allocations;
 `covenant:skill_loadout` saves a `ranks` map and slot `bindings`.
 All three use immutable snapshots, owner sync and NeoForge death/End copying.
 `covenant:progression_view` is unsaved owner presentation data, refreshed through
@@ -115,7 +119,7 @@ discarded, while pre-existing stored XP is retained.
 | --- | --- |
 | `track_caps` | All five namespaced track IDs required. Character 60 (1–1000); professions 20 (0–1000). |
 | `character_requirements` | Positive whole XP per transition, indexed by current level minus 1. Must cover the cap. Default `round(50 * 1200^((L-1)/58))`, 50 through 60,000. |
-| `profession_requirements` | Positive whole XP indexed by current profession level, starting 0. Empty until authored; otherwise covers every profession cap. |
+| `profession_requirements` | Positive whole XP indexed by current profession level, starting 0. Provisional default 100–2,000 in steps of 100. A nonempty curve must cover every profession cap; empty explicitly disables awards. |
 | `hostile_reward` | Whole XP, default 10, nonnegative signed long. Applies to `Enemy` actors except neutrals, with no spawn-origin penalty. |
 | `entity_rewards` | Exact entity ID → nonnegative whole XP. Defaults Enderman 20, Wither 2000, dragon 2000. Exact overrides beat tags; players always give zero. |
 | `reward_tags` | `{ "tag": "namespace:tag", "priority": integer, "xp": nonnegative long }`. Uses native entity-type tags; highest priority wins. Priorities must be unique. |

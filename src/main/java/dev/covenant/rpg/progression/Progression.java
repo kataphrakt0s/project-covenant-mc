@@ -49,7 +49,7 @@ public final class Progression {
         return true;
     }
 
-    /** A configured profession curve is required; this slice adds no automatic profession activity sources. */
+    /** Shared classless award engine for trusted activity hooks and commands, respecting source-dimension caps. */
     public static boolean awardProfession(ServerPlayer player, ServerLevel source, Identifier track, long amount) {
         ClassResources.requireServer(player);
         if (amount < 0 || !ProgressionData.PROFESSIONS.contains(track)) { throw new IllegalArgumentException("Invalid profession award"); }
@@ -59,7 +59,8 @@ public final class Progression {
         var old = state.tracks().get(track);
         var next = advance(old.level(), old.experience(), amount, data.gate(source, track), level -> data.required(track, level));
         if (next.level == old.level() && next.experience == old.experience()) { return false; }
-        player.setData(RpgData.PROFESSIONS, state.with(track, new ProfessionState.Track(next.level, next.experience)));
+        player.setData(RpgData.PROFESSIONS, state.with(track, old.withProgression(next.level, next.experience)));
+        refreshView(player);
         return true;
     }
 
@@ -92,6 +93,7 @@ public final class Progression {
                 data.gate(player.level(), ProgressionData.CHARACTER), data.maximum(ProgressionData.CHARACTER),
                 ClassResources.inCombat(player));
         if (!view.equals(player.getData(RpgData.PROGRESSION_VIEW))) { player.setData(RpgData.PROGRESSION_VIEW, view); }
+        ProfessionView.refresh(player);
     }
 
     public static CharacterProfile atLevel(CharacterProfile profile, int level) {

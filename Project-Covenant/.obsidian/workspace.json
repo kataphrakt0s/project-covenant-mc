@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Skill Trees Brainstorm.md",
+                "file": "Open Questions.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Skill Trees Brainstorm"
+              "title": "Open Questions"
             }
           }
         ],
@@ -188,23 +188,25 @@
   },
   "active": "b79fb49f8af121a0",
   "lastOpenFiles": [
+    "Progression Vertical Slice.md",
+    "README.md",
+    "Crafting Profession.md",
+    "Dungeons.md",
+    "Skill Trees Brainstorm.md",
+    "Character Progression.md",
     "Affix System and Equipment Customization.md",
     "Salvaging.md",
     "Progression Balance Configuration.md",
-    "Progression Vertical Slice.md",
     "Progression Systems.md",
     "Farming.md",
     "Experience and Reward Systems.md",
     "Logging.md",
     "Mining.md",
     "Dimensional Progression Gates.md",
-    "Crafting Profession.md",
     "Profession Progression.md",
     "Combat Skill Progression.md",
     "Skill Trees Brainstorm 1.md",
-    "Skill Trees Brainstorm.md",
     "Pasted image 20261104154316.png",
-    "Character Progression.md",
     "Open Questions.md",
     "Statistics.md",
     "Regions and Biomes.md",
@@ -212,8 +214,6 @@
     "Project Covenant - GDD.md",
     "Affix Pages.md",
     "Affixes and Rarity.md",
-    "Bosses.md",
-    "Data-Driven Content.md",
-    "Mod Compatibility.md"
+    "Bosses.md"
   ]
 }

@@ -45,7 +45,7 @@ public final class SkillNetworking {
 
     private static boolean accept(ServerPlayer player, CustomPacketPayload request) {
         ClassResources.requireServer(player);
-        return player.getData(dev.covenant.rpg.RpgData.SKILL_RUNTIME).requests.accept(ClassResources.now(player), request);
+        return player.getData(dev.covenant.rpg.RpgData.SKILL_RUNTIME).acceptRequest(ClassResources.now(player), request);
     }
 
     public record Apply(java.util.Map<Identifier, Integer> expected, java.util.Map<Identifier, Integer> desired) implements CustomPacketPayload {

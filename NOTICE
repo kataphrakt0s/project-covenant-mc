@@ -1,0 +1,30 @@
+Project Covenant
+Copyright (c) 2026 Project Covenant
+Official repository: https://github.com/kataphrakt0s/project-covenant-mc
+
+Project Covenant is an independently developed Minecraft Java Edition mod
+using NeoForge. This repository is the original Project Covenant project.
+
+The root MIT LICENSE applies only to original Project Covenant source code.
+The Project Covenant logo is excluded; see ASSET-LICENSE.md.
+
+When incorporating or adapting Project Covenant code, we request voluntary
+attribution to Project Covenant and a link to the official repository above.
+This request adds no condition or restriction to the MIT license. Mandatory
+copyright and license notice requirements are those in the MIT LICENSE itself.
+
+Minecraft source code, APIs, textures, models, sounds, icons and other assets,
+Mojang/Microsoft trademarks and branding, and third-party libraries,
+dependencies, mod assets and other third-party content remain the property
+of their respective owners, subject to their respective licenses and terms.
+They are not covered by the Project Covenant MIT license. References to
+Minecraft identifiers, APIs, registries, resources or mechanics do not grant
+Project Covenant ownership of those materials. References to Minecraft and
+other mods for compatibility or description do not imply ownership or endorsement.
+
+Existing third-party notices remain applicable:
+- TEMPLATE_LICENSE.txt preserves the MIT license and Copyright (c) 2023
+  NeoForged project notice for the upstream MDK template files.
+- The Gradle wrapper scripts (gradlew and gradlew.bat) retain their original
+  copyright and Apache-2.0 license notices. The wrapper JAR at
+  gradle/wrapper/gradle-wrapper.jar includes its license at META-INF/LICENSE.

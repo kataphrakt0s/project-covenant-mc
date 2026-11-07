@@ -1,5 +1,11 @@
 # Logging
 
+Implementation status: Offensive Mastery is usable in the first profession
+foundation. Natural log XP and bounded tree recognition are now implemented;
+Tree Felling and Auto-Replant remain planned.
+All numerical tuning remains provisional. See
+[Profession foundation](../docs/PROFESSIONS.md) for runtime boundaries.
+
 ## Identity
 
 Logging develops forestry, tree felling, sustainable wood gathering, and direct offensive mastery. It adds specialized ways to interact with trees while preserving ordinary Minecraft chopping and wood recipes at all profession levels.
@@ -8,20 +14,47 @@ Logging develops forestry, tree felling, sustainable wood gathering, and direct 
 
 ### Tree Felling
 
-| Rank | Minimum Logging level | Point cost | Intended effect |
-|---|---:|---:|---|
-| I | 1 | 1 | Initial tree-felling capability |
-| II | 5 | 1 | Increased maximum logs affected |
-| III | 10 | 1 | Further increased maximum logs affected |
-| IV | 15 | 1 | Highest defined tree-felling capability |
+| Rank | Minimum Logging level | Point cost | Maximum logs per activation |
+|---|---:|---:|---:|
+| I | 1 | 1 | 4 |
+| II | 5 | 1 | 8 |
+| III | 10 | 1 | 16 |
+| IV | 15 | 1 | 32 |
+
+These are configurable prototype defaults and include the initially mined log.
+A tree larger than the rank's limit can remain partially standing after an
+activation. These limits are planned behavior, not implemented gameplay.
 
 - Breaking the base log of a supported tree with a valid axe triggers felling.
 - Sneaking preserves normal single-block chopping.
 - Connected logs belonging to the tree are felled together, subject to the rank's maximum.
 - Modded trees and axes should be supported through tags or data-driven tree definitions.
+- Each harvested log uses normal tool durability, exhaustion, native loot, and
+  enchantment handling, following Vein Mining's per-block harvesting-cost rules.
+  Stop when the axe breaks, leaving remaining logs intact; completed harvests
+  keep their drops and eligible Logging XP.
+- Tree Felling has no cooldown, extra activation cost, or class-resource cost.
 - Normal leaf-decay behavior remains in place; Tree Felling does not introduce a separate forestry simulation.
+- Tree recognition must avoid tracking and saving every player-placed log.
+  A guaranteed exclusion based on log-placement history is not part of the
+  design.
+- Recognize a tree at chopping time using **both** a bounded tree-shape check
+  and nearby naturally grown, non-persistent leaves. Start from a base log on
+  suitable growing ground, follow matching logs upward toward a canopy, and
+  restrict sideways branching. Neither shape nor leaves alone is sufficient.
+- Leafless trees may fail recognition and use ordinary chopping. Fall back to
+  ordinary chopping whenever the bounded check cannot establish both conditions.
+- This is a conservative current-block-state heuristic, not proof of a tree's
+  origin. Naturally generated and sapling-grown trees can qualify; a constructed
+  tree-like arrangement or a treehouse attached to a real trunk remains an edge
+  case. Recognition runs only when triggered, with a fixed search budget.
 
-Exact log limits, tree identification rules, and detailed tool/drop interactions remain to be balanced and tested.
+The natural-XP implementation uses a 128-log, 32-block-height, four-block-radius
+recognition limit and a 4,096 loaded-block-read budget per request. It remembers
+recognized remaining logs transiently for sequential chopping, invalidates
+edited positions and discards evidence on chunk/catalogue reload. See
+[Profession activities](../docs/PROFESSIONS.md#natural-activity-xp) for fallback
+limitations. Tree Felling's multi-block activation remains planned.
 
 ### Offensive Mastery
 
@@ -35,7 +68,10 @@ Exact log limits, tree identification rules, and detailed tool/drop interactions
 
 Offensive Mastery is universal across Stalker, Reaver, and Weaver. It increases damage directly attributed to the player, including ordinary attacks and player-used skills. Damage dealt by companions, pets, Ballistas, and other summoned entities is excluded.
 
-The 2% per-rank value and 10% maximum are established design values; exact damage event attribution and stacking behavior should be validated during implementation.
+The 2% per-rank value and 10% maximum remain provisional tuning. The first
+implementation uses the native incoming-damage event; automated checks cover
+classless melee, attributed arrows/skill damage and owned-creature exclusions.
+Client feel and balance remain for playtesting.
 
 ### Automatic Replanting
 
@@ -45,6 +81,12 @@ The 2% per-rank value and 10% maximum are established design values; exact damag
 
 When Tree Felling successfully removes a supported tree, Automatic Replanting attempts to plant the matching sapling at the base location.
 
+- Replant only when the current Tree Felling activation removes the whole
+  recognized tree. If the log cap or a broken axe leaves it incomplete, skip
+  replanting and consume no sapling.
+- Do not remember unfinished trees for a delayed replant. Larger tree farms
+  may require manual replanting; this is an accepted trade-off of the felling
+  limits.
 - The matching sapling must be available in the player's inventory and is consumed on successful planting.
 - Normal planting conditions must be valid.
 - No saplings are generated for free.
@@ -64,6 +106,25 @@ Nine Profession Points remain unallocated at the Level 20 cap.
 ## XP and compatibility
 
 Logging XP should reward meaningful player-performed forestry actions. Repetitive low-value block breaking and automated tree farms do not award XP by default. Modded trees and tools should be supported through tags, data-driven definitions, and optional integrations where needed.
+
+Manually harvesting a qualifying sapling-grown tree has the same Logging XP
+eligibility as harvesting an equivalent wild tree. Player-tended, renewable
+tree plots are valid profession gameplay; exploring for new wild trees is not
+required. Automated harvesting still grants no Logging XP by default. These
+are implemented ordinary-harvest eligibility rules; Tree Felling remains planned.
+
+Award configured Logging XP **once per eligible log successfully harvested**,
+including each log removed by player-triggered Tree Felling. Tree Felling
+accelerates harvesting without adding an XP multiplier; reward size follows
+the eligible log count, not the number of drops. Ordinary manual harvesting
+can earn XP without purchasing Tree Felling.
+
+The **provisional reward is 20 XP per eligible log**, shared across all
+supported tree species. Qualifying sapling-grown and wild trees use the same
+value, and player-triggered Tree Felling awards it independently for each log
+actually harvested. With the shared 100-XP requirement, five qualifying logs
+earn Level 1. Keep reward mappings data-driven for modded trees and later
+balance tuning; these values do not establish validated leveling time.
 
 Ordinary tree chopping, wood collection, and vanilla wood recipes remain available without Logging investment.
 

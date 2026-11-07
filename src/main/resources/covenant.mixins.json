@@ -17,7 +17,13 @@
     "ComboMovementMixin",
     "ComboPlayerMixin",
     "ComboKnockbackMixin",
-    "ComboMovePacketMixin"
+    "ComboMovePacketMixin",
+    "ProfessionHarvestMixin",
+    "ProfessionPlacementMixin",
+    "ProfessionChunkMixin",
+    "ProfessionPistonMixin",
+    "ProfessionBreedingMixin",
+    "ProfessionEnchantingMixin"
   ],
   "client": [
     "client.BowUsePoseMixin",

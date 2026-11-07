@@ -18,10 +18,24 @@ Server datapack balance reloads preserve earned levels, allocations and raw XP.
 Dimension grouping uses native dimension-type tags; explicit dimension IDs win.
 See [PROGRESSION.md](docs/PROGRESSION.md) for format, APIs and boundaries.
 
-All four independent profession tracks initialize on login at level/XP zero.
-Profession abilities, requirements, reward curves and activity sources remain
-open pending the user's separate handoff. Their saved foundation is implemented;
-playable profession content remains a dependency of the full slice.
+All four independent, classless profession tracks initialize on login at level/XP
+zero. The first expanded foundation adds paid-cost allocations, a server-datapack
+catalogue, owner-synced four-tab Professions menu, atomic per-tab Apply, and a
+Profession Respec item. Held use for two seconds out of combat refunds all four
+professions together while preserving XP/levels. Logging's Offensive Mastery is
+the first usable ability; the other sixteen authored nodes remain visibly planned
+and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
+XP now use confirmed server outcomes, the provisional shared curve and reward
+table, persistent chunk-owned placed-ore exclusions, and bounded tree recognition.
+Gathering abilities and Workbench/itemization gameplay remain deferred.
+Additional profession-level recipe milestones are outside the
+progression slice; Workbench and respec recipes remain ungated. See
+[PROFESSIONS.md](docs/PROFESSIONS.md) and
+[Profession Progression](<Project-Covenant/Profession Progression.md>).
+The planned itemization includes Covenant-owned equipment rarity with server
+datapack definitions and
+item/tag-based opt-in rules for modpack developers; see
+[Affixes and Rarity](<Project-Covenant/Affixes and Rarity.md>).
 Use fresh saves: prototype profile/loadout migration is deliberately unsupported.
 
 All classes share the seven-second combat timer for damage/support, Rage grace,
@@ -47,7 +61,8 @@ progression slice remains standalone. See
 The radial menu opens while holding **G** (rebindable under Controls > Key Binds >
 Project Covenant) with ten numbered slots. Slot 1 is **Skills**: hover and release G,
 or left-click it, to open the non-pausing Skills window. Slot 2 opens Stats with the
-same controls; slots 3-10 are placeholders. Stats shows the current class and a
+same controls. Slot 3 opens Professions even before class selection; slots 4-10
+are placeholders. Stats shows the current class and a
 scrollable text list of supported native stats, bases, and active modifiers. Players
 without a class can select Stalker, Reaver, or Weaver there through the existing
 one-time server command. The page reads synced attributes/profile state; it adds
@@ -55,7 +70,8 @@ no saved data or stat calculation system.
 Slot 1 starts at the top; slots proceed clockwise. Mouse hover highlights a slot;
 release the binding to select or press Escape to cancel. It does not pause the world.
 It opens only in a living player's game, outside other screens,
-and closes on loss of focus. Combat Respec is the first custom item and recipe.
+and closes on loss of focus. Combat Respec and Profession Respec have native
+held-use interactions and shapeless recipes.
 
 The RPG storage foundation is server-authoritative: `covenant:character_profile` is
 an immutable, persistent, owner-synced NeoForge player attachment with death copying.
@@ -272,9 +288,13 @@ behavior remains subject to user playtesting.
 - Developer: `kataphrakt0s`.
 - Mod logo: `src/main/resources/mod-icon.png`, referenced by `logoFile` in mod metadata.
 - Java package: `dev.covenant`; entry point: `Covenant.java`.
-- Version: `0.1.0-dev`; license remains All Rights Reserved until chosen otherwise.
+- Version: `0.1.0-dev`; original Project Covenant source code is MIT licensed
+  (`LICENSE`). The logo is excluded with no reuse permission granted by this
+  repository (`ASSET-LICENSE.md`); Minecraft and third-party content retain their
+  respective owners' licenses and terms. See `NOTICE` for attribution and upstream notices.
 - Minecraft: `26.1.2`, exact version range.
-- NeoForge: `26.1.2.125`; ModDevGradle: `2.0.148`; Gradle wrapper: `9.2.1`.
+- NeoForge: `26.1.2.126` (matches ATM11 `0.14.0-beta`); ModDevGradle: `2.0.148`;
+  Gradle wrapper: `9.2.1`. This pins the loader only; ATM11 integration is unvalidated.
 - JDK: 64-bit Java 25. Machine-specific locations are in ignored
   `.local/environment.json`. Scripts set Java and Gradle home for their process;
   the Windows default Java is not the project's toolchain.

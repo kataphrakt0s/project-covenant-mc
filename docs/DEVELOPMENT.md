@@ -20,6 +20,15 @@ Close the development game before deploying another build. Prism's instance is
 deployment script replaces only `covenant-*.jar` in that marker-owned instance.
 Other mods and worlds are retained. New dependencies require explicit setup.
 
+The project now targets NeoForge **26.1.2.126**, matching
+[ATM11 0.14.0-beta](https://www.curseforge.com/minecraft/modpacks/all-the-mods-11/files/9426887).
+The generated mod metadata requires that version or newer. Before deploying a
+new build, close the development game and select `26.1.2.126` for NeoForge in
+Prism's Edit Instance > Version screen. `doctor`, `deploy`, and `prism` reject an
+instance whose loader differs from the project pin; `Setup-Prism.ps1` retains
+existing instances and does not upgrade them. Changing the repository pin does
+not update Prism or a remote server. Minecraft remains `26.1.2` and Java remains 25.
+
 ## LAN test server
 
 The isolated test server is at `cmm@192.168.0.193`, in
@@ -29,6 +38,11 @@ same Covenant JAR as the server. It uses authenticated accounts, a fresh Surviva
 world, eight player slots, and a private Temurin Java 25 runtime with a 4 GiB heap
 limit. All the Mons `minecraft.service` is stopped and disabled at boot; its files
 are retained.
+
+The `.125` loader above records the existing LAN setup, not the current build
+requirement. Upgrade the server and connecting clients to `.126` before deploying
+the new Covenant build. The LAN installation has not been upgraded or rechecked
+as part of the repository loader update.
 
 The system-wide `covenant.service` runs the server as `cmm`, starts at boot, and
 restarts on failure after ten seconds. Its unit is
@@ -187,6 +201,21 @@ This machine's ignored `.vscode/settings.json` selects the installed project JDK
 update it too when moving the project or changing JDK installations. ModDevGradle
 generates `.vscode/launch.json`; it is ignored because it contains absolute paths.
 
+## Profession foundation checks
+
+Radial slot 3 opens the classless Professions window. Use operator
+`/covenant profession level covenant:logging 17` to test the five Offensive
+Mastery ranks; `/covenant profession xp covenant:logging 1500` exercises ordinary
+XP awards. Native ore/log/mature-crop harvesting, credited breeding and
+enchanting-table use now award profession XP. Other nodes are
+planned and cannot be purchased. All tuning is provisional.
+
+Manually check per-tab drafts, right-click undo, Apply's combat gate, close
+discard, resized layouts/tooltips, and the two-second Profession Respec hold.
+The shapeless respec recipe uses four paper, four lapis and one emerald. Confirm
+that all four tracks refund together with XP/levels retained. See
+[PROFESSIONS.md](PROFESSIONS.md) for data formats and scope.
+
 ## Validation protocol
 
 - `scripts/Dev.ps1 verify` runs both the production build/checks and dedicated
@@ -197,7 +226,7 @@ generates `.vscode/launch.json`; it is ignored because it contains absolute path
   but do not substitute for two real clients with latency. For skill hardening,
   manually check root/freeze with falling and knockback, delayed dash handoff,
   instant item use and spear attacks while frozen, plus lightning seen by a nearby
-  observer. Both clients and server must use the same build (skill protocol 2).
+  observer. Both clients and server must use the same build (payload protocol 3).
 - For server-driven player movement, exercise the full native connection tick,
   not only `ServerPlayer.doTick()` or posted player-tick events. The pinned
   connection wrapper restores cached `firstGood` coordinates after `doTick()`;

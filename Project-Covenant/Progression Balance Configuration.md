@@ -49,7 +49,10 @@ Configurable values should include:
 - Starting character level (1) and starting skill points (1).
 - Skill points awarded per character level (1).
 - Profession global/default level cap (20), with per-profession override support where needed.
-- Shared profession XP curve and reward tuning.
+- Shared profession XP curve and reward tuning. The planned prototype curve
+  requires **100 × the target level per transition**, totaling **21,000 XP**
+  from Level 0 to 20 independently for each profession. Activity values and
+  final pacing remain provisional; see [[Profession Progression]].
 - Fallback dimension caps (character 60; profession 20 by default).
 
 ## Character XP rewards

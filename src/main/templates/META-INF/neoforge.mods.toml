@@ -1,3 +1,5 @@
+# MIT applies only to original Project Covenant source code; mod-icon.png is excluded.
+# See https://github.com/kataphrakt0s/project-covenant-mc for LICENSE, ASSET-LICENSE.md and NOTICE.
 license="${mod_license}"
 
 [[mixins]]

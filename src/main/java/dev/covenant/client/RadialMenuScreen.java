@@ -11,7 +11,7 @@ import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2f;
 import org.lwjgl.glfw.GLFW;
 
-/** Hold-to-open client UI. Slots one and two open Skills and Stats. */
+/** Hold-to-open client UI. Skills, Stats, and Professions have separate stable slots. */
 final class RadialMenuScreen extends Screen {
     private static final Component PLACEHOLDER = Component.translatable("screen.covenant.radial.placeholder");
     private final Component[] options = new Component[RadialMenuLayout.SLOT_COUNT];
@@ -29,6 +29,7 @@ final class RadialMenuScreen extends Screen {
         }
         options[0] = Component.translatable("screen.covenant.skills.title");
         options[1] = Component.translatable("screen.covenant.stats.title");
+        options[2] = Component.translatable("screen.covenant.professions.title");
     }
 
     @Override
@@ -95,6 +96,7 @@ final class RadialMenuScreen extends Screen {
         switch (slot) {
             case 0 -> minecraft.setScreen(new SkillsScreen());
             case 1 -> minecraft.setScreen(new StatsScreen());
+            case 2 -> minecraft.setScreen(new ProfessionsScreen());
             default -> { return false; }
         }
         return true;
@@ -125,7 +127,7 @@ final class RadialMenuScreen extends Screen {
                     slot == hovered ? 0xFFFFD084 : 0xFFE2E8ED);
         }
         graphics.centeredText(font, hovered < 0 ? title : options[hovered], centerX, centerY - 10, 0xFFF5DBA6);
-        graphics.centeredText(font, hovered >= 0 && hovered <= 1 ? Component.translatable("screen.covenant.radial.open") : PLACEHOLDER,
+        graphics.centeredText(font, hovered >= 0 && hovered <= 2 ? Component.translatable("screen.covenant.radial.open") : PLACEHOLDER,
                 centerX, centerY + 4, 0xFFABB6C2);
         graphics.centeredText(font, releaseHint, centerX, centerY + radius + 10, 0xFFE2E8ED);
     }

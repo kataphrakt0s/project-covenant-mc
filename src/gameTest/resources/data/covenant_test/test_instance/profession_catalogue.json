@@ -1,0 +1,1 @@
+{"type":"minecraft:function","function":"covenant_test:profession_catalogue","environment":"minecraft:default","structure":"covenant_test:empty","max_ticks":40,"setup_ticks":0,"required":true}

@@ -195,7 +195,8 @@ final class ProgressionGameTests {
             var player = f.player(null); var initial = player.getData(RpgData.PROFESSIONS);
             check(initial.tracks().size() == 4 && initial.tracks().values().stream().allMatch(t -> t.level() == 0 && t.experience() == 0), "Four independent classless profession tracks initialized");
             var mining = ProgressionData.PROFESSIONS.getFirst();
-            check(!Progression.awardProfession(player, helper.getLevel(), mining, 20), "No invented progression curve while profession content deferred");
+            check(Progression.awardProfession(player, helper.getLevel(), mining, 20), "Provisional shared profession curve accepts trusted classless awards");
+            check(player.getData(RpgData.PROFESSIONS).tracks().get(mining).experience() == 20, "Profession XP is independent of class creation");
             var state = initial.with(mining, new ProfessionState.Track(3, 17)); player.setData(RpgData.PROFESSIONS, state);
             PlayerProfiles.selectClass(player, PlayerClass.REAVER); check(player.getData(RpgData.PROFESSIONS).equals(state), "Class selection independent");
             var clone = f.player(null); clone.restoreFrom(player, false);

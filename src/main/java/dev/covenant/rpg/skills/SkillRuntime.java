@@ -5,6 +5,10 @@ import net.minecraft.server.level.ServerPlayer;
 
 /** Entity-local, server-only ephemeral state. Casts/combat never copy across replacement or logout. */
 public final class SkillRuntime {
+    /** Shared player-intent ingress budget; gameplay validation remains the caller's responsibility. */
+    public boolean acceptRequest(long tick, net.minecraft.network.protocol.common.custom.CustomPacketPayload request) {
+        return requests.accept(tick, request);
+    }
     /** Operator testing toggle; never saved, synced, or copied to a replacement player. */
     boolean infiniteResource;
     /** Operator cooldown-check bypass; entity-local and never saved, synced, or death-copied. */

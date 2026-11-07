@@ -18,14 +18,18 @@
 | Enchanting | A subset/specialization within Crafting, not a fifth profession |
 | Profession levels | Start at 0; default maximum 20 |
 | Profession points | 1 per level gained; 20 total at profession level 20 |
+| Profession XP curve | Prototype: 100 × target level XP per transition; 21,000 total from 0 to 20, using the same curve independently per track; activity rewards and pacing remain provisional |
 | Profession abilities | Level-gated, purchased with variable-cost Profession Points; most should eventually be obtainable |
-| Profession recipes | Core recipe rewards may unlock automatically at selected profession milestones |
-| Profession respec | Crafted item, more expensive than combat respec; resets one profession while preserving its level and XP |
+| Profession recipes | Future core recipe rewards may unlock automatically; additional profession-level recipe milestones are deferred beyond the slice; Workbench and respec recipes remain ungated |
+| Profession respec | Prototype: four paper, four lapis, one emerald, shapeless; no profession crafting gate; hold-use two seconds out of combat to reset all four professions' allocations together, preserving XP/levels; consume one item only on success |
 | XP separation | Covenant character/profession XP is separate from vanilla XP orbs |
 | Character XP | Primarily combat, with supplemental significant world/encounter milestones |
 | Character XP sharing | Eligible damage/support contributors split equally, each share rounded up; refreshing 30-second window, online at payout |
 | Prototype XP pacing | Five ordinary solo kills for Level 2; 3,000 Endermen or 30 repeat Withers for 59-to-60 where caps allow |
 | Profession XP | Contextual, activity-specific, meaningful player actions by default |
+| Enchanting Crafting XP | Prototype: 20/50/100 XP once per successful first/second/third enchanting-table option, regardless of displayed requirement; native activity integration implemented |
+| Affix-operation Crafting XP | Prototype: 20/40/60/80/100 XP for the affected affix's Common/Uncommon/Rare/Epic/Legendary rarity; shared by Add/Upgrade/Reroll/Remove at every numerical tier; planned activity integration |
+| Salvage Crafting XP | Prototype: 10/20/30/40/50 XP for Common/Uncommon/Rare/Epic/Legendary equipment with at least one Covenant affix at consumption; unaffixed gear gives zero XP even if rarity was previously initialized; normal eligible material returns remain available; planned activity integration |
 | Profession automation XP | Disabled by default; configured exceptions require attribution and anti-exploit safeguards |
 | Spawner combat XP | Eligible spawner mobs use normal rewards and contribution/cap rules |
 | Dimension gates | Data-driven exact IDs and dimension tags, priority, configurable fallback |

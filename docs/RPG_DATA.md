@@ -2,12 +2,32 @@
 
 The server-authoritative foundation now includes class selection, combat XP and
 skill-point progression. See [PROGRESSION.md](PROGRESSION.md) for the progression
-format, APIs and data balance. Profession tracks have saved state; their activity
-sources and ability content await the user's requirements. Page acquisition,
+format, APIs and data balance. [PROFESSIONS.md](PROFESSIONS.md) covers profession
+paid allocations, catalogue, menu, respec, the first effect and natural activity
+sources. Remaining ability effects are deferred. Page acquisition,
 rolling/loot and accessory integrations remain deferred.
 Effective stats use native equipment attributes; see [RPG_STATS.md](RPG_STATS.md).
 Skills use bounded intent packets and event-driven combat; there are no global
 enemy progression scans.
+
+## Profession state
+
+`covenant:profession_progression` remains the persistent owner-synced attachment
+with death/End copying. Its four classless tracks each save level, raw XP and
+an optional allocation map (`rank`, historical `paid_points`). Missing allocations
+decode as empty. Available points are derived from level minus actual saved
+spending, so cost reloads or removed definitions never silently refund or charge
+past purchases. Unknown allocations remain reserved until respec. XP awards
+preserve allocations. `covenant:profession_view` is unsaved owner-only catalogue
+and cap/requirement presentation; it is rebuilt after lifecycle transitions.
+
+`covenant:placed_ores` is a new persistent, server-only chunk attachment storing
+placed-ore positions. Mutable edits mark the chunk unsaved; native piston moves
+carry the exclusion. Missing data starts empty, with no reconstruction of older
+placement history. `covenant:harvest_trees` separately holds transient,
+server-only evidence for sequential log harvesting; it is never saved or synced.
+These add no player/item fields and do not change existing attachment IDs.
+See [PROFESSIONS.md](PROFESSIONS.md#natural-activity-xp) for precise lifecycles.
 
 ## Permanent character state
 

@@ -116,7 +116,10 @@ final class LifecycleHardeningGameTests {
     }
 
     static void cancellationRoutes(GameTestHelper helper) {
-        try (var f = new Fixture(helper)) {
+        var f = new Fixture(helper);
+        f.forceLanes();
+        helper.runAfterDelay(2, () -> {
+        try (f) {
             for (int route = 0; route < 3; route++) {
                 var combo = f.player(PlayerClass.REAVER);
                 f.learn(combo, SkillDefinition.LUNGING_COMBO, SkillDefinition.FORTITUDE_AURA);
@@ -144,8 +147,10 @@ final class LifecycleHardeningGameTests {
                 var trapper = f.player(PlayerClass.STALKER);
                 f.learn(trapper, SkillDefinition.BEAR_TRAP);
                 used(trapper, SkillDefinition.BEAR_TRAP);
-                var trap = helper.getLevel().getEntitiesOfClass(TrapEntity.class,
-                        trapper.getBoundingBox().inflate(4), entity -> !entity.isRemoved()).getFirst();
+                var traps = helper.getLevel().getEntitiesOfClass(TrapEntity.class,
+                        trapper.getBoundingBox().inflate(4), entity -> !entity.isRemoved());
+                check(!traps.isEmpty(), "Deployed fixture trap is queryable at route " + route + " and " + trapper.position());
+                var trap = traps.getFirst();
                 cancel(trapper, route);
                 check(trap.isRemoved(), "Central route removes owned traps: " + route);
             }
@@ -159,6 +164,7 @@ final class LifecycleHardeningGameTests {
             check(!Skills.isCasting(unlearned), "Actual unlearning routes pending-cast cancellation");
             helper.succeed();
         }
+        });
     }
 
     private static void cancel(ServerPlayer player, int route) {
@@ -201,11 +207,20 @@ final class LifecycleHardeningGameTests {
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<Entity> entities = new ArrayList<>();
+        final java.util.Set<net.minecraft.world.level.ChunkPos> forced = new java.util.HashSet<>();
         final Vec3 origin;
 
         Fixture(GameTestHelper helper) {
             this.helper = helper;
             origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 130, 1)));
+        }
+        void forceLanes() {
+            // All three routes need native entity queries in lanes beyond the template's forced chunks.
+            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 128) >> 4; x++) {
+                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 24) >> 4; z++) {
+                    if (helper.getLevel().setChunkForced(x, z, true)) { forced.add(new net.minecraft.world.level.ChunkPos(x, z)); }
+                }
+            }
         }
 
         ServerPlayer player(PlayerClass type) {
@@ -247,6 +262,7 @@ final class LifecycleHardeningGameTests {
                 helper.getLevel().getServer().getPlayerList().remove(player);
             }
             entities.forEach(Entity::discard);
+            forced.forEach(chunk -> helper.getLevel().setChunkForced(chunk.x(), chunk.z(), false)); forced.clear();
         }
     }
 }

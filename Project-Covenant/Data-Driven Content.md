@@ -11,8 +11,13 @@ remain server-owned. Balance changes preserve earned levels, points,
 allocations, and raw XP; new requirements apply to future XP awards, so the
 displayed percentage can change. Exact field/path schema and validation/failure
 handling remain open in [[Progression Balance Configuration]].
-Profession ability definitions and requirements remain pending the user's
-separate content work.
+Profession implementation design is in progress in the individual profession
+notes and [[Progression Vertical Slice]].
+
+The planned Covenant equipment rarity system uses server datapack definitions
+and item/tag-based opt-in rules. Modpack developers and other mods must be able
+to author participation and rarity content without a per-material compatibility
+list in Covenant code. See [[Affixes and Rarity]].
 
 Avoid generic frameworks without concrete requirements. Keep configuration validation clear and make invalid entries fail safely with actionable diagnostics.
 

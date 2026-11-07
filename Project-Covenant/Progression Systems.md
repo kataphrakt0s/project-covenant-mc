@@ -40,7 +40,12 @@ The four initial professions are Mining, Logging, Farming, and Crafting. Enchant
 
 Each profession starts at level 0 and defaults to a maximum of 20. Each level gained awards one Profession Point. Selected profession milestones automatically unlock core recipes. Abilities and new interactions require deliberate point investment, with variable costs (typically 1–3 points), level gates, prerequisites, and only occasional mutually exclusive alternatives. Most offerings should eventually be obtainable. Profession abilities do not consume combat keybinds.
 
-Profession respec resets one profession's allocations, refunds its points, preserves level and XP, and costs a crafted item more expensive than combat respec. Cross-profession requirements are allowed for specific recipes, but are not general ability/progression dependencies.
+For the prototype, Profession Respec resets all four professions' allocations
+together, refunds each track's spent points, and preserves every track's level
+and XP. Its crafted item costs more than Combat Respec and uses the same
+two-second held-item interaction out of combat. Cross-profession requirements
+are allowed for specific future recipes, but are not general ability/progression
+dependencies or a crafting requirement for prototype Profession Respec.
 
 See [[Profession Progression]], [[Mining]], [[Logging]], [[Farming]], and [[Crafting Profession]].
 

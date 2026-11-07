@@ -274,16 +274,92 @@ initial slice rules are subject to playtesting; see [[Dimensional Progression Ga
 
 ## Profession XP sources
 
+The planned shared prototype profession curve costs **100 × the target level
+per transition**, from 100 XP to reach Level 1 through 2,000 more to reach
+Level 20. All four tracks retain independent XP; Level 0 to 20 totals
+**21,000 XP per profession**. These units provide room for widely differing
+activity rewards. They do not establish validated leveling time; action
+rewards and pacing still require tuning. See [[Profession Progression]].
+
 Profession XP is event-driven, contextual, and tied to the relevant Minecraft activity. Rewards should recognize meaningful participation and significance, not grant a fixed efficient reward for every repeated low-value action.
 
 Examples of intended source categories:
 
-- Mining: meaningful ore extraction, prospecting, and designated mining interactions.
+- Mining: successful extraction of eligible ore blocks, once per block,
+  including player-triggered Vein Mining. Player-placed ores grant no XP;
+  Silk Touch still rewards initial extraction of ore that was not player-placed.
+  Fortune and drop processing do not multiply XP. Prospecting grants no XP.
+  The provisional coal/copper/Nether-quartz reward is **10 XP per eligible
+  original ore block**, including the relevant stone/deepslate variants.
+  **Iron awards 17 XP per eligible original block**, shared by stone and
+  deepslate variants.
+  **Gold, lapis, and redstone award 25 XP per eligible original block**,
+  including Nether gold and relevant stone/deepslate variants.
+  **Diamond and emerald award 50 XP per eligible original block**, shared by
+  stone and deepslate variants.
+  **Ancient debris awards 200 XP per eligible original block**, independently
+  of the Level 20 Prospecting detection unlock. See [[Mining]] for the complete
+  provisional initial reward table and planned eligibility rules.
 - Logging: meaningful tree felling, forestry, and wood-processing interactions.
-- Farming: mature crop harvests and designated agricultural/livestock activities.
+  Player-performed harvesting of qualifying sapling-grown trees has the same
+  XP eligibility as equivalent wild trees; automated harvesting grants no XP
+  by default. Harvest rewards are paid once per eligible log actually removed,
+  including player-triggered Tree Felling, with no ability XP multiplier or
+  drop-quantity multiplier. The **provisional reward is 20 XP per eligible log**,
+  shared across supported tree species; five qualifying logs reach Level 1.
+  See [[Logging]].
+- Farming: **only mature supported crop harvests and successful player-attributed
+  breeding** for the initial slice. Award crop XP once per mature crop harvested,
+  including ordinary harvesting and Scything, without ability/drop-quantity
+  multipliers. The **provisional crop reward is 5 XP per mature supported
+  crop**, shared across the initial crop types; twenty mature harvests reach
+  Level 1. Planting/replanting, Bone Meal use, feeding alone, milking,
+  shearing, passive collection, and automation grant no Farming XP. Successful
+  breeding provisionally pays **100 XP once per event** to vanilla's credited
+  breeder, without splitting
+  or duplicating it between players who fed different parents. See [[Farming]].
 - Crafting: meaningful enchanting, designated advanced recipes, Covenant workstation interactions, affix crafting/modification, and salvaging.
 
-Ordinary vanilla crafting does **not** award Crafting XP. Vanilla enchanting and other meaningful actions may award configurable Crafting XP, but exact eligibility and values remain to be designed.
+Ordinary vanilla crafting does **not** award Crafting XP. Successful vanilla
+enchanting-table operations are the initial Crafting XP route from Level 0 to
+Level 1, before Basic Affix Crafting can be purchased. Each successful operation
+awards XP once: provisionally **20 / 50 / 100 Crafting XP** for the first,
+second, and third options respectively, regardless of displayed level
+requirement. Levels actually spent and the number of enchantments produced
+do not scale the reward. Native enchanting requirements and costs remain in
+place. These enchanting rewards are implemented and remain provisional. See
+[[Crafting Profession]].
+
+Each successful **Add, Upgrade, Reroll, or Remove** operation awards Crafting
+XP once to the acting player when the server completes it and spends the
+required materials and Crafting Potential. Rerolls qualify even if the resulting
+value is worse or unchanged. Previews, rejected requests, and collecting/moving
+the equipment grant no XP. This reward scales with the **affected affix's
+rarity**, with higher built-in rarities paying more. Add uses the added affix;
+Upgrade/Reroll use the targeted affix; Remove uses its rarity before removal.
+For example, working on a Common affix on Legendary equipment pays the Common
+affix-operation reward. The prototype uses **one XP reward per affix rarity,
+shared across all four operations and all numerical tiers**: provisionally
+**20 / 40 / 60 / 80 / 100 Crafting XP** for Common / Uncommon / Rare / Epic /
+Legendary respectively. These are agreed, data-driven starting rewards for
+future implementation and playtesting, not implemented XP acquisition.
+
+Salvaging awards Crafting XP **once per affixed equipment item actually consumed**,
+to the player pressing Salvage, including when the item's recovery rolls
+produce no outputs. Batch rewards are the sum for consumed items, without
+batch or component-count multipliers. Queuing/removing inputs, previews,
+collecting results, rejected operations, and items left queued award no XP.
+Shared workstation access does not duplicate the award. Per-item salvage XP
+scales with the consumed equipment's Covenant rarity, with higher built-in
+rarities paying more. Equipment with **no Covenant affixes at consumption grants
+zero Crafting XP**, including uninitialized gear and initialized gear whose
+affixes were all removed. Vanilla enchantments alone do not qualify; normal
+eligible salvage material returns remain available. For affixed gear, the
+provisional reward is **10 / 20 / 30 / 40 / 50 Crafting XP** for Common /
+Uncommon / Rare / Epic / Legendary equipment respectively. Keep these amounts
+data-driven. These are agreed starting values for future implementation and
+playtesting, not implemented XP acquisition.
+See [[Salvaging]].
 
 ## Automation and modded content
 

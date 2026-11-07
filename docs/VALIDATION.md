@@ -2,12 +2,107 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## NeoForge 26.1.2.126 update (2026-11-06)
+
+- Updated the project loader pin from `.125` to `.126`, matching
+  [ATM11 0.14.0-beta](https://www.curseforge.com/minecraft/modpacks/all-the-mods-11/files/9426887).
+  Minecraft `26.1.2`, Java 25, ModDevGradle and Gradle are unchanged.
+- The [official changelog](https://maven.neoforged.net/releases/net/neoforged/neoforge/26.1.2.126/neoforge-26.1.2.126-changelog.txt)
+  lists one change since `.125`: a missing damage-container fallback when
+  blocking a goat's attack. Reviewed the
+  [upstream patch](https://github.com/neoforged/NeoForge/pull/3715);
+  no Covenant API adaptations were needed. The resolved POM's dependencies
+  are unchanged between these releases.
+- `scripts/Dev.ps1 build` passes, including radial, skill-tree and profession-tree
+  geometry checks. Evidence: ignored `.local/neoforge-126-build.log`.
+- `scripts/Dev.ps1 test` loads the dedicated server on NeoForge `26.1.2.126`
+  and reports **All 96 required tests passed :)** at 20:43:37.
+  Evidence: ignored `.local/neoforge-126-tests.log`.
+- Inspected `build/libs/covenant-0.1.0-dev.jar`: the generated NeoForge minimum
+  is `[26.1.2.126,)`, Minecraft remains `[26.1.2]`, and test classes/fixtures
+  are excluded. `git diff --check` passes.
+- Prism's development instance was inspected and still uses `.125`; it has
+  not been upgraded or deployed to. The documented LAN installation was not
+  inspected or changed. Update those loaders before deploying the new build;
+  the existing Prism version guard will reject `.125`.
+- Pending manual checks: launch the isolated instance on `.126`, verify the
+  Skills/Professions menus and ordinary combat/dash behavior, and block a goat's
+  ram with a shield. Full ATM11 compatibility and real-client behavior remain
+  unvalidated; matching the loader alone does not establish pack compatibility.
+
+## Natural profession activity XP (2026-11-06)
+
+- Implemented classless, server-owned XP from native ore/log/mature-crop
+  harvesting, credited breeding and enchanting-table completion. Reuses saved
+  profession tracks, the provisional curve, caps, paid allocations and owner
+  synchronization. Gathering abilities and Workbench/itemization remain deferred.
+- `scripts/Dev.ps1 build` passes, including all three geometry/layout checks.
+  Final evidence: ignored `.local/activity-build-final.log`.
+- `scripts/Dev.ps1 test` reports **All 96 required tests passed :)**, including
+  seven new activity tests, followed by clean shutdown and `BUILD SUCCESSFUL`.
+  Final evidence: ignored `.local/activity-tests-final.log`, with the required-pass
+  line at 20:10:17. Coverage includes real Survival harvesting, every initial ore
+  family, deepslate/Nether variants, Fortune/Silk Touch, incorrect tools, late
+  break and placement cancellation, Creative/FakePlayer exclusions, native chunk
+  serialization/load with another miner, piston extension and sticky retraction,
+  crop maturity, sequential tree chopping, persistent-leaf/structure rejection,
+  cached-log replacement, native breeding attribution/cancellation and native
+  enchanting costs/option rewards/replays. The isolated profession reload test
+  also verifies unchanged earned XP and new rewards on future native harvests.
+- Retraction validation found and fixed an ordering issue: provenance must be
+  captured from vanilla's resolved movement list after its old head removal,
+  not from a second resolver before that removal. Two existing long-lane
+  fixtures (combo sliding and lifecycle cancellation) now acquire/release
+  test-only chunk tickets and allow native entity visibility to settle before
+  their queries. Gameplay does not force chunks.
+- `git diff --check` passes. Production JAR inspection includes the activity
+  hooks, harvesting definitions and ground tag, and excludes test/local files.
+  `build/libs/covenant-0.1.0-dev.jar` SHA256:
+  `6B2A41A79FE468CD913B2E71D3E6FBA95A061B11ABC2CD825F283B33C861BB34`.
+- No client launch or deployment. Actual leveling time, rendered menu updates,
+  broader natural/sapling-grown tree coverage and a manual saved-world restart
+  remain user playtesting. Automated persistence coverage uses native chunk
+  serialization/load, not a retained-world restart in a separate process. See
+  [PROFESSIONS.md](PROFESSIONS.md#manual-client-checks) for the checklist.
+
+## Expanded profession foundation (2026-11-06)
+
+- Implemented the classless four-tab Professions entry in radial slot 3,
+  immutable paid-cost allocations, bounded server-validated Apply, owner-only
+  catalogue presentation, provisional XP/reward data, operator testing commands,
+  and all-four native held-use Profession Respec. Logging's Offensive Mastery is
+  functional; the other sixteen nodes and natural activity XP remain deferred.
+  All tuning remains provisional.
+- Seven new dedicated GameTests cover legacy-empty/paid-cost codecs, native
+  player files and death copying, classless independent XP/caps, atomic invalid
+  and stale purchases, forged costs/refunds, malformed packets, native melee,
+  arrow and skill-source damage, summon/tag exclusions, respec interruption and
+  completion, and real successful/failed datapack reloads including offline and
+  removed-definition reservations. The reload test caught listener replacement
+  resetting the catalogue revision; revision tokens now span listener instances.
+- Final combined verification passed all three geometry checks (radial, combat
+  tree, profession tree) and **All 89 required tests passed** on the dedicated
+  server. The profession geometry check covers 0-32 nodes across four viewport
+  sizes. Evidence: ignored `.local/professions-foundation-final.log`, including
+  the explicit native required-test pass line. An earlier post-fix full server
+  run also passed 89/89.
+- JAR inspection found the profession runtime/client classes, authored data,
+  damage tag and respec recipe/assets; test namespaces/classes and local artifacts
+  were excluded. English localization JSON parses. Production artifact:
+  `build/libs/covenant-0.1.0-dev.jar` (SHA256
+  `85F7A99E3342E95666EC656CB3B75391296B3F408866289871B46D9FEADCD494`).
+- No client was launched or deployed. Manual radial input, tab/draft/undo/Apply,
+  resized labels/tooltips and held-use feel remain for the user; see
+  [PROFESSIONS.md](PROFESSIONS.md). Automated geometry and server tests do not
+  establish rendered behavior. Crafting XP amounts and extra recipe milestones
+  remain design questions rather than guessed implementation defaults.
+
 ## Progression combat slice (2026-11-06)
 
 - Implemented combat XP/levels, equal rounded contributor shares, source-owned
   support, dimension/global caps, atomic first-Wither levels, points/ranks,
   staged Apply and crafted held-use respec. Four independent profession tracks
-  have saved state; activity sources, curves and abilities remain deferred.
+  had saved state at this stage; the profession foundation above adds a curve and first ability.
   Non-arrow playable skills allow Rank 1 until upgrades are authored.
 - Dedicated checks cover native damage/death and cancellation, support-only
   participation and overlapping suppliers, full Fortitude absorption, capped,

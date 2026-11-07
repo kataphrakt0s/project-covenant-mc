@@ -25,6 +25,13 @@ public final class RpgData {
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Covenant.MOD_ID);
     private static final DeferredRegister.DataComponents COMPONENTS =
             DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, Covenant.MOD_ID);
+    /** Chunk-local placement exclusions; mutable changes explicitly mark the owning chunk unsaved. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.HarvestChunkState.PlacedOres>> PLACED_ORES = ATTACHMENTS.register(
+            "placed_ores", () -> AttachmentType.builder(dev.covenant.rpg.progression.HarvestChunkState.PlacedOres::new)
+                    .serialize(dev.covenant.rpg.progression.HarvestChunkState.PlacedOres.CODEC.fieldOf("positions")).build());
+    /** Server-only, unsaved evidence from a bounded tree recognition request; invalidated by block edits. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.HarvestChunkState.Trees>> HARVEST_TREES = ATTACHMENTS.register(
+            "harvest_trees", () -> AttachmentType.builder(dev.covenant.rpg.progression.HarvestChunkState.Trees::new).build());
     public static final Supplier<AttachmentType<dev.covenant.rpg.progression.CombatProgression.State>> COMBAT_PROGRESSION = ATTACHMENTS.register(
             "combat_progression", () -> AttachmentType.builder(dev.covenant.rpg.progression.CombatProgression.State::new).build());
 
@@ -50,6 +57,9 @@ public final class RpgData {
     public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ProgressionView>> PROGRESSION_VIEW = ATTACHMENTS.register(
             "progression_view", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ProgressionView.EMPTY)
                     .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.progression.ProgressionView.STREAM_CODEC).build());
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ProfessionView>> PROFESSION_VIEW = ATTACHMENTS.register(
+            "profession_view", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ProfessionView.EMPTY)
+                    .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.progression.ProfessionView.STREAM_CODEC).build());
     /** Two owner-only combo rows, updated only at transitions; no saved/copy state. */
     public static final Supplier<AttachmentType<dev.covenant.rpg.skills.ComboDisplay>> COMBO_DISPLAY = ATTACHMENTS.register(
             "combo_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.ComboDisplay.EMPTY)

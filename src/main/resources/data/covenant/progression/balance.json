@@ -67,7 +67,9 @@
     53096,
     60000
   ],
-  "profession_requirements": [],
+  "_profession_note": "Provisional prototype XP requirements per transition from current level 0 through 19. Not final balance.",
+  "profession_requirements": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+    1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000],
   "hostile_reward": 10,
   "entity_rewards": {
     "minecraft:enderman": 20,

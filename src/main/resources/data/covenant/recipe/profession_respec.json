@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": ["minecraft:paper", "minecraft:paper", "minecraft:paper", "minecraft:paper", "minecraft:lapis_lazuli", "minecraft:lapis_lazuli", "minecraft:lapis_lazuli", "minecraft:lapis_lazuli", "minecraft:emerald"],
+  "result": {"id": "covenant:profession_respec", "count": 1}
+}

@@ -82,7 +82,17 @@ The initial profession roster is:
 
 Every character can develop every profession, independently of class. Each profession begins at level 0, uses the shared profession XP curve, and has a default maximum level of **20**. Each level gained awards one Profession Point, for 20 points at level 20. Points purchase level-gated abilities and interactions, generally at variable costs of 1–3 points. Most profession abilities should eventually be obtainable; only genuine alternative specializations should lock one another out.
 
-Profession levels automatically grant core recipe unlocks at selected milestones. New abilities and interactions require deliberate Profession Point investment. Profession abilities do not consume combat keybinds. Profession respecs reset one profession's allocations, refund its points, preserve its XP and level, and use a crafted item more expensive than the combat respec item.
+Profession levels automatically grant core recipe unlocks at selected milestones.
+These recipe rewards are a future direction: additional profession-level
+recipe milestones are deferred beyond the progression vertical slice. Its
+initial milestones use purchased abilities and automatic Crafting affix-tier
+access; Workbench and respec recipes remain ungated.
+New abilities and interactions require deliberate Profession Point investment.
+Profession abilities do not consume combat keybinds. For the prototype, one
+Profession Respec resets **all four professions' allocations together**, refunds
+each track's spent points, and preserves every track's XP and level. Its item
+is more expensive than Combat Respec and uses the same two-second held-item
+interaction out of combat. See [[Profession Progression]].
 
 Profession XP comes from meaningful activity-specific actions, not vanilla XP orbs. Ordinary vanilla crafting does not award Crafting XP. Automation grants no profession XP by default; explicitly configured automation exceptions must have attribution and anti-exploit safeguards.
 

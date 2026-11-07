@@ -47,7 +47,11 @@ Persist each profession independently:
 - Unspent Profession Points.
 - Purchased profession abilities/ranks and chosen mutually exclusive branches.
 
-Initial professions are Mining, Logging, Farming, and Crafting. Each starts at level 0, uses the shared profession XP curve, and defaults to a maximum of level 20. Profession respec resets only the selected profession's allocations, refunds its Profession Points, and preserves its level and XP.
+Initial professions are Mining, Logging, Farming, and Crafting. Each starts at
+level 0, uses the shared profession XP curve, and defaults to a maximum of
+level 20. Planned prototype Profession Respec resets all four professions'
+allocations together, refunds each track's spent Profession Points, and
+preserves every track's level and XP. See [[Profession Progression]].
 
 ## Authority and synchronization
 

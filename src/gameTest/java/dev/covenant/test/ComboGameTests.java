@@ -442,7 +442,10 @@ final class ComboGameTests {
     }
 
     static void sliding(GameTestHelper helper) {
-        try (var f = new Fixture(helper, 250)) {
+        var f = new Fixture(helper, 250);
+        f.forceLanes();
+        helper.runAfterDelay(2, () -> {
+        try (f) {
             for (var skill : List.of(SkillDefinition.LUNGING_COMBO, SkillDefinition.RIP_AND_RUSH)) {
                 var p = f.player(); p.setNoGravity(false); f.floor(p); p.setXRot(45);
                 if (skill == SkillDefinition.RIP_AND_RUSH) { used(p, skill); ready(p); }
@@ -528,6 +531,7 @@ final class ComboGameTests {
             }
             helper.succeed();
         }
+        });
     }
 
     private static void finishRush(Fixture f, ServerPlayer p, int count) {
@@ -573,11 +577,20 @@ final class ComboGameTests {
         final List<ServerPlayer> players = new ArrayList<>();
         final List<LivingEntity> mobs = new ArrayList<>();
         final List<BlockPos> blocks = new ArrayList<>();
+        final java.util.Set<net.minecraft.world.level.ChunkPos> forced = new java.util.HashSet<>();
         final Vec3 origin;
         Fixture(GameTestHelper helper, int height) {
             this.helper = helper;
             var pos = helper.absolutePos(new BlockPos(2, height, 2));
             origin = new Vec3(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
+        }
+        void forceLanes() {
+            // The tiny template does not cover the contact/prediction lanes appended to its east.
+            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 160) >> 4; x++) {
+                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
+                    if (helper.getLevel().setChunkForced(x, z, true)) { forced.add(new net.minecraft.world.level.ChunkPos(x, z)); }
+                }
+            }
         }
         ServerPlayer player() {
             var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "combo-test-player"), false);
@@ -629,6 +642,7 @@ final class ComboGameTests {
                 if (helper.getLevel().getServer().getPlayerList().getPlayer(player.getUUID()) == player) { helper.getLevel().getServer().getPlayerList().remove(player); }
             }
             players.clear(); blocks.forEach(p -> helper.getLevel().setBlockAndUpdate(p, Blocks.AIR.defaultBlockState())); blocks.clear();
+            forced.forEach(chunk -> helper.getLevel().setChunkForced(chunk.x(), chunk.z(), false)); forced.clear();
         }
     }
 }

@@ -133,6 +133,20 @@ public final class RpgGameTests {
         FUNCTIONS.register("progression_arrow_ranks", () -> ProgressionGameTests::arrowRanks);
         FUNCTIONS.register("progression_reload", () -> ProgressionReloadGameTests::run);
         FUNCTIONS.register("progression_defenses", () -> ProgressionGameTests::defenses);
+        FUNCTIONS.register("profession_storage", () -> ProfessionGameTests::storage);
+        FUNCTIONS.register("profession_validation", () -> ProfessionGameTests::validation);
+        FUNCTIONS.register("profession_packets", () -> ProfessionGameTests::packets);
+        FUNCTIONS.register("profession_damage", () -> ProfessionGameTests::damage);
+        FUNCTIONS.register("profession_respec", () -> ProfessionGameTests::respec);
+        FUNCTIONS.register("profession_catalogue", () -> ProfessionGameTests::catalogue);
+        FUNCTIONS.register("profession_reload", () -> ProfessionReloadGameTests::run);
+        FUNCTIONS.register("activity_mining", () -> ProfessionActivityGameTests::mining);
+        FUNCTIONS.register("activity_placement", () -> ProfessionActivityGameTests::placement);
+        FUNCTIONS.register("activity_piston", () -> ProfessionActivityGameTests::piston);
+        FUNCTIONS.register("activity_crops", () -> ProfessionActivityGameTests::crops);
+        FUNCTIONS.register("activity_logging", () -> ProfessionActivityGameTests::logging);
+        FUNCTIONS.register("activity_breeding", () -> ProfessionActivityGameTests::breeding);
+        FUNCTIONS.register("activity_enchanting", () -> ProfessionActivityGameTests::enchanting);
     }
 
     public RpgGameTests(IEventBus modBus) { FUNCTIONS.register(modBus); }

@@ -88,6 +88,15 @@ def skillTreeLayoutTest = tasks.register('skillTreeLayoutTest', JavaExec) {
 }
 tasks.named('check') { dependsOn skillTreeLayoutTest }
 
+def professionTreeLayoutTest = tasks.register('professionTreeLayoutTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks complete profession tree visibility and separate click targets across GUI sizes.'
+    classpath = sourceSets.geometryTest.runtimeClasspath
+    mainClass = 'dev.covenant.client.ProfessionTreeLayoutTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+tasks.named('check') { dependsOn professionTreeLayoutTest }
+
 tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
