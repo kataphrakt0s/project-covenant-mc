@@ -1,6 +1,7 @@
 {
   "values": [
-    "covenant:blast_trap"
+    "covenant:blast_trap",
+    "covenant:discharge_explosion"
   ],
   "replace": false
 }

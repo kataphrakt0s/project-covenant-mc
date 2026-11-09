@@ -9,6 +9,10 @@
     "covenant:ice_bolt",
     "covenant:lightning_bolt",
     "covenant:immolation",
-    "covenant:enchanting"
+    "covenant:enchanting",
+    "covenant:discharge_fire",
+    "covenant:discharge_ice",
+    "covenant:discharge_lightning",
+    "covenant:discharge_explosion"
   ]
 }

@@ -237,7 +237,7 @@ final class ProfessionActivityGameTests {
         }
     }
 
-    private static final class ActivityFixture implements AutoCloseable {
+    static final class ActivityFixture implements AutoCloseable {
         final GameTestHelper helper;
         final ProgressionGameTests.Fixture entities;
         final Set<BlockPos> edits = new HashSet<>();

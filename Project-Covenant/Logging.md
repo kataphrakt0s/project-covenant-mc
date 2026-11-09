@@ -2,7 +2,7 @@
 
 Implementation status: Offensive Mastery is usable in the first profession
 foundation. Natural log XP and bounded tree recognition are now implemented;
-Tree Felling and Auto-Replant remain planned.
+Tree Felling is implemented; Auto-Replant remains planned.
 All numerical tuning remains provisional. See
 [Profession foundation](../docs/PROFESSIONS.md) for runtime boundaries.
 
@@ -23,9 +23,17 @@ Logging develops forestry, tree felling, sustainable wood gathering, and direct 
 
 These are configurable prototype defaults and include the initially mined log.
 A tree larger than the rank's limit can remain partially standing after an
-activation. These limits are planned behavior, not implemented gameplay.
+activation. The profession catalogue's per-rank `blocks` field controls these
+limits (1-64 inclusive); the shipped limits are implemented.
 
 - Breaking the base log of a supported tree with a valid axe triggers felling.
+- After a capped activation leaves part of the tree standing, breaking its
+  lowest remaining recognized log can trigger another capped batch. Reuse the
+  temporary tree evidence used by Logging XP; do not save unfinished trees.
+  Chunk unload/reload, server restart or catalogue reload discards this evidence,
+  so leftovers that cannot establish a fresh tree recognition need ordinary
+  chopping. Tool classification uses `minecraft:axes`, with native per-log
+  harvest validation. This continuation rule is implemented.
 - Sneaking preserves normal single-block chopping.
 - Connected logs belonging to the tree are felled together, subject to the rank's maximum.
 - Modded trees and axes should be supported through tags or data-driven tree definitions.
@@ -33,6 +41,8 @@ activation. These limits are planned behavior, not implemented gameplay.
   enchantment handling, following Vein Mining's per-block harvesting-cost rules.
   Stop when the axe breaks, leaving remaining logs intact; completed harvests
   keep their drops and eligible Logging XP.
+- Stop the entire activation at the first protected, cancelled or otherwise
+  failed additional harvest, preserving completed drops and XP, as for Vein Mining.
 - Tree Felling has no cooldown, extra activation cost, or class-resource cost.
 - Normal leaf-decay behavior remains in place; Tree Felling does not introduce a separate forestry simulation.
 - Tree recognition must avoid tracking and saving every player-placed log.
@@ -54,7 +64,11 @@ recognition limit and a 4,096 loaded-block-read budget per request. It remembers
 recognized remaining logs transiently for sequential chopping, invalidates
 edited positions and discards evidence on chunk/catalogue reload. See
 [Profession activities](../docs/PROFESSIONS.md#natural-activity-xp) for fallback
-limitations. Tree Felling's multi-block activation remains planned.
+limitations. Tree Felling uses the same evidence, retaining membership in the
+recognized tree. Only a lowest remaining certified log can start another batch.
+Harvest order is breadth-first across matching certified logs at the same
+height or above; it never descends into lower branches or expands recursively.
+No terrain is loaded and no unfinished harvesting job is saved.
 
 ### Offensive Mastery
 
@@ -111,7 +125,7 @@ Manually harvesting a qualifying sapling-grown tree has the same Logging XP
 eligibility as harvesting an equivalent wild tree. Player-tended, renewable
 tree plots are valid profession gameplay; exploring for new wild trees is not
 required. Automated harvesting still grants no Logging XP by default. These
-are implemented ordinary-harvest eligibility rules; Tree Felling remains planned.
+are implemented ordinary-harvest and Tree Felling eligibility rules.
 
 Award configured Logging XP **once per eligible log successfully harvested**,
 including each log removed by player-triggered Tree Felling. Tree Felling

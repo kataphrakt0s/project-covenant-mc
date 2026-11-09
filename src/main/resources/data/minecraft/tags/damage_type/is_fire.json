@@ -2,7 +2,9 @@
   "values": [
     "covenant:flame_trap",
     "covenant:fire_bolt",
-    "covenant:immolation"
+    "covenant:immolation",
+    "covenant:discharge_fire",
+    "covenant:discharge_explosion"
   ],
   "replace": false
 }

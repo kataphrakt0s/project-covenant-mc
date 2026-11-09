@@ -58,6 +58,10 @@ public final class RpgData {
                     .sync((holder, recipient) -> holder == recipient, SkillState.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<SkillRuntime>> SKILL_RUNTIME = ATTACHMENTS.register(
             "skill_runtime", () -> AttachmentType.builder(SkillRuntime::new).build());
+    /** Unsaved owner-only elemental charge/reserve view; authority remains in SkillRuntime. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.WeaverDisplay>> WEAVER_DISPLAY = ATTACHMENTS.register(
+            "weaver_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.WeaverDisplay.EMPTY)
+                    .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.skills.WeaverDisplay.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ProfessionState>> PROFESSIONS = ATTACHMENTS.register(
             "profession_progression", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ProfessionState.INITIAL)
                     .serialize(dev.covenant.rpg.progression.ProfessionState.CODEC.fieldOf("professions")).copyOnDeath()

@@ -100,7 +100,8 @@ public final class SkillCommands {
     private static int list(CommandSourceStack source) throws CommandSyntaxException {
         var player = source.getPlayerOrException();
         source.sendSuccess(() -> cooldownFeedback(Skills.ignoresCooldowns(player)), false);
-        for (var skill : SkillDefinition.ALL) {
+        for (var definition : SkillDefinition.ALL) {
+            var skill = WeaverSkillData.resolve(player, ReaverSkillData.resolve(player, definition));
             source.sendSuccess(() -> Component.translatable("commands.covenant.skill.entry", skill.id().toString(),
                     skill.displayName(), skill.description(),
                     dev.covenant.rpg.stats.RpgStats.scaleSkillValue(player, dev.covenant.rpg.stats.RpgStats.RESOURCE_COST, skill.cost()),

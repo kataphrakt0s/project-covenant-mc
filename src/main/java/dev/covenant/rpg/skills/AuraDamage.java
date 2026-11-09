@@ -23,7 +23,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 /** Narrow native damage hooks. A hit frame keeps separate shield accounting correct under nested damage. */
 public final class AuraDamage {
     public static final ResourceKey<DamageType> IMMOLATION = type("immolation"), ENCHANTING = type("enchanting");
-    private static final List<ResourceKey<DamageType>> CALCULATED_TYPES = List.of(Bleeding.DAMAGE_TYPE, IMMOLATION, ENCHANTING,
+    private static final List<ResourceKey<DamageType>> CALCULATED_TYPES = List.of(Bleeding.DAMAGE_TYPE, RageStorm.DAMAGE_TYPE, IMMOLATION, ENCHANTING,
             type("fire_bolt"), type("ice_bolt"), type("lightning_bolt"),
             TrapKind.BEAR.damageType, TrapKind.FROST.damageType, TrapKind.FLAME.damageType, TrapKind.BLAST.damageType);
     private static ResourceKey<DamageType> type(String id) { return ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath("covenant", id)); }
@@ -33,9 +33,13 @@ public final class AuraDamage {
         final LivingEntity target;
         final DamageSource source;
         final int retaliationTicks;
+        final float healthBefore, absorptionBefore;
+        final boolean eligibleEnemy;
         float absorbed;
         Hit(LivingEntity target, DamageSource source) {
             this.previous = HIT.get(); this.target = target; this.source = source;
+            healthBefore = target.getHealth(); absorptionBefore = target.getAbsorptionAmount();
+            eligibleEnemy = source.getEntity() instanceof LivingEntity owner && Skills.canHit(owner, target);
             retaliationTicks = !Auras.active(target, Auras.Kind.FLAME_CLOAK) ? 0 : target instanceof Player player
                     ? (int) Math.clamp(Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.SKILL_DURATION, 80)), 1, Integer.MAX_VALUE) : 80;
         }
@@ -70,14 +74,18 @@ public final class AuraDamage {
     }
 
     public static double multiplier(LivingEntity source, boolean fire) {
-        return 1 + (Auras.active(source, Auras.Kind.RAGING) ? .2 : 0)
+        return 1 + Auras.battleCryBonus(source) + (Auras.active(source, Auras.Kind.RAGING) ? .2 : 0)
                 + (fire && Auras.active(source, Auras.Kind.IMMOLATION) ? .3 : 0);
     }
-    /** Bleed power captures both bonuses additively once; pulse processing never reapplies them. */
+    /** Elemental buff joins outgoing bonuses additively, captured once at spell/projectile creation. */
+    public static double elementalMultiplier(LivingEntity source, WeaverPower.Element element) {
+        return multiplier(source, element == WeaverPower.Element.FIRE) + WeaverPower.bonus(source, element);
+    }
+    /** Bleed power captures outgoing and bleed bonuses additively once; pulses never reapply them. */
     public static float bleedPower(LivingEntity source) {
         if (source.getAttribute(RpgStats.DAMAGE) == null) { return 0; }
         return (float) (source.getAttributeValue(RpgStats.DAMAGE) * .1
-                * (1 + (Auras.passive(source, Auras.Kind.RIPPING) ? .2 : 0) + (Auras.active(source, Auras.Kind.RAGING) ? .2 : 0)));
+                * (1 + Auras.battleCryBonus(source) + (Auras.passive(source, Auras.Kind.RIPPING) ? .2 : 0) + (Auras.active(source, Auras.Kind.RAGING) ? .2 : 0)));
     }
     private static void incoming(LivingIncomingDamageEvent event) {
         var source = event.getSource();
@@ -90,9 +98,10 @@ public final class AuraDamage {
             // Native crossbow rockets have no arrow base-damage field; retain their firing snapshot here.
             amount *= direct.getData(RpgData.AURA_PROJECTILE_POWER);
         }
-        if (source.getEntity() instanceof ServerPlayer player && !calculated(player, source)
+        if (source.getEntity() instanceof LivingEntity player && !calculated(player, source)
                 && (direct == null || !direct.hasData(RpgData.AURA_PROJECTILE_POWER))) {
-            amount *= multiplier(player, source.is(DamageTypeTags.IS_FIRE));
+            var element = WeaverPower.element(source);
+            amount *= element == null ? multiplier(player, false) : elementalMultiplier(player, element);
         }
         double vulnerability = (Auras.passive(event.getEntity(), Auras.Kind.SHOCK) ? .1 : 0)
                 + (event.getEntity().hasEffect(Vulnerability.EFFECT) ? Vulnerability.STRENGTH : 0);
@@ -101,8 +110,9 @@ public final class AuraDamage {
         event.setAmount((float) amount);
     }
 
-    private static boolean calculated(ServerPlayer player, DamageSource source) {
-        if (source == player.getData(RpgData.SKILL_RUNTIME).skillDamageSource) { return true; }
+    private static boolean calculated(LivingEntity player, DamageSource source) {
+        if (Discharge.damage(source)) { return true; }
+        if (player instanceof ServerPlayer serverPlayer && source == serverPlayer.getData(RpgData.SKILL_RUNTIME).skillDamageSource) { return true; }
         for (int i = 0; i < CALCULATED_TYPES.size(); i++) { if (source.is(CALCULATED_TYPES.get(i))) { return true; } }
         return false;
     }
@@ -129,6 +139,14 @@ public final class AuraDamage {
     }
 
     private static void landed(LivingDamageEvent.Post event) {
+        var frame = HIT.get();
+        if (frame != null && frame.target == event.getEntity() && frame.source == event.getSource() && frame.eligibleEnemy
+                && event.getSource().getEntity() instanceof ServerPlayer caster) {
+            double actual = Math.min(frame.healthBefore, Math.max(0, event.getHealthDamage()))
+                    + Math.min(frame.absorptionBefore, event.getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION))
+                    + frame.absorbed;
+            WeaverPower.bank(caster, WeaverPower.element(event.getSource()), actual);
+        }
         if (landedDamage(event) <= 0) { return; }
         var source = event.getSource();
         var target = event.getEntity();
@@ -197,7 +215,7 @@ public final class AuraDamage {
         for (var grant : grants.entrySet()) {
             var owner = level.getServer().getPlayerList().getPlayer(grant.getKey());
             if (grant.getValue() <= now || owner == null || owner.level() != level) { continue; }
-            double candidate = multiplier(owner, true);
+            double candidate = elementalMultiplier(owner, WeaverPower.Element.FIRE);
             if (candidate > power || (candidate == power && owner.getUUID().compareTo(strongest.getUUID()) < 0)) { strongest = owner; power = candidate; }
         }
         if (strongest == null) { return; }

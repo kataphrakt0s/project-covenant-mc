@@ -35,19 +35,23 @@
       "ranks": [
         {
           "level": 2,
-          "cost": 1
+          "cost": 1,
+          "blocks": 8
         },
         {
           "level": 5,
-          "cost": 1
+          "cost": 1,
+          "blocks": 16
         },
         {
           "level": 10,
-          "cost": 1
+          "cost": 1,
+          "blocks": 32
         },
         {
           "level": 15,
-          "cost": 1
+          "cost": 1,
+          "blocks": 64
         }
       ]
     },
@@ -91,19 +95,23 @@
       "ranks": [
         {
           "level": 1,
-          "cost": 1
+          "cost": 1,
+          "blocks": 4
         },
         {
           "level": 5,
-          "cost": 1
+          "cost": 1,
+          "blocks": 8
         },
         {
           "level": 10,
-          "cost": 1
+          "cost": 1,
+          "blocks": 16
         },
         {
           "level": 15,
-          "cost": 1
+          "cost": 1,
+          "blocks": 32
         }
       ]
     },

@@ -105,6 +105,7 @@ final class ProfessionsScreen extends Screen {
                 if (node.id().equals(ProfessionData.OFFENSIVE_MASTERY)) {
                     tip.append(" · " + String.format(Locale.ROOT, "+%.2f%%", value.bonus() * 100));
                 }
+                if (value.blocks() > 0) { tip.append(" · ").append(text("blocks", value.blocks())); }
             }
             node.prerequisite().map(catalogue.abilities()::get).ifPresent(parent -> tip.append("\n").append(text("requires", parent.name())));
             tip.append("\n").append(text("node_help"));

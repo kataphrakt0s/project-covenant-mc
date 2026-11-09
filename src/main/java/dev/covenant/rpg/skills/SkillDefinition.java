@@ -14,7 +14,7 @@ import net.minecraft.resources.Identifier;
  */
 public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, double cost,
         int cooldownTicks, int castTicks, Effect effect, double power, double range) {
-    public enum Effect { BOW_SHOT, DISENGAGE, CLEAVE, REND, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, TRAP, AURA, COMBO }
+    public enum Effect { BOW_SHOT, DISENGAGE, CLEAVE, REND, RAGE_STORM, BATTLE_CRY, PASSIVE, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, DISCHARGE, THREEFOLD, TELEPORT, TRAP, AURA, COMBO }
     /** Rank 1: 20 Focus, six-second cooldown, four-block backward hop over six ticks. */
     public static final SkillDefinition DISENGAGE = define("disengage", PlayerClass.STALKER, 20, 120, 0, Effect.DISENGAGE, 0, 4);
     /** Rank 1: 30 Focus, eight-second cooldown, four magic damage and a four-second vulnerability. */
@@ -27,6 +27,12 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     public static final SkillDefinition CLEAVE = define("cleave", PlayerClass.REAVER, 20, 60, 0, Effect.CLEAVE, 1, 3);
     /** Instant native-reach melee hit; 20 Rage, two-second cooldown. Bleed tuning lives in Bleeding. */
     public static final SkillDefinition REND = define("rend", PlayerClass.REAVER, 20, 40, 0, Effect.REND, 1, 0);
+    /** Rank 1 shout: 30 Rage, thirty-second cooldown; duration, radius and strength in ReaverSkillData. */
+    public static final SkillDefinition BATTLE_CRY = define("battle_cry", PlayerClass.REAVER, 30, 600, 0, Effect.BATTLE_CRY, .15, 6);
+    /** Rank 1 travelling area: 35 Rage, twelve-second cooldown, sixteen-tick wind-up. */
+    public static final SkillDefinition RAGE_STORM = define("rage_storm", PlayerClass.REAVER, 35, 240, 16, Effect.RAGE_STORM, 3, 8);
+    /** Free self-only passive while assigned; never activates or starts a cooldown. */
+    public static final SkillDefinition BLOOD_FEVER = define("blood_fever", PlayerClass.REAVER, 0, 0, 0, Effect.PASSIVE, 0, 4);
     /** Three fresh presses: 20/10/20 Rage; cooldown starts at sequence end. Stage tuning lives in Combos. */
     public static final SkillDefinition LUNGING_COMBO = define("lunging_combo", PlayerClass.REAVER, 20, 240, 0, Effect.COMBO, 0, 3);
     /** Circular Rend, six-block dash, bleed-consuming finisher; 30/20/20 Rage and 20-second end cooldown. */
@@ -37,6 +43,10 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     public static final SkillDefinition ICE_BOLT = define("ice_bolt", PlayerClass.WEAVER, 20, 40, 10, Effect.ELEMENTAL_BOLT, 6, 0);
     /** Hits the first enemy or solid block within 24 blocks; no lightning status or native lightning entity. */
     public static final SkillDefinition LIGHTNING_BOLT = define("lightning_bolt", PlayerClass.WEAVER, 20, 40, 10, Effect.LIGHTNING_BOLT, 6, 24);
+    /** Rank 1 defaults; server datapacks tune these three skills through WeaverSkillData. */
+    public static final SkillDefinition DISCHARGE = define("discharge", PlayerClass.WEAVER, 30, 240, 10, Effect.DISCHARGE, 0, 3);
+    public static final SkillDefinition THREEFOLD_SYSTEM = define("threefold_system", PlayerClass.WEAVER, 10, 500, 0, Effect.THREEFOLD, 0, 0);
+    public static final SkillDefinition TELEPORT = define("teleport", PlayerClass.WEAVER, 25, 200, 0, Effect.TELEPORT, 0, 8);
     /** Instant throw; root duration and contact behavior live in TrapKind/TrapEntity. */
     public static final SkillDefinition BEAR_TRAP = define("bear_trap", PlayerClass.STALKER, 20, 160, 0, Effect.TRAP, 0, 0);
     /** Eight-second, 3.5-block patch; one shared 50% slow regardless of overlapping owners. */
@@ -57,8 +67,9 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     public static final SkillDefinition IMMOLATION_AURA = define("immolation_aura", PlayerClass.WEAVER, 40, 600, 0, Effect.AURA, 0, 6);
     public static final SkillDefinition ENCHANTING_AURA = define("enchanting_aura", PlayerClass.WEAVER, 40, 500, 0, Effect.AURA, 0, 6);
     public static final List<SkillDefinition> ALL = List.of(PIERCING_SHOT, AIMED_SHOT, DISENGAGE, ARCANE_ARROW, MULTISHOT, CLEAVE, REND, ARCANE_BOLT,
-            LUNGING_COMBO, RIP_AND_RUSH, BEAR_TRAP, FROST_TRAP, FLAME_TRAP, BLAST_TRAP, FIRE_BOLT, ICE_BOLT, LIGHTNING_BOLT,
-            DODGE_AURA, SWIFTNESS_AURA, RIPPING_AURA, FORTITUDE_AURA, RAGING_AURA, ICY_VEINS, FLAME_CLOAK, FREEZING_AURA, SHOCK_AURA, IMMOLATION_AURA, ENCHANTING_AURA);
+            LUNGING_COMBO, RIP_AND_RUSH, BATTLE_CRY, RAGE_STORM, BLOOD_FEVER, BEAR_TRAP, FROST_TRAP, FLAME_TRAP, BLAST_TRAP, FIRE_BOLT, ICE_BOLT, LIGHTNING_BOLT,
+            DODGE_AURA, SWIFTNESS_AURA, RIPPING_AURA, FORTITUDE_AURA, RAGING_AURA, ICY_VEINS, FLAME_CLOAK, FREEZING_AURA, SHOCK_AURA, IMMOLATION_AURA, ENCHANTING_AURA,
+            DISCHARGE, THREEFOLD_SYSTEM, TELEPORT);
 
     public SkillDefinition {
         allowedClasses = Set.copyOf(allowedClasses);

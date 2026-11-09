@@ -2,8 +2,13 @@
   "replace": false,
   "values": [
     "covenant:bleed",
+    "covenant:rage_storm",
     "covenant:flame_trap",
     "covenant:immolation",
-    "covenant:enchanting"
+    "covenant:enchanting",
+    "covenant:discharge_fire",
+    "covenant:discharge_ice",
+    "covenant:discharge_lightning",
+    "covenant:discharge_explosion"
   ]
 }

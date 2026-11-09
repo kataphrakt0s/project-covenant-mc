@@ -32,7 +32,8 @@ public final class Auras {
         RAGING("raging_aura", 120, true, false), ICY_VEINS("icy_veins", 80, true, false),
         FLAME_CLOAK("flame_cloak", 160, true, false), FREEZING("freezing_aura", 30, false, true),
         SHOCK("shock_aura", 140, false, true), IMMOLATION("immolation_aura", 120, false, true),
-        ENCHANTING("enchanting_aura", 120, false, false);
+        ENCHANTING("enchanting_aura", 120, false, false), BATTLE_CRY("battle_cry", 120, true, false),
+        DISCHARGE_FREEZE("discharge", 20, false, true);
         public final Identifier id;
         final SkillDefinition definition;
         public final int duration;
@@ -52,6 +53,7 @@ public final class Auras {
     public static final class State {
         final EnumMap<Kind, Map<UUID, Long>> passive = new EnumMap<>(Kind.class);
         final EnumMap<Kind, Map<UUID, Long>> active = new EnumMap<>(Kind.class);
+        final Map<UUID, Double> battleCryPower = new HashMap<>();
         final EnumSet<Kind> assigned = EnumSet.noneOf(Kind.class);
         final Set<LivingEntity> recipients = new HashSet<>();
         UUID shieldOwner;
@@ -91,6 +93,7 @@ public final class Auras {
     public static void reconcile(ServerPlayer player) {
         var state = player.hasData(RpgData.AURAS) ? player.getData(RpgData.AURAS) : null;
         for (var kind : Kind.values()) {
+            if (kind == Kind.BATTLE_CRY || kind == Kind.DISCHARGE_FREEZE) { continue; }
             boolean eligible = assigned(player, kind);
             if (!eligible && state != null && state.assigned.remove(kind)) { removeSource(player, kind); }
             if (eligible) {
@@ -101,8 +104,38 @@ public final class Auras {
     }
 
     private static List<LivingEntity> nearby(ServerPlayer source) {
-        return source.level().getEntitiesOfClass(LivingEntity.class, source.getBoundingBox().inflate(RADIUS),
-                target -> target.isAlive() && !target.isSpectator() && source.distanceToSqr(target) <= RADIUS * RADIUS);
+        return nearby(source, RADIUS);
+    }
+
+    private static List<LivingEntity> nearby(ServerPlayer source, double radius) {
+        return source.level().getEntitiesOfClass(LivingEntity.class, source.getBoundingBox().inflate(radius),
+                target -> target.isAlive() && !target.isSpectator() && source.distanceToSqr(target) <= radius * radius);
+    }
+
+    /** One shout-time recipient snapshot. Moving away keeps the grant; late entrants do not receive it. */
+    static void battleCry(ServerPlayer source) {
+        var config = ReaverSkillData.get(source.level().getServer()).cry();
+        long until = now(source) + Math.max(1, (long) Math.ceil(RpgStats.scaleSkillValue(source, RpgStats.SKILL_DURATION, config.duration())));
+        for (var target : nearby(source, config.radius())) {
+            if (!allied(source, target)) { continue; }
+            target.getData(RpgData.AURAS).battleCryPower.put(source.getUUID(), config.bonus());
+            grant(source, target, Kind.BATTLE_CRY, true, until);
+            source.level().sendParticles(ParticleTypes.ANGRY_VILLAGER, target.getX(), target.getEyeY(), target.getZ(), 5, .3, .3, .3, 0);
+        }
+    }
+
+    /** Strongest unexpired shout wins; independent source lifetimes prevent one caster erasing another. */
+    public static double battleCryBonus(LivingEntity target) {
+        if (!target.hasData(RpgData.AURAS)) { return 0; }
+        var state = target.getData(RpgData.AURAS);
+        var grants = state.active.get(Kind.BATTLE_CRY);
+        if (grants == null) { return 0; }
+        double bonus = 0;
+        long time = now(target);
+        for (var grant : grants.entrySet()) {
+            if (grant.getValue() > time) { bonus = Math.max(bonus, state.battleCryPower.getOrDefault(grant.getKey(), 0.0)); }
+        }
+        return bonus;
     }
 
     static void activate(ServerPlayer source, SkillDefinition definition) {
@@ -123,6 +156,17 @@ public final class Auras {
             }
             source.level().sendParticles(kind == Kind.FREEZING ? ParticleTypes.SNOWFLAKE : ParticleTypes.ENCHANT,
                     target.getX(), target.getY() + 1, target.getZ(), 12, .4, .5, .4, .02);
+        }
+    }
+
+    /** Damage-gated Discharge rider shares freeze control while retaining separate source cleanup. */
+    static void dischargeFreeze(ServerPlayer source, LivingEntity target, int ticks) {
+        if (target.isInvulnerableTo(source.level(), source.damageSources().freeze())) { return; }
+        grant(source, target, Kind.DISCHARGE_FREEZE, true, now(source) + ticks);
+        target.stopUsingItem();
+        if (target instanceof ServerPlayer player) {
+            player.getData(RpgData.SKILL_RUNTIME).cancelCast(player);
+            Combos.interruptMovement(player, false);
         }
     }
 
@@ -171,7 +215,8 @@ public final class Auras {
     }
 
     public static boolean frozen(LivingEntity target) {
-        return target.level().isClientSide() ? target.getData(RpgData.AURA_FROZEN) : active(target, Kind.FREEZING);
+        return target.level().isClientSide() ? target.getData(RpgData.AURA_FROZEN)
+                : active(target, Kind.FREEZING) || active(target, Kind.DISCHARGE_FREEZE);
     }
 
     public static boolean consumeDodge(LivingEntity target) {
@@ -219,7 +264,7 @@ public final class Auras {
     }
 
     private static void sync(LivingEntity target) {
-        boolean freeze = active(target, Kind.FREEZING);
+        boolean freeze = active(target, Kind.FREEZING) || active(target, Kind.DISCHARGE_FREEZE);
         if (target.getData(RpgData.AURA_FROZEN) != freeze) { target.setData(RpgData.AURA_FROZEN, freeze); }
         float shield = shield(target);
         if (target instanceof ServerPlayer && target.getData(RpgData.FORTITUDE_CAPACITY) != shield) {
@@ -230,6 +275,7 @@ public final class Auras {
     public static void cleanse(LivingEntity target) {
         target.removeEffect(MobEffects.SLOWNESS);
         target.removeEffect(Chilled.EFFECT);
+        target.removeEffect(DischargeSlow.EFFECT);
         FrostSlows.cleanse(target);
         if (target.hasData(RpgData.AURAS)) {
             var grants = target.getData(RpgData.AURAS).passive.remove(Kind.FREEZING);
@@ -252,7 +298,7 @@ public final class Auras {
         if (source != null && source.hasData(RpgData.AURAS)) { source.getData(RpgData.AURAS).recipients.remove(target); }
     }
 
-    private static void removeSource(ServerPlayer source, Kind kind) {
+    static void removeSource(ServerPlayer source, Kind kind) {
         var state = source.getData(RpgData.AURAS);
         for (var target : state.recipients.toArray(LivingEntity[]::new)) {
             var recipient = target.getData(RpgData.AURAS);
@@ -260,6 +306,7 @@ public final class Auras {
                 for (var entry : maps.entrySet()) { if (kind == null || entry.getKey() == kind) { entry.getValue().remove(source.getUUID()); } }
                 maps.values().removeIf(Map::isEmpty);
             }
+            if (kind == null || kind == Kind.BATTLE_CRY) { recipient.battleCryPower.remove(source.getUUID()); }
             if ((kind == null || kind == Kind.FORTITUDE) && source.getUUID().equals(recipient.shieldOwner)) {
                 recipient.shieldOwner = null; recipient.shield = 0;
             }
@@ -277,6 +324,7 @@ public final class Auras {
         for (var maps : List.of(state.passive, state.active)) { maps.values().forEach(grants -> owners.addAll(grants.keySet())); maps.clear(); }
         if (state.shieldOwner != null) { owners.add(state.shieldOwner); }
         state.shieldOwner = null; state.shield = 0; state.assigned.clear();
+        state.battleCryPower.clear();
         owners.forEach(owner -> unlink(target, owner));
         update(target);
         target.removeData(RpgData.AURAS);
@@ -314,6 +362,8 @@ public final class Auras {
             removedOwners.add(state.shieldOwner); state.shieldOwner = null; state.shield = 0; changed = true;
         }
         if (state.shieldOwner != null) { state.nextExpiry = Math.min(state.nextExpiry, state.shieldUntil); }
+        var cries = state.active.get(Kind.BATTLE_CRY);
+        state.battleCryPower.keySet().removeIf(owner -> cries == null || !cries.containsKey(owner));
         removedOwners.forEach(owner -> unlink(target, owner));
         if (changed) { update(target); }
         AuraDamage.immolate(target, state, now);

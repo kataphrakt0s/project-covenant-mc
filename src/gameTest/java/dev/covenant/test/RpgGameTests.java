@@ -52,6 +52,30 @@ public final class RpgGameTests {
             DeferredRegister.create(Registries.TEST_FUNCTION, "covenant_test");
 
     static {
+        FUNCTIONS.register("weaver_activation", () -> WeaverGameTests::activation);
+        FUNCTIONS.register("weaver_discharge_cast", () -> WeaverGameTests::dischargeCast);
+        FUNCTIONS.register("weaver_discharge_mixed", () -> WeaverGameTests::dischargeMixed);
+        FUNCTIONS.register("weaver_discharge_defenses", () -> WeaverGameTests::dischargeDefenses);
+        FUNCTIONS.register("weaver_threefold_damage", () -> WeaverGameTests::threefoldDamage);
+        FUNCTIONS.register("weaver_threefold_accounting", () -> WeaverGameTests::threefoldAccounting);
+        FUNCTIONS.register("weaver_threefold_expiry", () -> WeaverGameTests::threefoldExpiry);
+        FUNCTIONS.register("weaver_threefold_snapshots", () -> WeaverGameTests::threefoldSnapshots);
+        FUNCTIONS.register("weaver_teleport_geometry", () -> WeaverGameTests::teleportGeometry);
+        FUNCTIONS.register("weaver_teleport_blocked", () -> WeaverGameTests::teleportBlocked);
+        FUNCTIONS.register("weaver_lifecycle", () -> WeaverGameTests::lifecycle);
+        FUNCTIONS.register("weaver_config", () -> WeaverGameTests::config);
+        FUNCTIONS.register("weaver_discharge_threefold", () -> WeaverGameTests::dischargeThreefold);
+        FUNCTIONS.register("weaver_reload", () -> WeaverGameTests::reload);
+        FUNCTIONS.register("reaver_cry", () -> ReaverGameTests::cry);
+        FUNCTIONS.register("reaver_cry_duration", () -> ReaverGameTests::cryDuration);
+        FUNCTIONS.register("reaver_fever", () -> ReaverGameTests::fever);
+        FUNCTIONS.register("reaver_fever_updates", () -> ReaverGameTests::feverUpdates);
+        FUNCTIONS.register("reaver_storm_cast", () -> ReaverGameTests::stormCast);
+        FUNCTIONS.register("reaver_storm_pulses", () -> ReaverGameTests::stormPulses);
+        FUNCTIONS.register("reaver_storm_terrain", () -> ReaverGameTests::stormTerrain);
+        FUNCTIONS.register("reaver_storm_safety", () -> ReaverGameTests::stormSafety);
+        FUNCTIONS.register("reaver_config", () -> ReaverGameTests::config);
+        FUNCTIONS.register("reaver_reload", () -> ReaverGameTests::reload);
         FUNCTIONS.register("itemization_rules", () -> ItemizationGameTests::rules);
         FUNCTIONS.register("itemization_reload", () -> ItemizationReloadGameTests::run);
         FUNCTIONS.register("workbench_common", () -> ItemizationGameTests::common);
@@ -165,6 +189,12 @@ public final class RpgGameTests {
         FUNCTIONS.register("activity_logging", () -> ProfessionActivityGameTests::logging);
         FUNCTIONS.register("activity_breeding", () -> ProfessionActivityGameTests::breeding);
         FUNCTIONS.register("activity_enchanting", () -> ProfessionActivityGameTests::enchanting);
+        FUNCTIONS.register("gathering_vein_ranks", () -> GatheringGameTests::veinRanks);
+        FUNCTIONS.register("gathering_vein_rules", () -> GatheringGameTests::veinRules);
+        FUNCTIONS.register("gathering_failures", () -> GatheringGameTests::failures);
+        FUNCTIONS.register("gathering_tree_ranks", () -> GatheringGameTests::treeRanks);
+        FUNCTIONS.register("gathering_tree_continuation", () -> GatheringGameTests::treeContinuation);
+        FUNCTIONS.register("gathering_tree_rules", () -> GatheringGameTests::treeRules);
     }
 
     public RpgGameTests(IEventBus modBus) { FUNCTIONS.register(modBus); }

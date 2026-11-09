@@ -72,7 +72,7 @@ final class ProfessionGameTests {
             ProfessionAllocations.apply(player, LOGGING, revision, Map.of(), Map.of(OFFENSIVE, 1));
             check(logging(player).allocations().isEmpty(), "Every purchased rank observes its level gate");
             level(player, LOGGING, 20); var empty = player.getData(RpgData.PROFESSIONS);
-            ProfessionAllocations.apply(player, LOGGING, revision, Map.of(), Map.of(OFFENSIVE, 1, ProfessionData.id("logging/tree_felling"), 1));
+            ProfessionAllocations.apply(player, LOGGING, revision, Map.of(), Map.of(OFFENSIVE, 1, ProfessionData.id("logging/auto_replant"), 1));
             check(player.getData(RpgData.PROFESSIONS).equals(empty), "Mixed available/planned purchase fails atomically");
             ProfessionAllocations.apply(player, ProfessionData.id("mining"), revision, Map.of(), Map.of(OFFENSIVE, 1));
             ProfessionAllocations.apply(player, LOGGING, revision, Map.of(), Map.of(OFFENSIVE, 6));
@@ -185,7 +185,18 @@ final class ProfessionGameTests {
         try (var reader = helper.getLevel().getServer().getResourceManager().getResourceOrThrow(ProfessionData.FILE).openAsReader()) {
             var original = JsonParser.parseReader(reader).getAsJsonObject();
             var data = ProfessionData.parse(original);
-            check(data.abilities().size() == 17 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 5, "Seventeen authored nodes; Logging mastery and four wired Crafting nodes can be purchased");
+            check(data.abilities().size() == 17 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 7, "Seventeen authored nodes; two gathering abilities, Logging mastery and four Crafting nodes can be purchased");
+            for (double value : new double[] {0, -1, 65, 1.5}) {
+                var badBlocks = original.deepCopy();
+                badBlocks.getAsJsonArray("abilities").get(1).getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("blocks", value);
+                rejects(() -> ProfessionData.parse(badBlocks), "Gathering block limits reject zero, negative, excessive and fractional values: " + value);
+            }
+            var missingBlocks = original.deepCopy();
+            missingBlocks.getAsJsonArray("abilities").get(1).getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().remove("blocks");
+            rejects(() -> ProfessionData.parse(missingBlocks), "Gathering limits must be explicitly authored");
+            check(ProfessionView.CODEC.parse(JsonOps.INSTANCE, ProfessionView.CODEC.encodeStart(JsonOps.INSTANCE,
+                    new ProfessionView(1, data.abilities(), Map.of())).getOrThrow()).getOrThrow().abilities().equals(data.abilities()),
+                    "Owner presentation round trip retains gathering block limits");
             check(data.activityRewards().get(ProfessionData.id("farming/breeding")) == 100
                     && data.activityRewards().get(ProfessionData.id("crafting/enchant_option_3")) == 100,
                     "Agreed gathering and enchanting rewards are authored");

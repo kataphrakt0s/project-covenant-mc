@@ -72,3 +72,14 @@ gathering abilities or Workbench/itemization effects are enabled by this chunk.
 Runtime boundaries and manual checks are in [PROFESSIONS.md](PROFESSIONS.md).
 Crafting reward decisions are now recorded in the linked design notes; all
 balance remains provisional. Additional recipe milestones are outside the slice.
+
+## Follow-on: gathering batches
+
+Vein Mining and Tree Felling now use the existing purchases, original-block
+activity XP and loaded-chunk harvesting definitions. Native per-block costs and
+loot are retained, sneaking bypasses expansion, and tool break or the first
+blocked harvest stops the batch. Lowest remaining certified logs can continue
+partial trees using disposable evidence. Other gathering abilities, including
+Automatic Replanting, remain deferred. Current contracts, configurable limits
+and validation evidence are in [PROFESSIONS.md](PROFESSIONS.md) and
+[VALIDATION.md](VALIDATION.md).

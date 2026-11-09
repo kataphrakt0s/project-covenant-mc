@@ -20,6 +20,8 @@ import net.neoforged.neoforge.resource.ListenerKey;
 public final class ProfessionData extends SimplePreparableReloadListener<ProfessionData.Catalogue> {
     public static final Identifier FILE = id("progression/professions.json");
     public static final Identifier OFFENSIVE_MASTERY = id("logging/offensive_mastery");
+    public static final Identifier VEIN_MINING = id("mining/vein_mining");
+    public static final Identifier TREE_FELLING = id("logging/tree_felling");
     private static final ListenerKey<ProfessionData> KEY = ListenerKey.create(id("professions"));
     // Retained listeners are replaced on reload. Tokens must distinguish those instances too.
     private static final AtomicLong REVISIONS = new AtomicLong();
@@ -29,15 +31,17 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
     public static void register(AddServerReloadListenersEvent event) { event.addRetainedListener(KEY, new ProfessionData()); }
     public static Snapshot snapshot(MinecraftServer server) { return server.getServerResources().managers().getListener(KEY).snapshot; }
 
-    /** Level gates and point costs are per rank; bonus units belong to the implemented ability. */
-    public record Rank(int level, int cost, double bonus) {
+    /** Level/cost are per rank. Blocks includes the initiating block, defaults to zero for other abilities, and caps at 64. */
+    public record Rank(int level, int cost, double bonus, int blocks) {
         public static final Codec<Rank> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.intRange(1, 1000).fieldOf("level").forGetter(Rank::level),
                 Codec.intRange(1, 1000).fieldOf("cost").forGetter(Rank::cost),
-                Codec.DOUBLE.optionalFieldOf("bonus", 0.0).forGetter(Rank::bonus)
+                Codec.DOUBLE.optionalFieldOf("bonus", 0.0).forGetter(Rank::bonus),
+                Codec.intRange(0, 64).optionalFieldOf("blocks", 0).forGetter(Rank::blocks)
         ).apply(i, Rank::new));
         public Rank {
-            if (level < 1 || level > 1000 || cost < 1 || cost > 1000 || !Double.isFinite(bonus) || bonus < 0 || bonus > 1024) {
+            if (level < 1 || level > 1000 || cost < 1 || cost > 1000 || !Double.isFinite(bonus) || bonus < 0 || bonus > 1024
+                    || blocks < 0 || blocks > 64) {
                 throw new IllegalArgumentException("Invalid profession rank");
             }
         }
@@ -59,11 +63,14 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
             int previous = 0;
             for (var rank : ranks) {
                 if (rank.level() < previous) { throw new IllegalArgumentException("Rank gates must be ordered: " + id); }
+                if ((id.equals(VEIN_MINING) || id.equals(TREE_FELLING)) && rank.blocks() < 1) {
+                    throw new IllegalArgumentException("Gathering ranks require blocks in 1-64: " + id);
+                }
                 previous = rank.level();
             }
         }
         /** Availability is owned by runtime code, never enabled by trusting a datapack/client flag. */
-        public boolean implemented() { return id.equals(OFFENSIVE_MASTERY)
+        public boolean implemented() { return id.equals(OFFENSIVE_MASTERY) || id.equals(VEIN_MINING) || id.equals(TREE_FELLING)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.BASIC)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.SALVAGING)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.RECOVERY)
@@ -84,6 +91,7 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
             for (var rank : object.getAsJsonArray("ranks")) {
                 rank.getAsJsonObject().get("level").getAsBigDecimal().intValueExact();
                 rank.getAsJsonObject().get("cost").getAsBigDecimal().intValueExact();
+                if (rank.getAsJsonObject().has("blocks")) { rank.getAsJsonObject().get("blocks").getAsBigDecimal().intValueExact(); }
             }
             var node = Node.CODEC.parse(JsonOps.INSTANCE, element).getOrThrow();
             if (nodes.put(node.id(), node) != null) { throw new IllegalArgumentException("Duplicate profession ability: " + node.id()); }

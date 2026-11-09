@@ -1,7 +1,7 @@
 # Skills, class resources, and skill trees
 
 This foundation shares the existing class/profile and native stat/Affix Page systems.
-It adds 28 code-backed skills, persistent skill resources/cooldowns, and an
+It adds 34 code-backed skills, persistent skill resources/cooldowns, and an
 unsaved entity-local cast/combat/combo attachment. The Skills window presents
 the current class's tree with staged point/rank purchases and eight saved
 assignments. Unimplemented nodes remain visible but unavailable. Piercing Shot
@@ -49,6 +49,188 @@ uses the existing playable roster; further skill content follows this order.
 This is a dependency guide rather than a promise to implement an entire stage in
 one pass. Rend and the bleed foundation were prioritized next for Reaver's
 dependent skills. Skills whose requirements span stages follow their latest dependency.
+
+## Weaver Discharge, Threefold System and Teleport
+
+These three skills implement the accepted provisional Rank 1 defaults. Their
+existing level gates are 5, 15 and 10 respectively, with no prerequisites.
+Purchases use the existing one-point Apply flow and eight-distinct-skill limit;
+higher ranks remain unavailable. Override `data/covenant/skills/weaver.json`
+and `/reload` for server tuning. `WeaverSkillData` documents field units and
+enforces finite values, whole tick/count fields and bounded areas/chain limits.
+Invalid reloads retain live data. Commands report live costs/timers; tooltip
+numbers explicitly describe shipped defaults.
+
+| Skill | Shipped Rank 1 defaults |
+|---|---|
+| Discharge | 30 Mana, 240-tick cooldown, ten-tick cast; three-block spherical radius; one direct damage per stored stack of each element |
+| Threefold System | Assigned self-only passive; instant activation for 10 Mana, 500-tick cooldown; up to +30% damage per element for 160 base ticks |
+| Teleport | Instant eight-block aimed blink for 25 Mana, 200-tick cooldown; no damage |
+
+Discharge stores one charge per successfully completed Fire/Ice/Lightning Bolt
+cast, even when it misses, while Discharge is learned. Counters are independent
+and capped at five each. Aura ticks, secondary hits, arcane spells and Discharge
+itself grant none. Empty reserves reject activation without spending. All charges
+are consumed at successful cast completion, before damage callbacks, including
+paid empty-area casts. Interrupted casts spend nothing and start no cooldown.
+Shared Icy Veins removes its wind-up. Costs/cooldowns snapshot at cast start;
+elemental power, effects, radius and current charge counts snapshot at completion.
+
+Each elemental component is a separate attributed magic hit, bypassing armor,
+shields and Dodge while retaining general reductions, absorption, Fortitude,
+actual invulnerability and elemental defenses. Components bypass native hurt
+immunity and preserve the previous hurt-window state. Positive ice damage applies
+a saved native 30% slow for 60 base ticks, or a transient 20-base-tick freeze at
+five ice charges. Freeze uses existing input/cast interruption and non-stacking
+control rules, including eligible bosses; it has no separate immunity period.
+Discharge slow uses the shared strongest-slow rule and native cleansing/save/load;
+configured strength rounds to percentage points. Positive fire damage ignites for
+80 base ticks using native burning. Five fire charges add one centered, fire- and
+explosion-tagged hit, up to four damage with linear falloff to zero at the radius.
+This extra hit retains native armor/explosion defenses. No blocks, fire blocks,
+native lightning entities or terrain destruction are created.
+
+Five lightning charges also create one chain from the nearest initial area
+target, hitting at most two additional enemies outside the main radius. Each
+jump selects the nearest unclaimed enemy within four blocks of the preceding
+target's eyes, with UUID tie-breaking and solid-cover checks. Each takes 50% of
+the lightning contribution without further falloff. Main-area targets cannot be
+hit again by arcs. Main damage uses the shared enemy/alliance/PvP rules and clear
+eye-to-eye cover checks; a wall blocks all components and riders.
+
+Threefold banks 25% of personally attributed elemental damage into **each other**
+element's reserve, capped at six damage points per reserve. Only actual health,
+ordinary absorption and Fortitude loss counts, once, with health overkill removed.
+Allied/self damage and fully negated hits give nothing. Covenant fire/ice/lightning
+bolts, their chains and Discharge components qualify, as do personally attributed
+fire-tagged hits, including owned Immolation pulses. Arcane damage and unattributed
+native burning do not. Reserve entries expire individually after 200 game ticks;
+this fixed ten-second window does not scale with skill duration. Storage uses a
+bounded 200-tick ring, with same-tick contributions merged and overflow discarded.
+
+Activation requires assignment, a nonempty reserve and no existing Threefold
+buff, even with operator cooldown bypass. Each element gains
+`max_bonus * reserve / capacity`, fixed for the entire duration. All reserves are
+consumed; banking pauses while active and resumes after expiry. Bonuses add to
+Battle Cry, Immolation and other outgoing bonuses. New projectiles capture their
+own elemental bonus once at launch; removing the buff never rewrites airborne
+shots, and later buffs do not boost them retroactively. Active duration uses the
+existing duration multiplier. Existing active snapshots survive balance reloads;
+new contributions/activations adopt live data and reads clamp to the live cap.
+
+Teleport sweeps the full player collision box along full 3D aim, stopping before
+the first solid/entity collision without sliding, stepping up or passing through
+thin shapes. The destination needs body space but no floor. World border and
+build-height bounds constrain travel. A route whose collision-query bounds enter
+an unloaded chunk rejects without forcing/loading it. Less than 0.1 blocks of
+available movement also rejects without spending or cooldown. Root, freeze,
+mounting, sleeping and executing skill movement prevent activation. Successful
+travel uses native server teleport synchronization, preserves facing, replaces
+velocity with zero and resets accumulated fall distance; subsequent gravity and
+fall damage behave normally. Lava and other hazards are not filtered out.
+
+Charges, reserves and active bonuses are unsaved server runtime, never death
+copied. Death, logout and class/dimension changes clear all three. Unlearning
+Discharge clears charges and its owned freezes; its ordinary slow/burning can
+finish naturally. Removing Threefold's last assignment or unlearning it clears
+its bank and buff immediately; moving between slots while still assigned retains
+them. Saved resources, cooldowns and loadouts retain their existing formats.
+The new unsaved owner-only `covenant:weaver_display` shows charges and reserve
+fullness or active bonuses in fire/ice/lightning order. Cast/activation/loadout
+transitions update it immediately; banking/expiry changes publish at most four
+times per second, only when values change. Display data never authorizes gameplay.
+
+Manual checks: purchase and bind the skills, rotate elemental bolts and observe
+the charge/reserve HUD, activate Threefold then Discharge, compare partial/full
+element riders, and blink toward walls/ceilings and while falling. Rendered layout,
+combat feel, real-client latency/teleport acknowledgement and pack compatibility
+remain manual playtesting; dedicated fixtures are not evidence for those checks.
+
+## Reaver shout, storm and slotted passive
+
+Battle Cry, Rage Storm and Blood Fever implement Rank 1 from the
+[Reaver balance proposal](<../Project-Covenant/Project_Covenant_Reaver_Balance_Proposal.md>).
+All retain the normal level gates, one-point purchase, eight-distinct-skill limit,
+and existing Apply flow. Blood Fever requires Rend; Rage Storm requires Cleave.
+Higher ranks remain unavailable pending concrete upgrades.
+
+| Skill | Default behavior |
+|---|---|
+| Battle Cry | Instant, 30 Rage, 600-tick cooldown; +15% outgoing damage for 120 base ticks to self and allies within six blocks |
+| Rage Storm | 35 Rage, 240-tick cooldown, sixteen-tick wind-up; eight-block straight travel at 0.35 blocks/tick, two-block spherical radius, three damage per pulse |
+| Blood Fever | Free passive while slotted; every five ticks count up to five distinct bleeding enemies within four blocks; +2% base movement and +3% base attack speed per enemy |
+
+Battle Cry uses the shared team/owned-pet policy and source-aware aura lifetime
+system. It has no passive component and does not require assignment for command
+activation. Recipients are captured at shout time, including through cover; walking
+away retains the buff, while late entrants receive nothing. Overlapping cries use
+the strongest unexpired strength, with independent caster lifetimes. Its bonus adds
+to existing outgoing aura bonuses. Native attributed attacks, skills and new bleeds
+benefit, including allied pets. Projectile power and bleed power capture it once
+when created; existing shots/stacks are unchanged, and damage processing never
+reapplies a captured bonus. Unattributed environmental damage has no attacker to buff.
+Support attribution follows the existing aura system. Unbinding the shout leaves
+an already cast buff active; unlearning, source/recipient departure, confirmed death,
+class/dimension changes and expiry clean it through existing lifecycle boundaries.
+
+Rage Storm spends and starts cooldown only after its cast completes and eligibility
+is revalidated. Failed entity admission spends nothing. Costs, wind-up and cooldown
+snapshot at cast start; area tuning, power and full 3D aim snapshot at release.
+The caster can move independently. The center stops at solid collision geometry;
+each pulse requires clear line of sight from the center to the target's bounding-box
+center, with that center inside the sphere. Fluids do not stop it. Pulses occur on
+release and every ten ticks afterward. The default 23-tick journey offers three
+pulses; four is a per-enemy attempt ceiling, not a guaranteed four-hit sequence.
+Defended attempts count toward that ceiling. Armor, toughness, shields, Resistance,
+absorption, Fortitude and actual invulnerability retain native behavior. This area
+is not a melee strike/projectile for Dodge or Ripping triggers. Pulses bypass native
+hurt cooldown and restore its previous state, allowing scheduled full hits without
+changing other attacks' immunity window. Storm damage grants no outgoing Rage.
+The native entity owns local queries and bounded crimson/sweep particles; it never
+saves or forces chunks. Unloaded coverage, expiry/range, caster departure,
+confirmed death, class/dimension change or unlearning discard it without refunds.
+Skill-duration bonuses do not change its distance, speed, radius or pulse schedule.
+
+Blood Fever uses native transient `ADD_MULTIPLIED_BASE` movement/attack-speed
+modifiers. Shared teammate bleeds count; extra stacks on one enemy do not. Allies,
+owned allied pets, dead targets and spectators are excluded by shared targeting.
+It detects through cover, within a sphere measured between feet. Only eligible
+slotted Reavers perform its local query, once per configured interval; no global
+entity scan runs. Changes take effect within five ticks by default. Unbinding or
+unlearning removes bonuses immediately; all normal player lifecycle cleanup applies.
+Modifiers and current count never save or copy. Pressing its key reports that it is
+passive and commits no spending, cast, cooldown or activation lock.
+
+### Server datapack tuning
+
+Override `data/covenant/skills/reaver.json` and use `/reload`. The built-in file is
+the complete example. Times use game ticks (20/second), distances/radii use blocks,
+speed uses blocks/tick, damage uses damage points, bonuses use decimal fractions.
+The three JSON objects contain:
+
+| Object | Fields and accepted bounds |
+|---|---|
+| `battle_cry` | `cost` 0–10000; `cooldown_ticks` 0–72000; `duration_ticks` 1–72000; `radius` 0.1–32; `damage_bonus` 0–10 |
+| `rage_storm` | `cost` 0–10000; `cooldown_ticks`/`cast_ticks` 0–72000; `speed` 0.01–4; `distance` 0.1–64; `radius` 0.1–8; `damage` 0–10000; `pulse_ticks` 1–200; `max_hits` 1–64 |
+| `blood_fever` | `radius` 0.1–16; `update_ticks` 1–200; `movement_per_enemy`/`attack_per_enemy` 0–1; `max_enemies` 1–32 |
+
+All fields are required finite JSON numbers; tick/count fields require integers.
+Invalid data rejects the reload without replacing this listener's live snapshot.
+Reloads preserve allocations, resources and committed cooldowns. Existing shouts
+and storms retain their snapshots; Blood Fever picks up new tuning on its next
+scheduled refresh. Existing equipment cost/cooldown/cast multipliers and shout
+duration scaling apply. Tooltips describe built-in defaults. Skill-tree structure,
+rank upgrades, shared effect policy and older skills are outside this small tuning
+file; the proposal's wider data-driven conversion remains future work.
+
+For manual checks, select Reaver and use operator `/covenant progression level 5`
+if setup is needed, then purchase Cleave, Rend and the three new skills through
+Apply. Bind Blood Fever to enable its passive. Use `/covenant resource infinite true`
+for repeated casts without changing resource balance behavior, and
+`/covenant skill ignorecooldowns true` when testing repetition. Check Storm's
+wind-up/3D aim/walls, Blood Fever's speed changes as shared bleeds enter/leave range,
+and Battle Cry's timed ally/pet benefit with a second client. Commands list live
+server costs/timers; descriptive tooltips show built-in defaults.
 
 ## Stalker mobility and arrow skills
 

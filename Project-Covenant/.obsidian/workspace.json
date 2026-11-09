@@ -25,14 +25,12 @@
             "id": "b79fb49f8af121a0",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "image",
               "state": {
-                "file": "Project_Covenant_Reaver_Balance_Proposal.md",
-                "mode": "source",
-                "source": false
+                "file": "Pasted image 20261104154316.png"
               },
-              "icon": "lucide-file",
-              "title": "Project_Covenant_Reaver_Balance_Proposal"
+              "icon": "lucide-image",
+              "title": "Pasted image 20261104154316"
             }
           }
         ],
@@ -188,9 +186,17 @@
   },
   "active": "b79fb49f8af121a0",
   "lastOpenFiles": [
-    "Project_Covenant_Stalker_Balance_Proposal.md",
-    "Open Questions.md",
     "Project_Covenant_Reaver_Balance_Proposal.md",
+    "Project_Covenant_Stalker_Balance_Proposal.md",
+    "Milestone 1 - RPG Foundation.md",
+    "Loot and Rewards.md",
+    "Logging.md",
+    "Milestone 4 - World Progression.md",
+    "Milestone 3 - Itemization and Crafting.md",
+    "Milestone 2 - Character Gameplay.md",
+    "Pasted image 20261104154316.png",
+    "Character Progression.md",
+    "Open Questions.md",
     "Unconfirmed 89590.crdownload",
     "Unconfirmed 722765.crdownload",
     "Progression Vertical Slice.md",
@@ -198,24 +204,16 @@
     "Crafting Profession.md",
     "Dungeons.md",
     "Skill Trees Brainstorm.md",
-    "Character Progression.md",
     "Affix System and Equipment Customization.md",
     "Salvaging.md",
     "Progression Balance Configuration.md",
     "Progression Systems.md",
     "Farming.md",
     "Experience and Reward Systems.md",
-    "Logging.md",
     "Mining.md",
     "Dimensional Progression Gates.md",
     "Profession Progression.md",
     "Combat Skill Progression.md",
-    "Skill Trees Brainstorm 1.md",
-    "Pasted image 20261104154316.png",
-    "Statistics.md",
-    "Regions and Biomes.md",
-    "Project Vision.md",
-    "Project Covenant - GDD.md",
-    "Affix Pages.md"
+    "Skill Trees Brainstorm 1.md"
   ]
 }

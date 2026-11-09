@@ -326,8 +326,8 @@ Repeated bleed applications add separate stacks, up to 3 stacks per enemy. Each
 stack counts as one bleed instance for Consume and Guillotine's flat consumption
 damage. Blood Fever counts bleeding enemies, not the number of stacks on them.
 Reapplying bleed refreshes the duration of all existing stacks, including when
-already at the 3-stack cap. Rend and the shared bleed foundation are implemented;
-the dependent bleed skills below remain planned.
+already at the 3-stack cap. Rend, the shared bleed foundation, Rip and Rush and
+Blood Fever are implemented; the other dependent bleed skills remain planned.
 
 At the cap, a new application replaces the oldest stack and refreshes all stack
 durations. The replacement carries the new application's damage and attacker;
@@ -904,22 +904,26 @@ damage and prevent bleed application. No weapon-category restriction is added.
 #### Battle Cry
 Minimum character level: 3.
 
-Planned behavior: an active shout that briefly increases all outgoing damage for
-the player and nearby allies, including spells and damage over time. This creates
-a shared offensive window. Buff strength, range, duration, resource cost, and
-cooldown are deferred. Ally identification remains outside this design pass.
+Implemented Rank 1: instant shout granting self and eligible allies within six
+blocks +15% outgoing damage for six base seconds. Costs 30 Rage; thirty-second
+cooldown. Uses shared aura team/owned-pet recipients and source-aware cleanup.
+Copies do not stack strength. Recipients retain the buff after moving away; late
+entrants get nothing. New projectiles/bleeds capture it once; existing ones are
+unchanged. Higher ranks remain deferred. See [[Project_Covenant_Reaver_Balance_Proposal]].
 
 #### Rage Storm
 Minimum character level: 5.
 
 Requires: Cleave.
 
-Planned behavior: a spell-like cast with a wind-up, followed by an area of effect
-released from the player that slowly moves forward. It travels in a fixed
-direction set when the cast completes, allowing the player to reposition
-independently after release. Enemies take repeated damage at short intervals
-while they remain inside the moving area. Wind-up duration, movement speed, area
-size, travel distance, damage, and hit interval are deferred.
+Implemented Rank 1: sixteen-tick wind-up, then a two-block-radius spherical area
+travelling eight blocks at 0.35 blocks/tick along full 3D aim captured at release.
+The player moves independently. Solid terrain stops its center and blocks damage
+through cover. Pulses deal three armor-mitigated damage immediately on release,
+then every ten ticks, at most four attempts per enemy. The default journey offers
+three pulses. Costs 35 Rage at completion; twelve-second cooldown. It is a
+temporary native entity with lifecycle cleanup and no saving or chunk forcing.
+Higher ranks remain deferred. See [[Project_Covenant_Reaver_Balance_Proposal]].
 
 #### Execute
 Minimum character level: 5.
@@ -931,14 +935,16 @@ are deferred.
 #### Blood Fever
 Minimum character level: 5.
 
-Planned behavior: grant the player movement-speed and attack-speed bonuses based
-on the number of nearby bleeding enemies. While the buff is active, its strength
-updates as that count changes, including enemies entering or leaving range and
-dying.
+Requires: Rend.
 
-Detection uses a 4-block radius with periodic local checks. Tick cost must be
-measured during implementation. Update interval and bonuses per enemy are
-deferred.
+Implemented Rank 1: free self-only passive while assigned to a skill slot.
+Every five ticks, count distinct bleeding enemies within four blocks (including
+shared teammate bleeds) for +2% base movement and +3% base attack speed each,
+capped at five enemies (+10%/+15%). Extra stacks, allies and allied pets do not
+count. Native transient modifiers update as enemies move, stop bleeding or die;
+unbinding removes them immediately. Higher ranks remain deferred. The local
+query is measured in the dedicated fixture; see `docs/VALIDATION.md` for evidence
+and [[Project_Covenant_Reaver_Balance_Proposal]] for the balance baseline.
 
 #### Leap
 Minimum character level: 10.
@@ -1327,22 +1333,24 @@ See `docs/RPG_SKILLS.md` for defenses, persistence, and overlap rules.
 #### Discharge
 Minimum character level: 5.
 
-Planned behavior: store stacks from previously cast ice, fire, and lightning
-spells, with a separate counter capped at 5 for each element. Activating Discharge
-deals damage and applies effects in an AoE centered on the player, based on the
-stored stack counts and element types. All stored stacks are consumed when the
-cast completes. Damage values, area size, Mana cost, and cooldown are deferred.
+Implemented Rank 1: completed Fire/Ice/Lightning Bolt casts store one charge of
+that element while Discharge is learned, capped at five each, including misses.
+Activate for 30 Mana, a 0.5-second cast and twelve-second cooldown to consume all
+charges in a three-block player-centered area. Each charge adds one damage of
+its element before defenses. An empty bank rejects; an empty area is a paid cast.
 
-Ice contribution: add a movement slow, upgraded to a brief freeze when all
-5 ice stacks are consumed. Slow strength and duration and freeze duration are
-deferred.
+Positive ice damage applies a 30% slow for three seconds, replaced by a one-second
+freeze at five ice charges. Positive fire damage ignites for four seconds; five
+fire charges add one centered explosion dealing up to four extra damage with
+linear distance falloff and no terrain destruction. Five lightning charges add
+one chain to up to two external enemies, four-block jumps, dealing 50% of the
+lightning contribution each. Cover blocks the area and arcs; all components
+resolve independently through native defenses without hurt-window suppression.
 
-Fire contribution: ignite affected enemies. Consuming 5 fire stacks also adds one
-explosion at Discharge's center. Burn duration and explosion damage are deferred.
-
-Lightning contribution: add lightning damage. Consuming 5 lightning stacks also
-sends chain-lightning arcs beyond the main AoE. Damage scaling, chain range, and
-chain target limit are deferred.
+Charges are transient and clear on death, logout, class/dimension change or
+unlearning. Duration scaling and shared freeze/slow rules apply. Server datapacks
+tune Rank 1 through `data/covenant/skills/weaver.json`; higher ranks are deferred.
+See `docs/RPG_SKILLS.md` for attribution, snapshots, riders and cleanup.
 
 #### Fire Bolt
 Minimum character level: 5.
@@ -1401,9 +1409,17 @@ base, scaled by the existing resource-cost multiplier.
 #### Teleport
 Minimum character level: 10.
 
-Planned behavior: blink along the player's aim, stopping at a clear position
-before solid obstacles. No enemy target is required. Range, Mana cost, and
-cooldown are deferred.
+Implemented Rank 1: instantly blink up to eight blocks along full 3D aim for
+25 Mana, with a ten-second cooldown. No target or destination floor is required.
+Sweep the complete player collision box and stop before obstacles without sliding
+or passing through walls. Respect border/build bounds and loaded chunks. Blocked
+or negligible movement rejects without spending or cooldown. Root, freeze,
+mounting, sleeping and existing skill movement prevent activation.
+
+Success resets velocity and accumulated fall distance, using native server
+teleport synchronization. Hazards and subsequent falling remain normal. Server
+datapacks tune Rank 1 through `data/covenant/skills/weaver.json`; higher ranks are
+deferred. See `docs/RPG_SKILLS.md` for collision and lifecycle boundaries.
 
 #### Freezing Aura
 Minimum character level: 15.
@@ -1497,26 +1513,27 @@ resource-cost and cooldown multipliers.
 #### Threefold System
 Minimum character level: 15.
 
-Planned design direction: combine the ideas behind Path of Exile's Elemental
-Overload and Elemental Equilibrium. See
-[Grinding Gear Games' explanation of both keystones](https://www.pathofexile.com/forum/view-thread/3185299).
+Design inspiration: combine the ideas behind Path of Exile's Elemental Overload
+and Elemental Equilibrium; see [Grinding Gear Games' explanation](https://www.pathofexile.com/forum/view-thread/3185299).
 
-Passive: store elemental power based on other elemental types the player has
-used recently. Fire builds power for ice and lightning; ice builds power for fire
-and lightning; lightning builds power for fire and ice.
+Implemented Rank 1 follows the agreed elemental-reserve design direction:
+fire builds ice/lightning, ice builds fire/lightning, and lightning builds
+fire/ice. While assigned, bank 25% of personally attributed actual elemental
+damage into each other reserve, capped at six damage points each. Individual
+contributions expire after ten seconds. Health, absorption and Fortitude count
+once; misses, overkill, allies and unattributed burning do not generate power.
 
-Stored power is a fraction of elemental damage actually dealt, with capped
-storage. Only damage dealt within the last 10 seconds contributes; older
-contributions expire individually as they leave that rolling window.
+Activate instantly for 10 Mana and a 25-second cooldown. Consume all reserves
+for an eight-second self buff, granting each element up to +30% damage according
+to its reserve fullness. Bonuses snapshot at activation and combine additively
+with existing outgoing bonuses. Banking pauses while active and resumes after
+expiry. New elemental projectiles capture their bonus when fired.
 
-Active: consume all stored power at once to grant a fixed-duration damage buff.
-Each element receives a percentage damage bonus based on how full its reserve
-is, up to the maximum bonus at full storage. Bonuses are set when activated and
-remain fixed for that buff's duration. Banking pauses while the buff is active
-and resumes after it ends.
-
-Stored damage fraction, storage cap, boost strength and duration, Mana cost, and
-cooldown are deferred.
+An empty bank or existing buff rejects activation. Banking requires assignment;
+removing its last slot clears both reserves and buff. All runtime clears on death,
+logout and class/dimension change. Server datapacks tune Rank 1 through
+`data/covenant/skills/weaver.json`; higher ranks are deferred. See
+`docs/RPG_SKILLS.md` for rolling expiry, attribution and damage snapshots.
 
 #### Ice Tomb
 Minimum character level: 20.

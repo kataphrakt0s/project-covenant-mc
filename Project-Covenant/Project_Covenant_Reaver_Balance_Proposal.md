@@ -5,6 +5,16 @@
 **Resource:** Rage  
 **Design philosophy:** Vanilla-first balance, with server datapack configurability for modpacks.
 
+**Implemented subset (2026-11-08):** Battle Cry, Rage Storm and Blood Fever now
+use these Rank 1 defaults. Blood Fever is a self-only passive while slotted and
+requires Rend. Rage Storm follows full release-time 3D aim and stops at solid
+terrain, with cover blocking pulses; its first pulse is immediate, then every ten
+ticks, with four attempts per target as a ceiling. Battle Cry uses existing allied
+recipients and captures its bonus on new projectiles/bleeds, never retroactively
+boosting existing ones. Higher ranks and the rest of this proposal remain proposed.
+See [[Skill Trees Brainstorm]] and `docs/RPG_SKILLS.md` for the implementation
+contract and the three-skill server datapack schema.
+
 ---
 
 # 1. Executive Summary

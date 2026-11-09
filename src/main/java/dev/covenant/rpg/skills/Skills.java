@@ -44,6 +44,10 @@ public final class Skills {
             EntityType.Builder.<TrapEntity>of(TrapEntity::new, MobCategory.MISC).sized(0.3f, 0.15f)
                     .clientTrackingRange(8).updateInterval(1).noSave().noSummon().fireImmune()
                     .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Covenant.MOD_ID, "trap"))));
+    public static final DeferredHolder<EntityType<?>, EntityType<RageStorm>> RAGE_STORM = ENTITIES.register("rage_storm", () ->
+            EntityType.Builder.<RageStorm>of(RageStorm::new, MobCategory.MISC).sized(.25f, .25f)
+                    .clientTrackingRange(8).updateInterval(1).noSave().noSummon().fireImmune()
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Covenant.MOD_ID, "rage_storm"))));
 
     private Skills() {}
 
@@ -52,11 +56,15 @@ public final class Skills {
         Bleeding.register();
         Rooted.register(modBus);
         Chilled.register(modBus);
+        DischargeSlow.register(modBus);
         FrostSlows.register();
         Auras.register();
         ArmorShred.register(modBus);
         Vulnerability.register(modBus);
         Combos.register();
+        BloodFever.register();
+        NeoForge.EVENT_BUS.addListener(ReaverSkillData::register);
+        NeoForge.EVENT_BUS.addListener(WeaverSkillData::register);
         SkillControls.register();
         SkillLifecycle.register();
         NeoForge.EVENT_BUS.addListener(Skills::tick);
@@ -69,12 +77,15 @@ public final class Skills {
     /** Returns localized feedback and changes nothing on rejection. Casts spend only at completion. */
     public static Component activate(ServerPlayer player, SkillDefinition skill) {
         ClassResources.requireServer(player);
+        skill = ReaverSkillData.resolve(player, skill);
+        skill = WeaverSkillData.resolve(player, skill);
         var runtime = player.getData(RpgData.SKILL_RUNTIME);
         if (runtime.executing) { return message("busy"); }
         Auras.reconcile(player);
         Combos.expire(player);
         var failure = validate(player, skill);
         if (failure != null) { return failure; }
+        if (skill.effect() == SkillDefinition.Effect.PASSIVE) { return message("passive"); }
         if (runtime.cast != null) { return message("casting"); }
         if (ClassResources.now(player) < runtime.nextActivation) { return message("busy"); }
         if (skill.effect() == SkillDefinition.Effect.COMBO) { return Combos.activate(player, skill); }
@@ -96,8 +107,13 @@ public final class Skills {
         var type = PlayerProfiles.getSelectedClass(player).orElse(null);
         if (type == null || !skill.allowedClasses().contains(type)) { return message("class"); }
         if (!player.getData(RpgData.SKILL_LOADOUT).learned().contains(skill.id())) { return message("unlearned"); }
+        if (skill.effect() == SkillDefinition.Effect.DISCHARGE && !WeaverPower.hasCharges(player)) { return message("charges"); }
+        if (skill.effect() == SkillDefinition.Effect.THREEFOLD) {
+            if (!WeaverPower.assigned(player)) { return message("assigned"); }
+            if (!WeaverPower.canActivate(player)) { return message("reserves"); }
+        }
         if (!ignoresCooldowns(player) && cooldownRemaining(player, skill) > 0) { return message("cooldown", cooldownRemaining(player, skill) / 20.0); }
-        if (skill.effect() == SkillDefinition.Effect.DISENGAGE) {
+        if (skill.effect() == SkillDefinition.Effect.DISENGAGE || skill.effect() == SkillDefinition.Effect.TELEPORT) {
             if (Rooted.contains(player)) { return message("rooted"); }
             if (player.getData(RpgData.SKILL_RUNTIME).movement != null || player.isPassenger() || player.isSleeping()) { return message("busy"); }
         }
@@ -145,9 +161,17 @@ public final class Skills {
         if (trap != null && (trap.isRemoved() || validate(player, skill) != null)) {
             trap.discard(); return message("unavailable");
         }
+        var storm = skill.effect() == SkillDefinition.Effect.RAGE_STORM ? RageStorm.prepare(player) : null;
+        if (skill.effect() == SkillDefinition.Effect.RAGE_STORM && storm == null) { return message("unavailable"); }
+        if (storm != null && (storm.isRemoved() || validate(player, skill) != null)) {
+            storm.discard(); return message("unavailable");
+        }
+        var destination = skill.effect() == SkillDefinition.Effect.TELEPORT ? Teleport.destination(player, skill.range()) : null;
+        if (skill.effect() == SkillDefinition.Effect.TELEPORT && destination == null) { return message("destination"); }
         // Commit before any damaging effect. A rejected entity add never replaces the previous trap.
         if (!ClassResources.consume(player, cost)) {
             if (trap != null) { trap.discard(); }
+            if (storm != null) { storm.discard(); }
             return message("resource");
         }
         long now = ClassResources.now(player);
@@ -155,6 +179,9 @@ public final class Skills {
         player.getData(RpgData.SKILL_RUNTIME).nextActivation = now + 1;
         switch (skill.effect()) {
             case COMBO -> throw new IllegalStateException("Combos use staged activation");
+            case PASSIVE -> throw new IllegalStateException("Passives do not activate");
+            case BATTLE_CRY -> Auras.battleCry(player);
+            case RAGE_STORM -> storm.release();
             case AURA -> Auras.activate(player, skill);
             case ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT -> SpellSkills.execute(player, skill);
             case TRAP -> Traps.accept(player, trap);
@@ -162,7 +189,11 @@ public final class Skills {
             case DISENGAGE -> Combos.disengage(player);
             case CLEAVE -> MeleeSkills.cleave(player, skill);
             case REND -> MeleeSkills.rend(player, rendTarget);
+            case DISCHARGE -> Discharge.execute(player);
+            case THREEFOLD -> WeaverPower.activate(player);
+            case TELEPORT -> Teleport.execute(player, destination);
         }
+        WeaverPower.castCompleted(player, skill);
         if (skill.effect() != SkillDefinition.Effect.BOW_SHOT) {
             player.swing(InteractionHand.MAIN_HAND, true);
         }
@@ -192,12 +223,15 @@ public final class Skills {
             } else if (now >= cast.endsAt()) {
                 runtime.cancelCast(player);
                 player.sendSystemMessage(execute(player, cast.skill(), cast.cost(), cast.cooldown()));
+            } else if (cast.skill().effect() == SkillDefinition.Effect.RAGE_STORM) {
+                SkillVisuals.rageCharge(player);
             } else if (SpellSkills.isSpell(cast.skill())) {
                 SkillVisuals.charge(player);
             }
         }
         if (type != null && player.isAlive() && !player.isSpectator() && now % 5 == 0) {
             ClassResources.tick(player, type);
+            WeaverPower.reconcile(player);
         }
     }
 

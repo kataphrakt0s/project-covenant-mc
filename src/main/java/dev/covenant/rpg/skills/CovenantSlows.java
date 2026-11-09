@@ -14,7 +14,8 @@ public final class CovenantSlows {
         if (target.level().isClientSide()) { return; }
         double slow = Auras.passive(target, Auras.Kind.FREEZING) ? .1 : 0;
         if (target.hasEffect(Chilled.EFFECT)) { slow = Math.max(slow, .3); }
-        if (target.hasData(RpgData.FROST_SOURCES) && !target.getData(RpgData.FROST_SOURCES).patches.isEmpty()) { slow = .5; }
+        slow = Math.max(slow, DischargeSlow.strength(target));
+        if (target.hasData(RpgData.FROST_SOURCES) && !target.getData(RpgData.FROST_SOURCES).patches.isEmpty()) { slow = Math.max(slow, .5); }
         var speed = target.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed == null) { return; }
         var previous = speed.getModifier(ID);

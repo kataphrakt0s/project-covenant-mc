@@ -22,7 +22,7 @@ public final class ElementalBolt extends ThrowableItemProjectile {
     public SkillDefinition skill() { return getType() == Skills.FIRE_BOLT.get() ? SkillDefinition.FIRE_BOLT : SkillDefinition.ICE_BOLT; }
     void initialize(int duration) {
         this.duration = duration;
-        if (getOwner() instanceof LivingEntity owner) { setData(dev.covenant.rpg.RpgData.AURA_PROJECTILE_POWER, AuraDamage.multiplier(owner, skill() == SkillDefinition.FIRE_BOLT)); }
+        if (getOwner() instanceof LivingEntity owner) { setData(dev.covenant.rpg.RpgData.AURA_PROJECTILE_POWER, AuraDamage.elementalMultiplier(owner, WeaverPower.element(skill()))); }
     }
     @Override protected Item getDefaultItem() { return getType() == Skills.FIRE_BOLT.get() ? Items.FIRE_CHARGE : Items.SNOWBALL; }
 

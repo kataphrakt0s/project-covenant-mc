@@ -11,11 +11,11 @@ Hold G and choose radial slot 3, **Professions**. Mining, Logging, Farming and
 Crafting each show their own level, XP, available points and authored nodes.
 Left-click adds a pending rank; right-click undoes pending ranks. Each tab keeps
 its draft. Apply submits only the displayed track, out of combat. Closing the
-screen discards drafts. The world keeps running. Twelve planned gathering abilities stay
+screen discards drafts. The world keeps running. Ten planned abilities stay
 visible and unavailable; their descriptions describe future behavior.
 
-`covenant:logging/offensive_mastery` is purchasable alongside all four Crafting
-nodes. Its five provisional
+Vein Mining and Tree Felling are purchasable alongside all four Crafting nodes
+and `covenant:logging/offensive_mastery`. Its five provisional
 ranks cost one point each at levels 5/8/11/14/17, granting a total outgoing
 player-damage bonus of 2/4/6/8/10%. Native attacks, arrows and attributed skill
 damage use the native incoming-damage event. Owned-creature damage is excluded;
@@ -34,9 +34,56 @@ Implemented salvage rewards are 10/20/30/40/50 XP for affixed Common-through-Leg
 equipment. All XP amounts remain provisional. Additional profession-level
 recipe milestones are deferred beyond the progression slice; Workbench and
 respec recipes remain ungated.
-Gathering abilities remain deferred. The Workbench, rarity, loot, affix operations
+Other gathering abilities remain deferred. The Workbench, rarity, loot, affix operations
 and salvage are implemented; see [ITEMIZATION.md](ITEMIZATION.md) for the loop,
 four Crafting nodes, data formats and validation boundaries.
+
+## Vein Mining and Tree Felling
+
+Both are class-independent contextual abilities: purchase ranks in Professions,
+then break a qualifying block with a tool in the main hand. Sneaking preserves
+ordinary single-block harvesting. Creative, spectators and FakePlayers cannot
+activate batches. There is no cooldown, class-resource cost or flat activation
+charge. Automatic Replanting and the other planned gathering effects remain
+unavailable.
+
+| Ability | Rank level gates | Point cost per rank | Total blocks per activation |
+|---|---|---|---|
+| Vein Mining | 2 / 5 / 10 / 15 | 1 | 8 / 16 / 32 / 64 |
+| Tree Felling | 1 / 5 / 10 / 15 | 1 | 4 / 8 / 16 / 32 |
+
+Limits include the initially harvested block and snapshot at that harvest.
+Vein Mining requires an item in `minecraft:pickaxes`; Tree Felling requires
+`minecraft:axes`. Modded tools can join those native tags and must pass native
+harvest checks. Veins use all 26 face/edge/corner neighbours and the same
+configured activity ID as their family. Stone/deepslate variants and Nether
+gold therefore join their configured families. The first matching ore mapping
+wins; packs can map multiple entries to one activity ID to share a family.
+Placed ore is harvestable but keeps its ordinary zero-Mining-XP exclusion.
+
+Tree Felling requires the bounded recognition below and an initiating log at
+the lowest remaining height in that recognized tree. It follows only certified
+same-family logs upward or at the same height, in breadth-first order. Chopping
+an upper log is ordinary single-block harvesting. A capped or interrupted tree
+can continue in another batch from a lowest remaining certified log. Its evidence
+is transient, invalidates edited logs and is discarded on chunk/catalogue reload
+or restart. Floating leftovers may then require ordinary chopping. Tree-shaped
+constructions attached to real trunks remain the documented heuristic limitation.
+Leaves retain native decay; there is no extra leaf harvest or replant.
+
+One synchronous server batch starts only after the original block is confirmed
+removed and its native loot/tool handling completes. Extra blocks use native
+player harvesting, including per-block durability, exhaustion, enchantments,
+loot, vanilla XP, profession XP, Adventure restrictions and BreakBlockEvent.
+The batch stops at the first protected, cancelled, changed, unsuitable or
+otherwise failed target, or when the original held tool breaks/is replaced.
+Completed harvests retain their drops and XP. Checks also enforce spawn
+protection and world borders for extra blocks. Extra breaks never expand into
+recursive batches. Searches use loaded chunks only, with a hard cap of 64
+members and at most 26 neighbour checks per member; tree recognition retains
+its separate fixed bounds. No job, tick scan or chunk ticket is created.
+These bounds are not a performance benchmark or a claim of protection-mod
+compatibility testing.
 
 ## Natural activity XP
 
@@ -151,6 +198,16 @@ are nondecreasing. Optional `bonus` defaults to zero and must be finite within
 a fractional total damage bonus). Integer fields reject fractional JSON values.
 Datapacks cannot enable an ability whose runtime behavior is unimplemented.
 
+Vein Mining and Tree Felling ranks require a whole-number `blocks` value in
+1-64, including the initiating block. Zero, omitted, fractional and oversized
+gathering limits reject the complete reload. Other abilities default this field
+to zero. Existing replacement profession catalogues must add `blocks` to these
+two nodes when adopting this version. No saved attachment or ability ID changes;
+owned ranks/paid costs remain intact, and future activations use the current
+rank's tuning. Removing a node disables its effect while retaining its paid
+reservation until respec. If ranks are shortened, the last remaining rank's
+limit applies, as for Offensive Mastery. Limits appear in owner-synced tooltips.
+
 `activity_rewards` holds up to 4,096 nonnegative whole-long values, keyed by
 namespaced activity ID. Native hooks consume the shipped Mining family IDs,
 `covenant:logging/log`, `covenant:farming/mature_crop`,
@@ -219,3 +276,9 @@ feel still need user playtesting:
 6. Place Silk-Touched ore, save/reopen, and mine it as another player. Move placed
    ore with a piston before mining it. Both should yield normal drops and zero
    Mining XP. Check nonstandard/large trees for the documented conservative fallback.
+7. Purchase Vein Mining/Tree Felling, compare normal and sneaking harvests, and
+   check native drops, tool damage and partial-tree continuation at each rank.
+   Break a nearly exhausted tool; verify remaining blocks stay intact. Reconnect
+   or reload with a partial tree and check the conservative evidence fallback.
+   Check rendered rank limits and tooltips. Protection/modpack interoperability,
+   simultaneous real clients and unusual tree coverage remain manual checks.

@@ -83,6 +83,12 @@ public final class SkillVisuals {
         player.level().sendParticles(ParticleTypes.END_ROD, hand.x, hand.y, hand.z, 1, 0.04, 0.04, 0.04, 0.005);
     }
 
+    static void rageCharge(ServerPlayer player) {
+        if (player.tickCount % 2 != 0) { return; }
+        var hand = player.getEyePosition().add(player.getLookAngle().scale(.6)).add(0, -.25, 0);
+        player.level().sendParticles(RED, hand.x, hand.y, hand.z, 4, .15, .15, .15, 0);
+    }
+
     static void cleave(ServerPlayer player, double range) {
         var level = player.level();
         for (int i = 0; i < 24; i++) {

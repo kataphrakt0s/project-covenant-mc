@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "function": "covenant_test:weaver_reload",
+  "environment": "covenant_test:weaver_reload",
+  "type": "minecraft:function",
+  "max_ticks": 300
+}

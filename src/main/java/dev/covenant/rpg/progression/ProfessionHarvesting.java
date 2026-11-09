@@ -47,7 +47,7 @@ public final class ProfessionHarvesting {
         }
         for (var tree : definitions.trees()) {
             if (tree.logs().test(state)) {
-                return recognizedLog(player.level(), pos, state, snapshot, tree)
+                return recognizedTree(player.level(), pos, state, snapshot, tree) != null
                         ? new Award(LOGGING, ProfessionData.id("logging/log")) : null;
             }
         }
@@ -132,37 +132,38 @@ public final class ProfessionHarvesting {
         return new PistonMove(sources, placed, extending ? direction : direction.getOpposite());
     }
 
-    private static boolean recognizedLog(ServerLevel level, BlockPos pos, BlockState state,
+    static HarvestChunkState.TreeEvidence recognizedTree(ServerLevel level, BlockPos pos, BlockState state,
             ProfessionData.Snapshot snapshot, HarvestDefinitions.Tree tree) {
         var chunk = loaded(level, pos);
-        if (chunk == null) { return false; }
+        if (chunk == null) { return null; }
         if (chunk.hasData(RpgData.HARVEST_TREES)) {
             var cache = chunk.getData(RpgData.HARVEST_TREES);
-            if (cache.revision == snapshot.revision() && cache.logs.get(pos.asLong()) == state) { return true; }
+            var evidence = cache.logs.get(pos.asLong());
+            if (cache.revision == snapshot.revision() && evidence != null && evidence.logs().get(pos) == state) { return evidence; }
         }
         var search = new TreeSearch(level);
         var base = pos;
         for (int i = 0; i < MAX_TREE_HEIGHT; i++) {
             var below = search.read(base.below());
-            if (below == null) { return false; }
+            if (below == null) { return null; }
             if (!tree.logs().test(below)) { break; }
             base = base.below();
         }
         var ground = search.read(base.below());
-        if (ground == null || !snapshot.catalogue().harvesting().ground().test(ground)) { return false; }
+        if (ground == null || !snapshot.catalogue().harvesting().ground().test(ground)) { return null; }
         var queue = new ArrayDeque<BlockPos>(); var seen = new HashSet<BlockPos>();
         var logs = new LinkedHashMap<BlockPos, BlockState>();
         queue.add(base); seen.add(base); boolean canopy = false;
         while (!queue.isEmpty()) {
             var current = queue.removeFirst();
             var log = search.read(current);
-            if (log == null) { return false; }
+            if (log == null) { return null; }
             logs.put(current, log);
-            if (logs.size() > MAX_TREE_LOGS) { return false; }
+            if (logs.size() > MAX_TREE_LOGS) { return null; }
             for (var direction : Direction.values()) {
                 var leafPos = current.relative(direction);
                 var leaf = search.read(leafPos);
-                if (leaf == null) { return false; }
+                if (leaf == null) { return null; }
                 if (current.getY() >= base.getY() + 2 && tree.leaves().test(leaf)
                         && leaf.hasProperty(BlockStateProperties.PERSISTENT) && !leaf.getValue(BlockStateProperties.PERSISTENT)) { canopy = true; }
             }
@@ -174,24 +175,25 @@ public final class ProfessionHarvesting {
                         var next = current.offset(dx, dy, dz);
                         if (!seen.add(next)) { continue; }
                         var nextState = search.read(next);
-                        if (nextState == null) { return false; }
+                        if (nextState == null) { return null; }
                         if (!tree.logs().test(nextState)) { continue; }
                         if (Math.abs(next.getX() - base.getX()) > MAX_TREE_RADIUS || Math.abs(next.getZ() - base.getZ()) > MAX_TREE_RADIUS
-                                || next.getY() - base.getY() >= MAX_TREE_HEIGHT) { return false; }
+                                || next.getY() - base.getY() >= MAX_TREE_HEIGHT) { return null; }
                         queue.addLast(next);
                     }
                 }
             }
         }
-        if (!canopy || logs.size() < 3) { return false; }
+        if (!canopy || logs.size() < 3 || !logs.containsKey(pos)) { return null; }
+        var evidence = new HarvestChunkState.TreeEvidence(logs);
         for (var entry : logs.entrySet()) {
             var targetChunk = loaded(level, entry.getKey());
-            if (targetChunk == null) { return false; }
+            if (targetChunk == null) { return null; }
             var cache = targetChunk.getData(RpgData.HARVEST_TREES);
             if (cache.revision != snapshot.revision()) { cache.logs.clear(); cache.revision = snapshot.revision(); }
-            cache.logs.put(entry.getKey().asLong(), entry.getValue());
+            cache.logs.put(entry.getKey().asLong(), evidence);
         }
-        return logs.containsKey(pos);
+        return evidence;
     }
 
     /** Every read, including absent chunks, consumes the fixed budget; no getChunk call may load terrain. */

@@ -21,6 +21,9 @@ public final class SkillRuntime {
     long awaitingDashSequence;
     long dashAcknowledgementUntil;
     long rushSpeedUntil;
+    int bloodFeverCount;
+    long nextBloodFever;
+    final java.util.Set<RageStorm> storms = new java.util.HashSet<>();
     final java.util.EnumMap<TrapKind, TrapEntity> traps = new java.util.EnumMap<>(TrapKind.class);
     final java.util.EnumMap<TrapKind, TrapEntity> patches = new java.util.EnumMap<>(TrapKind.class);
     long combatUntil;
@@ -28,6 +31,7 @@ public final class SkillRuntime {
     long nextActivation;
     net.minecraft.world.damagesource.DamageSource skillDamageSource;
     PendingCast cast;
+    WeaverPower.State weaver;
     final SkillControls.MovementState controlMovement = new SkillControls.MovementState();
     final SkillRequestBudget requests = new SkillRequestBudget();
 
@@ -38,7 +42,10 @@ public final class SkillRuntime {
     }
 
     public void cancelSkill(ServerPlayer player, SkillDefinition skill) {
-        if (cast != null && cast.skill() == skill) { cancelCast(player); }
+        if (cast != null && cast.skill().id().equals(skill.id())) { cancelCast(player); }
+        if (skill == SkillDefinition.RAGE_STORM) { RageStorm.clear(player); }
+        if (skill == SkillDefinition.BATTLE_CRY) { Auras.removeSource(player, Auras.Kind.BATTLE_CRY); }
+        if (skill == SkillDefinition.DISCHARGE) { Auras.removeSource(player, Auras.Kind.DISCHARGE_FREEZE); }
         Combos.cancel(player, skill);
         Traps.clear(player, skill.id());
     }

@@ -57,8 +57,8 @@ authoring and validation below remain, and final balance is still provisional.
   server work budget. The 8/12/16/24/24-block radii remain conditional on an
   inexpensive search; ore tiers, the five-second cooldown, and the private
   ore-type/direction/Y report are settled in [[Mining]].
-- Implement multi-block harvesting abilities and supported-tree planting
-  mappings. Ordinary-harvest XP, persistent placed-ore exclusion with native
+- Vein Mining and Tree Felling are implemented; supported-tree planting
+  mappings and Automatic Replanting remain deferred. Ordinary-harvest XP, persistent placed-ore exclusion with native
   piston movement, and bounded tree-shape recognition are implemented; see
   [Profession activities](../docs/PROFESSIONS.md#natural-activity-xp). The
   tree-shape-plus-natural-leaves policy retains its documented conservative

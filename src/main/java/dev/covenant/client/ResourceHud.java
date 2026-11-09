@@ -17,6 +17,8 @@ public final class ResourceHud {
     private static String label = "";
     private static float displayedShield = -1;
     private static net.minecraft.network.chat.Component shieldLabel = net.minecraft.network.chat.Component.empty();
+    private static dev.covenant.rpg.skills.WeaverDisplay weaverView;
+    private static net.minecraft.network.chat.Component dischargeLabel, threefoldLabel;
 
     private ResourceHud() {}
 
@@ -75,6 +77,21 @@ public final class ResourceHud {
             }
             var combos = player.getData(dev.covenant.rpg.RpgData.COMBO_DISPLAY);
             int comboY = y - (shield > 0 ? 2 : 1) * (HEIGHT + 3);
+            var weaver = player.getData(dev.covenant.rpg.RpgData.WEAVER_DISPLAY);
+            if (!weaver.equals(weaverView)) {
+                weaverView = weaver;
+                dischargeLabel = net.minecraft.network.chat.Component.translatable("hud.covenant.discharge", weaver.fire(), weaver.ice(), weaver.lightning(), weaver.maxCharges());
+                threefoldLabel = net.minecraft.network.chat.Component.translatable(weaver.buff() ? "hud.covenant.threefold.buff" : "hud.covenant.threefold.reserve",
+                        weaver.firePower(), weaver.icePower(), weaver.lightningPower());
+            }
+            if (weaver.discharge()) {
+                graphics.text(minecraft.font, dischargeLabel, Math.max(3, x + WIDTH - minecraft.font.width(dischargeLabel)), comboY + 1, 0xFFFFFFFF);
+                minecraft.gui.rightHeight += HEIGHT + 3; comboY -= HEIGHT + 3;
+            }
+            if (weaver.threefold()) {
+                graphics.text(minecraft.font, threefoldLabel, Math.max(3, x + WIDTH - minecraft.font.width(threefoldLabel)), comboY + 1, 0xFFFFFFFF);
+                minecraft.gui.rightHeight += HEIGHT + 3; comboY -= HEIGHT + 3;
+            }
             for (var row : combos.rows()) {
                 long remaining = row.deadline() - (minecraft.level.getGameTime() + combos.clockOffset());
                 if (!row.moving() && remaining <= 0) { continue; }

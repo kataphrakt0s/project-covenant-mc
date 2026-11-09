@@ -24,7 +24,7 @@ public final class ElementalBolts {
                 .getOrThrow(ResourceKey.create(Registries.DAMAGE_TYPE, skill.id()));
         var before = AuraDamage.before(target);
         double captured = direct != owner && direct.hasData(dev.covenant.rpg.RpgData.AURA_PROJECTILE_POWER)
-                ? direct.getData(dev.covenant.rpg.RpgData.AURA_PROJECTILE_POWER) : AuraDamage.multiplier(owner, skill == SkillDefinition.FIRE_BOLT);
+                ? direct.getData(dev.covenant.rpg.RpgData.AURA_PROJECTILE_POWER) : AuraDamage.elementalMultiplier(owner, WeaverPower.element(skill));
         target.hurtServer(level, new DamageSource(type, direct, owner), (float) (skill.power() * captured));
         if (!target.isAlive() || !before.landed(target)) { return; }
         if (skill == SkillDefinition.FIRE_BOLT && !target.fireImmune()) {
@@ -54,7 +54,7 @@ public final class ElementalBolts {
                             .thenComparing(LivingEntity::getUUID)).orElse(null);
             if (next == null) { break; }
             SkillVisuals.lightning(player.level(), from.getEyePosition(), next.getEyePosition());
-            next.hurtServer(player.level(), new DamageSource(type, player, player), (float) (SkillDefinition.LIGHTNING_BOLT.power() * .5 * AuraDamage.multiplier(player, false)));
+            next.hurtServer(player.level(), new DamageSource(type, player, player), (float) (SkillDefinition.LIGHTNING_BOLT.power() * .5 * AuraDamage.elementalMultiplier(player, WeaverPower.Element.LIGHTNING)));
             hit.add(next); previous = next;
         }
     }

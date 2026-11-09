@@ -5,6 +5,7 @@ import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.progression.*;
 import java.nio.file.*;
 import java.util.*;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.LevelResource;
@@ -27,6 +28,10 @@ final class ProfessionReloadGameTests {
                 helper.getLevel().setBlock(cropPos, matureWheat, 2); harvester.gameMode.destroyBlock(cropPos);
                 ProfessionGameTests.check(harvester.getData(RpgData.PROFESSIONS).tracks().get(ProfessionData.id("farming")).experience() == 5,
                         "Natural crop activity starts with the shipped reward");
+                var miningId = ProfessionData.id("mining");
+                harvester.setData(RpgData.PROFESSIONS, harvester.getData(RpgData.PROFESSIONS).with(miningId, new ProfessionState.Track(2, 0)));
+                ProfessionAllocations.apply(harvester, miningId, ProfessionData.snapshot(server).revision(), Map.of(), Map.of(ProfessionData.VEIN_MINING, 1));
+                var gatheringState = harvester.getData(RpgData.PROFESSIONS);
                 for (var target : List.of(player, offline)) {
                     var state = target.getData(RpgData.PROFESSIONS);
                     target.setData(RpgData.PROFESSIONS, state.with(ProfessionGameTests.LOGGING,
@@ -47,6 +52,11 @@ final class ProfessionReloadGameTests {
                 mastery.getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("cost", 3);
                 mastery.getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("bonus", .07);
                 mastery.getAsJsonArray("ranks").get(1).getAsJsonObject().addProperty("cost", 4);
+                for (var ability : json.getAsJsonArray("abilities")) {
+                    if (ability.getAsJsonObject().get("id").getAsString().equals(ProfessionData.VEIN_MINING.toString())) {
+                        ability.getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("blocks", 2);
+                    }
+                }
                 json.getAsJsonObject("activity_rewards").addProperty("covenant:farming/mature_crop", 13);
                 Files.createDirectories(directory);
                 Files.writeString(pack.resolve("pack.mcmeta"), "{\"pack\":{\"description\":\"Disposable profession reload test\",\"min_format\":101,\"max_format\":101}}");
@@ -62,6 +72,13 @@ final class ProfessionReloadGameTests {
                 helper.getLevel().setBlock(cropPos, matureWheat, 2); harvester.gameMode.destroyBlock(cropPos);
                 ProfessionGameTests.check(harvester.getData(RpgData.PROFESSIONS).tracks().get(ProfessionData.id("farming")).experience() == 18,
                         "Future native harvests use the reloaded reward");
+                var orePositions = java.util.stream.IntStream.range(0, 3).mapToObj(index -> helper.absolutePos(new BlockPos(4 + index, 3, 4))).toList();
+                for (var pos : orePositions) { helper.getLevel().setBlock(pos, net.minecraft.world.level.block.Blocks.IRON_ORE.defaultBlockState(), 2); }
+                harvester.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE));
+                harvester.gameMode.destroyBlock(orePositions.getFirst());
+                ProfessionGameTests.check(orePositions.stream().filter(pos -> helper.getLevel().getBlockState(pos).isAir()).count() == 2
+                        && harvester.getData(RpgData.PROFESSIONS).tracks().get(miningId).allocations().equals(gatheringState.tracks().get(miningId).allocations()),
+                        "Future native batches use reloaded limits while retaining purchased ranks/paid costs");
                 var loaded = f.player(null); var reporter = new ProblemReporter.Collector();
                 loaded.load(TagValueInput.create(reporter, helper.getLevel().registryAccess(), disk));
                 ProfessionGameTests.check(reporter.isEmpty() && loaded.getData(RpgData.PROFESSIONS).equals(initial), "Offline paid reservations survive tuning reload");
@@ -80,12 +97,19 @@ final class ProfessionReloadGameTests {
                 ProfessionGameTests.check(failed && ProfessionData.snapshot(server) == updated && player.getData(RpgData.PROFESSIONS).equals(paid), "Invalid reload retains the live catalogue and all paid reservations");
                 mastery.getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("cost", 3);
                 for (int index = json.getAsJsonArray("abilities").size() - 1; index >= 0; index--) {
-                    if (json.getAsJsonArray("abilities").get(index).getAsJsonObject().get("id").getAsString().equals(ProfessionGameTests.OFFENSIVE.toString())) {
+                    var abilityId = json.getAsJsonArray("abilities").get(index).getAsJsonObject().get("id").getAsString();
+                    if (abilityId.equals(ProfessionGameTests.OFFENSIVE.toString()) || abilityId.equals(ProfessionData.VEIN_MINING.toString())) {
                         json.getAsJsonArray("abilities").remove(index);
                     }
                 }
                 Files.writeString(directory.resolve("professions.json"), json.toString()); server.reloadResources(selected).join();
                 ProfessionGameTests.check(player.getData(RpgData.PROFESSIONS).equals(paid), "Removed definition preserves unknown allocations and spent points");
+                for (var pos : orePositions) { helper.getLevel().setBlock(pos, net.minecraft.world.level.block.Blocks.IRON_ORE.defaultBlockState(), 2); }
+                harvester.gameMode.destroyBlock(orePositions.getFirst());
+                ProfessionGameTests.check(orePositions.stream().filter(pos -> helper.getLevel().getBlockState(pos).isAir()).count() == 1
+                        && harvester.getData(RpgData.PROFESSIONS).tracks().get(miningId).rank(ProfessionData.VEIN_MINING) == 1,
+                        "Removing a gathering definition disables expansion without deleting its paid reservation");
+                for (var pos : orePositions) { helper.getLevel().setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2); }
                 ProfessionGameTests.check(ProfessionAllocations.respec(player)
                         && player.getData(RpgData.PROFESSIONS).tracks().get(ProfessionGameTests.LOGGING).points() == 17, "Removed content can still be refunded by all-profession respec");
                 helper.succeed();

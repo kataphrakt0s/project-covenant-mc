@@ -1,8 +1,9 @@
 # Mining
 
 Natural ore-harvest XP and persistent chunk-owned placed-ore exclusions are
-implemented, including native piston movement. Mining abilities below remain
-planned. Runtime contracts: [Profession activities](../docs/PROFESSIONS.md#natural-activity-xp).
+implemented, including native piston movement. Vein Mining is implemented;
+other Mining abilities below remain planned. Runtime contracts:
+[Profession activities](../docs/PROFESSIONS.md#natural-activity-xp).
 
 ## Identity
 
@@ -98,9 +99,18 @@ defaults; a deposit larger than the limit requires another mining action.
   additional flat activation charge; it remains usable before class selection.
 - Stop immediately when the tool breaks, leaving all remaining ore intact.
   Ore already harvested retains its normal drops and any eligible Mining XP.
+- Stop the entire activation at the first protected, cancelled or otherwise
+  failed additional harvest; keep completed drops and XP. Do not skip the
+  blocked position to continue elsewhere in the vein.
 
-Remaining edge cases are still being designed. The rules above are planned
-behavior, not implemented gameplay.
+Vein Mining is implemented as one synchronous, server-owned breadth-first batch,
+using loaded chunks only. Missing terrain is not searched or loaded. The rank's
+limit snapshots when the initial block is harvested; extra blocks never start
+recursive batches. The existing activity/reward ID identifies an ore family,
+with the first matching configured ore mapping winning. Tool classification
+uses `minecraft:pickaxes`, followed by native harvest eligibility for each block.
+Rank limits live in the profession catalogue's `blocks` field (1-64 inclusive).
+Placed ore participates in extraction but retains its zero-Mining-XP exclusion.
 
 ### Auto-Smelt
 
@@ -258,7 +268,7 @@ gated by the Level 20 Prospecting detection capstone; normal tool/harvest and
 placement eligibility still applies.
 
 All initial ore families now have implemented ordinary-harvest sources with
-provisional prototype rewards. Vein Mining remains planned. Remaining modded mapping
+provisional prototype rewards. Vein Mining also uses these rewards. Remaining modded mapping
 coverage and actual leveling-time balance still need validation and tuning.
 
 Ordinary Minecraft mining, tool use, and resource access are never gated by Mining level.

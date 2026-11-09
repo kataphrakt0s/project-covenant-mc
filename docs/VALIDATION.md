@@ -2,6 +2,110 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Weaver Discharge, Threefold System and Teleport (2026-11-08)
+
+- Implemented all three at Rank 1 with the accepted provisional defaults,
+  server datapack tuning in `data/covenant/skills/weaver.json`, owner-only
+  charge/reserve/buff HUD rows and existing authoritative purchase/cast/spend flow.
+  See `RPG_SKILLS.md` for the numerical and lifecycle contract.
+- `scripts/Dev.ps1 verify`: **BUILD SUCCESSFUL** and the dedicated server's
+  explicit **All 144 required tests passed :)**. This includes fourteen new
+  Weaver tests, the existing 130 tests and all three geometry/layout checks.
+  Final evidence is ignored `.local/weaver-verify-final.log`.
+- Survival fixtures cover empty/unlearned/class/resource/control rejection,
+  scaled costs/cooldowns, bolt completion versus cancellation, independent charge
+  caps, paid empty-area Discharge completion, all elemental damage components,
+  max-charge freeze/ignite/explosion/chains, external chain bounds, cover, armor,
+  actual invulnerability and preservation of native hurt-window state. Native
+  slows use the shared strongest-only calculation.
+- Threefold tests cover assignment gates, actual health/absorption/Fortitude
+  accounting without overkill, lethal hits, excluded allies/invulnerable hits,
+  reserve caps, per-contribution rolling expiry, linear buff strengths, paused
+  banking and resumption, additive Battle Cry interaction, projectile snapshots,
+  Discharge banking/buff integration, and immediate assignment/lifecycle cleanup.
+- Teleport fixtures cover full-range airborne movement, momentum/fall reset,
+  diagonal collision without sliding, body/head clearance, thin iron bars,
+  build-height bounds, blocked-start rejection without spending, short paid travel,
+  native connection ticks and native teleport acknowledgement. Source inspection
+  confirms collision lookups use non-loading chunk access; skill routes reject
+  unloaded collision-query bounds and never add chunk tickets.
+- Real successful/invalid datapack reloads test new tuning, preservation of live
+  data after rejection, old active snapshots, charges and player progression,
+  resources, cooldowns and loadouts. Native player-save inspection excludes the
+  unsaved owner view. The production JAR contains all three skill implementations
+  and their tuning resource, excludes test code/data, and changed JSON parses
+  without duplicate keys. `git diff --check` passes.
+- Manual checks remain: purchase/binding and HUD layout at different GUI scales,
+  elemental rotations and full-charge riders, slow/freeze feel, airborne/wall
+  blinks, real-client latency/multiplayer movement, retained-world restart and
+  modpack/protection interoperability. No client was launched or deployment made.
+
+## Reaver Battle Cry, Rage Storm and Blood Fever (2026-11-08)
+
+- Rank 1 implementations follow the Obsidian Reaver balance proposal. Blood Fever
+  is passive while slotted and requires Rend. Rage Storm follows full release-time
+  aim, stops at solid terrain, and cannot damage through cover. Higher ranks and
+  other proposed Reaver changes remain deferred. See `RPG_SKILLS.md` for the
+  implementation contract and `data/covenant/skills/reaver.json` tuning schema.
+- `scripts/Dev.ps1 verify`: dedicated server reported **All 130 required tests
+  passed :)**, including ten new Reaver tests, existing RPG/profession/itemization
+  coverage and all three geometry/layout checks. Evidence: ignored
+  `.local/reaver-verify-final.log`. The final packaged build is also checked with
+  `scripts/Dev.ps1 build` after updating the command's live tuning readout.
+- Native Survival fixtures cover point purchases/prerequisites, free slotted
+  passive behavior, five-enemy cap, shared bleed counting, local updates/expiry,
+  immediate unbind/class cleanup, shout team/pet eligibility, overlap, duration
+  scaling, captured bleed/projectile power, remote source cleanup, scaled Storm
+  spending/cast/cooldown, completion-time aim, immediate/repeated pulses, armor,
+  actual invulnerability, defended-attempt caps, solid cover/terrain, no outgoing
+  skill Rage, unsaved Storm state, unlearning/dimension cleanup, canceled casts
+  and rejected entity admission. Real successful/failed reloads preserve live
+  balance, player progress, allocations, resources, cooldowns and effect snapshots.
+- Blood Fever's final local measurement was **11.1352 microseconds/refresh** for
+  1,000 refreshes after 100 warm-ups with 25 nearby bleeding enemies. Earlier runs
+  measured roughly 19-28 microseconds. This measures the local fixture/query path,
+  not whole-server tick cost or multiplayer scalability. Queries run once per
+  five ticks only for eligible slotted Reavers; unchanged modifiers are retained.
+- An existing sliding-combo fixture failed once at a different world placement;
+  it passed subsequent full runs without gameplay or combo-test edits.
+- Client visuals, Storm aiming/feel, real-client allied bursts, latency, reconnect
+  and retained-world behavior remain manual checks. No client was launched and no
+  Prism deployment occurred. New temporary state is intentionally unsaved; stable
+  resource/loadout formats and existing cooldown persistence remain unchanged.
+
+## Vein Mining and Tree Felling (2026-11-08)
+
+- Both gathering abilities are purchasable and use bounded server-owned native
+  harvest batches. Shipped rank caps are 8/16/32/64 ore and 4/8/16/32 logs,
+  including the initiating block. Sneaking bypasses expansion. Blocks use
+  native durability, exhaustion, loot, enchantments and original-block XP;
+  cancellation/tool break stops the whole activation. Partial-tree continuation
+  uses disposable recognition evidence, with no saved job or terrain loading.
+- `scripts/Dev.ps1 verify`: **BUILD SUCCESSFUL**, **All 120 required tests
+  passed :)**, including all three geometry/layout checks and six new gathering
+  GameTests. Evidence: ignored `.local/gathering-verify.log`.
+- Native Survival coverage includes all rank caps and no recursive expansion,
+  classless purchases, unpurchased/sneaking/wrong-tool/Creative/FakePlayer
+  fallback, face/edge/corner ore-family grouping, stone/deepslate variants,
+  placed-origin/extra-ore XP exclusions, Silk Touch/Fortune/Unbreaking,
+  per-block drops/durability/exhaustion/XP, initial/extra cancellation, initial
+  and extra tool break with one native destroy-item event, respec, conservative
+  canopy checks, upper-log exclusion, partial-tree continuation, edited-log
+  invalidation and simulated loss of disposable chunk evidence.
+- Catalogue checks reject missing/zero/fractional/oversized gathering limits and
+  verify owner-view codec round trips. The real isolated resource-reload test
+  checks changed batch limits on future harvests, unchanged paid allocations,
+  and removed-definition disabling without erasing the paid reservation.
+- Production JAR inspection includes the gathering implementation and shipped
+  limits and excludes test/local files. SHA256:
+  `0542A5D2FBE0C22567FC743AC25824EF3FAACF3F85F6CE897B4D1708C4C6A5D5`.
+  `git diff --check` passes.
+- Manual checks remain: rendered menu/tooltips, actual mining/chopping feel,
+  unusual trees/axes, real-client reconnects, a retained-world restart,
+  simultaneous real clients and protection/modpack interoperability. Fixed
+  bounds are not a performance benchmark. No client launch, deployment or
+  remote update was performed. See [PROFESSIONS.md](PROFESSIONS.md).
+
 ## Affix debug commands (2026-11-07)
 
 - Replaced raw-stat apply/inspect with operator-only main-hand `set`, `rarity`,

@@ -49,6 +49,7 @@ public final class CovenantClient {
         event.registerEntityRenderer(Skills.FIRE_BOLT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(Skills.ICE_BOLT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(Skills.TRAP.get(), context -> new ThrownItemRenderer<>(context, 0.8f, true));
+        event.registerEntityRenderer(Skills.RAGE_STORM.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
     }
 
     private void registerKeys(RegisterKeyMappingsEvent event) {

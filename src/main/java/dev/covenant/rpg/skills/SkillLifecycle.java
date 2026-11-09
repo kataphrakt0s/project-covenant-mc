@@ -23,6 +23,9 @@ public final class SkillLifecycle {
         Combos.clear(player);
         player.getData(RpgData.SKILL_RUNTIME).cancelCast(player);
         Traps.clear(player, null);
+        RageStorm.clear(player);
+        BloodFever.clear(player);
+        WeaverPower.clear(player);
         Auras.clear(player);
         if (reason == Reason.CONFIRMED_DEATH) { clearTargetOnDeath(player); }
     }
@@ -60,6 +63,8 @@ public final class SkillLifecycle {
             }
         }
         Auras.reconcile(player);
+        BloodFever.reconcile(player);
+        WeaverPower.reconcile(player);
     }
 
     private static void loggedOut(PlayerEvent.PlayerLoggedOutEvent event) {

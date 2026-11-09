@@ -9,7 +9,7 @@ final class SpellSkills {
 
     static boolean isSpell(SkillDefinition skill) {
         return switch (skill.effect()) {
-            case ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT -> true;
+            case ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, DISCHARGE, TELEPORT -> true;
             default -> false;
         };
     }

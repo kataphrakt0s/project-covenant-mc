@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "function": "covenant_test:reaver_storm_terrain",
+  "environment": "minecraft:default",
+  "type": "minecraft:function",
+  "max_ticks": 300
+}

@@ -50,7 +50,7 @@ public final class SkillTree {
             node("battle_cry", PlayerClass.REAVER, 3, 7),
             node("rage_storm", PlayerClass.REAVER, 5, 0, "cleave"),
             node("execute", PlayerClass.REAVER, 5, 3),
-            node("blood_fever", PlayerClass.REAVER, 5, 5),
+            node("blood_fever", PlayerClass.REAVER, 5, 5, "rend"),
             node("leap", PlayerClass.REAVER, 10, 0),
             node("ripping_aura", PlayerClass.REAVER, 10, 3, null, "fortitude_aura"),
             node("fortitude_aura", PlayerClass.REAVER, 10, 5, null, "ripping_aura"),

@@ -1,0 +1,5 @@
+{
+  "battle_cry": { "cost": 30, "cooldown_ticks": 600, "duration_ticks": 120, "radius": 6, "damage_bonus": 0.15 },
+  "rage_storm": { "cost": 35, "cooldown_ticks": 240, "cast_ticks": 16, "speed": 0.35, "distance": 8, "radius": 2, "damage": 3, "pulse_ticks": 10, "max_hits": 4 },
+  "blood_fever": { "radius": 4, "update_ticks": 5, "movement_per_enemy": 0.02, "attack_per_enemy": 0.03, "max_enemies": 5 }
+}

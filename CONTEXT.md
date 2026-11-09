@@ -23,11 +23,15 @@ zero. The first expanded foundation adds paid-cost allocations, a server-datapac
 catalogue, owner-synced four-tab Professions menu, atomic per-tab Apply, and a
 Profession Respec item. Held use for two seconds out of combat refunds all four
 professions together while preserving XP/levels. Logging's Offensive Mastery is
-usable alongside all four Crafting nodes; the other twelve authored nodes remain
-visibly planned and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
+usable alongside Vein Mining, Tree Felling and all four Crafting nodes; the other
+ten authored nodes remain visibly planned and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
 XP now use confirmed server outcomes, the provisional shared curve and reward
 table, persistent chunk-owned placed-ore exclusions, and bounded tree recognition.
-Gathering abilities remain deferred. The shared, persistent Covenant Workbench
+Vein Mining and Tree Felling use bounded native per-block harvests, sneaking to
+bypass, normal tool costs/drops/XP, and stop at tool break or the first blocked
+harvest. Lowest remaining recognized logs can continue partial trees using
+disposable tree evidence; no unfinished harvesting job is saved. Other gathering
+abilities remain deferred. The shared, persistent Covenant Workbench
 now supports Add/Upgrade/Reroll/Remove and ten-input/twelve-output salvage,
 Crafting access/XP, and Recovery/Focused Recovery. It uses a netherite-block
 placeholder model and the agreed ungated recipe. See [ITEMIZATION.md](docs/ITEMIZATION.md).
@@ -108,8 +112,30 @@ Lightning Bolt. Fire ignites through native burning; Ice applies one saved/synce
 All three prototype bolts cost 20 Mana, cast in 0.5 seconds, have independent
 two-second cooldowns, and deal six damage. Fire's four-second burn and Ice's
 three-second chill scale with skill duration. Lightning stops at the first eligible
-enemy or solid block within 24 blocks. The
-Reaver also has Rend and a shared bleed foundation. The remaining brainstorm nodes
+enemy or solid block within 24 blocks. Weaver also has Rank 1 Discharge, Threefold
+System and Teleport. Completed
+fire/ice/lightning bolt casts bank up to five charges each for Discharge: a
+three-block elemental burst with full-charge freeze, explosion and external-chain
+riders. Assigned Threefold banks a fraction of actual damage for the other two
+elements in a ten-second rolling window, then consumes its reserves for fixed
+percentage bonuses while pausing banking. Teleport blinks up to eight blocks along
+full aim, checking the entire body path before spending and resetting momentum
+and fall distance on success. Owner-only HUD rows show charges and reserves/buffs.
+The three skills use `data/covenant/skills/weaver.json` server tuning; charges,
+reserves and buffs are unsaved and clear on lifecycle changes. Threefold also
+clears on removal of its last assignment. See `docs/RPG_SKILLS.md` for numerical
+defaults, damage snapshots, collision and cleanup contracts. The
+Reaver also has Rend and a shared bleed foundation, Battle Cry, Rage Storm,
+and the slotted Blood Fever passive. Their Rank 1 defaults follow the Reaver balance
+proposal. Battle Cry grants nearby allies +15% outgoing damage for six seconds;
+new projectiles and bleeds capture the bonus once. Rage Storm winds up for sixteen
+ticks, then travels eight blocks along full release-time aim, stopping at solid
+terrain; its two-block area pulses for three armor-mitigated damage every ten ticks.
+Blood Fever counts up to five bleeding enemies within four blocks every five ticks
+for up to +10% base movement and +15% base attack speed. It requires Rend.
+Server datapacks tune these three skills through `data/covenant/skills/reaver.json`;
+higher ranks and converting other Reaver tuning remain separate work. See
+`docs/RPG_SKILLS.md` for snapshots, cleanup and resource bounds. The remaining brainstorm nodes
 remain visible but unavailable for point purchases, without passive stat
 bonuses or global equipment restrictions.
 `PlayerProfiles.getSelectedClass` resolves built-in definitions;
@@ -232,9 +258,9 @@ and HUD layout remain for manual playtesting. See `docs/COMBOS_IMPLEMENTATION_PL
 The Skills window displays only the current class's tree from
 `Project-Covenant/Skill Trees Brainstorm.md` (62 total nodes across the three classes).
 Left/right clicks draft upgrades; Apply commits point purchases out of combat.
-Committed ranks require a respec item to refund. The server enforces all 11
+Committed ranks require a respec item to refund. The server enforces all 12
 prerequisite links, unlock levels and the Ripping/Fortitude Aura exclusion.
-Unimplemented nodes remain visible and unavailable for points or bindings. Twenty-eight
+Unimplemented nodes remain visible and unavailable for points or bindings. Thirty-four
 skills have gameplay, including all eleven auras. Assigned auras grant free
 passives; instant activations commit a resource cost and cooldown. Source-aware
 transient grants handle allies/pets, overlap, expiry, and loadout/lifecycle cleanup.
