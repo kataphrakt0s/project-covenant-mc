@@ -7,6 +7,8 @@ import dev.covenant.rpg.stats.RpgStats;
 import java.util.*;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +25,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /** Transient source-owned coverage. Only assigned sources query space; recipients age their own grants. */
 public final class Auras {
+    private static final DustParticleOptions RAGE_CUE = new DustParticleOptions(0xE34336, .7f);
     /** Radius in blocks, refresh interval and passive grace in game ticks; none scale with duration. */
     public static final double RADIUS = 6;
     public static final int REFRESH_TICKS = 10, COVERAGE_TICKS = 20;
@@ -47,6 +50,11 @@ public final class Auras {
         public static Kind of(SkillDefinition definition) {
             for (var kind : values()) { if (kind.id.equals(definition.id())) { return kind; } }
             throw new IllegalArgumentException("Not an aura: " + definition.id());
+        }
+
+        /** Radius in blocks of the slotted passive's spherical field; zero denotes no persistent area. */
+        public double passiveRadius() {
+            return selfOnly || this == BATTLE_CRY || this == DISCHARGE_FREEZE ? 0 : RADIUS;
         }
     }
 
@@ -121,7 +129,7 @@ public final class Auras {
             if (!allied(source, target)) { continue; }
             target.getData(RpgData.AURAS).battleCryPower.put(source.getUUID(), config.bonus());
             grant(source, target, Kind.BATTLE_CRY, true, until);
-            source.level().sendParticles(ParticleTypes.ANGRY_VILLAGER, target.getX(), target.getEyeY(), target.getZ(), 5, .3, .3, .3, 0);
+            activationParticles(source, target, Kind.BATTLE_CRY);
         }
     }
 
@@ -155,9 +163,22 @@ public final class Auras {
                     Combos.interruptMovement(player, false);
                 }
             }
-            source.level().sendParticles(kind == Kind.FREEZING ? ParticleTypes.SNOWFLAKE : ParticleTypes.ENCHANT,
-                    target.getX(), target.getY() + 1, target.getZ(), 12, .4, .5, .4, .02);
+            activationParticles(source, target, kind);
         }
+    }
+
+    /** One brief receipt cue per activation; passive refreshes never emit particles or sounds. */
+    private static void activationParticles(ServerPlayer source, LivingEntity target, Kind kind) {
+        ParticleOptions particle = switch (kind) {
+            case FREEZING, ICY_VEINS, DISCHARGE_FREEZE -> ParticleTypes.SNOWFLAKE;
+            case FLAME_CLOAK, IMMOLATION -> ParticleTypes.SMALL_FLAME;
+            case SHOCK -> ParticleTypes.ELECTRIC_SPARK;
+            case DODGE, SWIFTNESS -> ParticleTypes.CLOUD;
+            case RIPPING, RAGING, BATTLE_CRY -> RAGE_CUE;
+            default -> ParticleTypes.ENCHANT;
+        };
+        source.level().sendParticles(particle, target.getX(), target.getY() + .9, target.getZ(),
+                6, .3, .35, .3, .01);
     }
 
     /** Damage-gated Discharge rider shares freeze control while retaining separate source cleanup. */
@@ -185,6 +206,7 @@ public final class Auras {
         source.getData(RpgData.AURAS).recipients.add(target);
         state.nextExpiry = Math.min(state.nextExpiry, until);
         if (!wasPresent || (active && kind == Kind.FORTITUDE)) { update(target); }
+        else if (active) { sync(target); }
         if (kind.offensive) {
             if (active) { dev.covenant.rpg.progression.CombatProgression.supportEnemy(source, target); }
         } else { dev.covenant.rpg.progression.CombatProgression.supportAlly(source, target); }
@@ -226,6 +248,7 @@ public final class Auras {
         if (!active(target, Kind.DODGE)) { return false; }
         var grants = target.getData(RpgData.AURAS).active.remove(Kind.DODGE);
         grants.keySet().forEach(owner -> unlink(target, owner));
+        sync(target);
         return true;
     }
 
@@ -273,6 +296,7 @@ public final class Auras {
         if (target instanceof ServerPlayer && target.getData(RpgData.FORTITUDE_CAPACITY) != shield) {
             target.setData(RpgData.FORTITUDE_CAPACITY, shield);
         }
+        if (target instanceof ServerPlayer player) { BuffDisplay.sync(player); }
     }
 
     public static void cleanse(LivingEntity target) {
@@ -285,6 +309,7 @@ public final class Auras {
             if (grants != null) { grants.keySet().forEach(owner -> unlink(target, owner)); }
         }
         CovenantSlows.update(target);
+        sync(target);
     }
 
     private static boolean belongs(State state, UUID owner) {

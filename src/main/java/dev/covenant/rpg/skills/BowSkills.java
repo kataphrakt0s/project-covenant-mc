@@ -51,7 +51,7 @@ final class BowSkills {
                         fan, multishot ? ClassResources.now(player) + StalkerArrows.FAN_LIFETIME_TICKS : 0));
             }
             ProjectileCombat.captureSupport(arrow, player);
-            arrow.setData(RpgData.SKILL_SHOT, true);
+            SkillVisuals.markArrow(arrow, skill);
             ProjectileCombat.markSkill(arrow);
             Projectile.spawnProjectile(arrow, player.level(), ammo.copyWithCount(1));
         }
@@ -60,5 +60,6 @@ final class BowSkills {
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
         if (skill != SkillDefinition.AIMED_SHOT) { SkillVisuals.bowDraw(player, SkillVisuals.BOW_DRAW_TICKS); }
+        SkillSounds.release(player, skill);
     }
 }

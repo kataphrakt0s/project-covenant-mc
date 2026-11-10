@@ -125,10 +125,14 @@ final class ReaverGameTests {
         f.learn(source, SkillDefinition.BLOOD_FEVER); SkillLoadouts.bind(source, 0, SkillDefinition.BLOOD_FEVER.id());
         var target = f.target(2); Bleeding.apply(target, source, .1f, 12);
         helper.onEachTick(f::tick);
-        helper.runAtTickTime(7, () -> { check(BloodFever.count(source) == 1, "Periodic scan discovers bleed"); target.setPos(f.origin.add(0, 0, 9)); });
+        // Leave the spherical radius vertically so the target remains in the template's entity-ticking chunk.
+        helper.runAtTickTime(7, () -> { check(BloodFever.count(source) == 1, "Periodic scan discovers bleed"); target.setPos(f.origin.add(0, 9, 2)); });
         helper.runAtTickTime(13, () -> { check(BloodFever.count(source) == 0, "Leaving radius updates within five ticks"); target.setPos(f.origin.add(0, 0, 2)); });
         helper.runAtTickTime(20, () -> {
-            try { check(BloodFever.count(source) == 0, "Expired bleed does not reenter count"); helper.succeed(); }
+            try {
+                check(Bleeding.count(target) == 0, "Bleed expires after active target ticks");
+                check(BloodFever.count(source) == 0, "Expired bleed does not reenter count"); helper.succeed();
+            }
             finally { f.close(); }
         });
     }

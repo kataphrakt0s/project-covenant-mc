@@ -2,6 +2,63 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Status icons, aura outlines and native traps (2026-11-10)
+
+- `scripts/Dev.ps1 build` and final `scripts/Dev.ps1 verify`: compilation,
+  all three UI geometry suites, production packaging and dedicated NeoForge
+  26.1.2.126 checks passed. Explicit final result:
+  **All 160 required tests passed :)**. Evidence:
+  `.local/status-polish-build.log` and `.local/status-polish-verify-validated.log`.
+- Three new required status tests cover classless allied passive/active receipts,
+  unchanged passive refreshes, refreshed deadlines, expiry, source removal,
+  spectator visibility boundaries, immediate Dodge/shield consumption, lifecycle
+  cleanup, bounded wire round trips, owner-only sync and omitted save data.
+  Authoritative area radii and self-only exclusions are also checked.
+- The new unsaved `covenant:buff_display` attachment supplies top-left native
+  icons. Skills channel revision 6 requires matching clients; saved gameplay
+  data is unchanged. Aura outlines run locally with 48/32/0 live native dust
+  points for All/Decreased/Minimal; shared radii merge into one six-block ring.
+- Native trap block rendering compiles against the pinned model API. Production
+  JAR inspection confirms StatusHud, AuraRangeVisuals, TrapRenderer and BuffDisplay,
+  with no GameTest classes/resources. Language JSON parses and whitespace checks pass.
+- Earlier runs exposed existing test-fixture chunk assumptions. Blood Fever's
+  expiry target now leaves range vertically while remaining in its ticking chunk.
+  Sliding-combo and control fixtures now await native entity-chunk readiness and
+  assert target query visibility; fixture-owned tickets are released on completion
+  or readiness timeout. No production chunk forcing or combat tuning was added.
+  The original sliding failure did not log query visibility; the new precondition
+  addresses that missing guarantee. All affected tests passed on the final run.
+- Manual checks remain top-left layout at normal/high GUI scale, open-screen
+  tooltips, combo/Threefold countdowns, consumed buffs, aura movement/unslotting,
+  particle settings and slopes, plus trap models on full blocks/slabs and in
+  darkness. No client launch, Prism/LAN deployment, publishing or remote push.
+
+## Combat feedback and native audio (2026-11-09)
+
+- `scripts/Dev.ps1 verify`: build, all three UI geometry suites, production
+  packaging and dedicated NeoForge 26.1.2.126 checks passed. Explicit result:
+  **All 157 required tests passed :)**. Evidence:
+  `.local/combat-polish-verify.log` and `runs/gametest/logs/latest.log`.
+- Four new required feedback tests observe native positional sound events:
+  rejected requests stay silent; Multishot emits one release while preserving
+  five arrows, ammo and durability; casts emit one start/completion cue and
+  cancellation prevents release; Arcane/Fire/Ice wall collisions emit one
+  terminal impact; melee whiffs and prevented damage have no contact accent,
+  while two damaged targets produce one aggregate contact accent.
+- Native arrow save/load omits both cosmetic attachments while retaining
+  saved skill provenance. The new visual style is transient and tracking-synced.
+  Skills channel revision 5 requires matching clients for the added attachment.
+- Pinned Minecraft sound/particle APIs were checked against resolved sources.
+  Production JAR contains skill audio and excludes test classes; changed common
+  feedback helpers have no client imports. `git diff --check` passed.
+- Source review caught and fixed Rage Storm's resolved-definition identity
+  comparison before validation. It now selects its cast sound by effect kind.
+- Sound balance, first-person aim visibility, effect readability, reduced-particle
+  settings and nearby-player perception remain manual client checks. No client
+  launch, Prism/LAN deployment, publishing or remote push was performed.
+- This completes the first combat feedback pass. Native model/pose improvements
+  and progression/Workbench feedback remain subsequent polish work.
+
 ## Farming Scything and Automatic Replanting (2026-11-08)
 
 - `scripts/Dev.ps1 verify`: build, all three UI geometry suites, JAR packaging

@@ -16,10 +16,6 @@ public final class ResourceHud {
     private static long displayedCurrent = Long.MIN_VALUE;
     private static long displayedMaximum = Long.MIN_VALUE;
     private static String label = "";
-    private static float displayedShield = -1;
-    private static net.minecraft.network.chat.Component shieldLabel = net.minecraft.network.chat.Component.empty();
-    private static dev.covenant.rpg.skills.WeaverDisplay weaverView;
-    private static net.minecraft.network.chat.Component dischargeLabel, threefoldLabel;
 
     private ResourceHud() {}
 
@@ -63,49 +59,6 @@ public final class ResourceHud {
                 graphics.pose().scale(scale, scale);
                 graphics.centeredText(minecraft.font, label, 0, 0, 0xFFFFFFFF);
                 graphics.pose().popMatrix();
-                float shield = player.getData(dev.covenant.rpg.RpgData.FORTITUDE_CAPACITY);
-                if (shield > 0) {
-                    if (shield != displayedShield) {
-                        displayedShield = shield;
-                        shieldLabel = net.minecraft.network.chat.Component.translatable("hud.covenant.fortitude",
-                                String.format(java.util.Locale.ROOT, "%.1f", shield));
-                    }
-                    int shieldY = y - HEIGHT - 3;
-                    minecraft.gui.rightHeight += HEIGHT + 3;
-                    graphics.fill(x, shieldY, x + WIDTH, shieldY + HEIGHT, 0xFF16181E);
-                    graphics.fill(x + 1, shieldY + 1, x + 1 + (int) ((WIDTH - 2) * shield / 6), shieldY + HEIGHT - 1, 0xFF7E9DAB);
-                    graphics.centeredText(minecraft.font, shieldLabel, x + WIDTH / 2, shieldY + 1, 0xFFFFFFFF);
-                }
-                var combos = player.getData(dev.covenant.rpg.RpgData.COMBO_DISPLAY);
-                int comboY = y - (shield > 0 ? 2 : 1) * (HEIGHT + 3);
-                var weaver = player.getData(dev.covenant.rpg.RpgData.WEAVER_DISPLAY);
-                if (!weaver.equals(weaverView)) {
-                    weaverView = weaver;
-                    dischargeLabel = net.minecraft.network.chat.Component.translatable("hud.covenant.discharge", weaver.fire(), weaver.ice(), weaver.lightning(), weaver.maxCharges());
-                    threefoldLabel = net.minecraft.network.chat.Component.translatable(weaver.buff() ? "hud.covenant.threefold.buff" : "hud.covenant.threefold.reserve",
-                            weaver.firePower(), weaver.icePower(), weaver.lightningPower());
-                }
-                if (weaver.discharge()) {
-                    graphics.text(minecraft.font, dischargeLabel, Math.max(3, x + WIDTH - minecraft.font.width(dischargeLabel)), comboY + 1, 0xFFFFFFFF);
-                    minecraft.gui.rightHeight += HEIGHT + 3; comboY -= HEIGHT + 3;
-                }
-                if (weaver.threefold()) {
-                    graphics.text(minecraft.font, threefoldLabel, Math.max(3, x + WIDTH - minecraft.font.width(threefoldLabel)), comboY + 1, 0xFFFFFFFF);
-                    minecraft.gui.rightHeight += HEIGHT + 3; comboY -= HEIGHT + 3;
-                }
-                for (var row : combos.rows()) {
-                    long remaining = row.deadline() - (minecraft.level.getGameTime() + combos.clockOffset());
-                    if (!row.moving() && remaining <= 0) { continue; }
-                    String skill = row.combo() == 0 ? "lunging_combo" : "rip_and_rush";
-                    var action = net.minecraft.network.chat.Component.translatable("combo.covenant." + skill + "." + row.stage());
-                    var text = net.minecraft.network.chat.Component.translatable(row.moving() ? "hud.covenant.combo.moving" : "hud.covenant.combo.waiting",
-                            net.minecraft.network.chat.Component.translatable("skill.covenant." + skill), action,
-                            String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, remaining) / 20.0));
-                    int width = minecraft.font.width(text);
-                    graphics.text(minecraft.font, text, Math.max(3, x + WIDTH - width), comboY + 1, 0xFFFFFFFF);
-                    minecraft.gui.rightHeight += HEIGHT + 3;
-                    comboY -= HEIGHT + 3;
-                }
             }
         });
     }

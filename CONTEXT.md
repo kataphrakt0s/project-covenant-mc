@@ -132,8 +132,8 @@ percentage bonuses while pausing banking. Teleport blinks up to eight blocks alo
 full aim, checking the entire body path before spending and resetting momentum
 and fall distance on success. Floor/ceiling contact clips vertical travel while
 allowing remaining forward movement; walls stop the blink, and airborne endpoints
-need no landing support. Entities do not obstruct the blink. Owner-only HUD rows
-show charges and reserves/buffs.
+need no landing support. Entities do not obstruct the blink. Owner-only top-left
+icons show elemental charges and reserves/buffs.
 The three skills use `data/covenant/skills/weaver.json` server tuning; charges,
 reserves and buffs are unsaved and clear on lifecycle changes. Threefold also
 clears on removal of its last assignment. See `docs/RPG_SKILLS.md` for numerical
@@ -264,7 +264,7 @@ Late predicted position packets are held through an endpoint acknowledgement;
 the server resets the native movement anchor on a matching endpoint, with one
 impulse-preserving correction on disagreement or a 40-tick acknowledgement timeout.
 Costs, hits, movement completion, and follow-up windows remain server-owned.
-Runtime, gravity suppression, and owner-only HUD rows are never saved or copied.
+Runtime, gravity suppression, and owner-only combo displays are never saved or copied.
 Saved cooldown/resource/loadout formats are unchanged. Movement feel, latency,
 and HUD layout remain for manual playtesting. See `docs/COMBOS_IMPLEMENTATION_PLAN.md`.
 
@@ -277,7 +277,7 @@ Unimplemented nodes remain visible and unavailable for points or bindings. Thirt
 skills have gameplay, including all eleven auras. Assigned auras grant free
 passives; instant activations commit a resource cost and cooldown. Source-aware
 transient grants handle allies/pets, overlap, expiry, and loadout/lifecycle cleanup.
-Fortitude is a separate six-point shield with an owner HUD row; ordinary Dodge
+Fortitude is a separate six-point shield with an owner status icon; ordinary Dodge
 caps at 85%, and Covenant slows use only their strongest active value. Freeze
 suppresses native movement/actions and interrupts Covenant casts. No temporary
 aura state is saved. See `docs/AURAS_IMPLEMENTATION_PLAN.md` and `docs/RPG_SKILLS.md`.
@@ -336,12 +336,59 @@ with a transient synced deadline and client render hooks rather than actual item
 Saved resources/loadouts and gameplay rules are unchanged. Rendered HUD/effect
 behavior remains subject to user playtesting.
 
+Polish prioritizes player feel and useful feedback without crowding the visual
+space. The first combat pass adds native positional cast/release/collision sounds,
+aggregate melee contact cues, trap transition sounds, elemental cast/impact
+particles, distinct arrow accents and accurate circular/square attack/deployment
+outlines. Multishot and recurring effects keep restrained feedback. Arrow visual
+styles are transient and tracking-synced. A second pass adds top-left native
+icons for combos, Discharge, Threefold and received buffs, replacing the old
+status text above hunger. Buff receipts/timers are unsaved owner-only snapshots
+updated at existing transitions (skills network revision 6). Slotted area auras
+show one merged, local-owner six-block dust outline; self-only auras have no
+false radius. The bounded ring follows movement, cleans up on unslotting and
+lifecycle changes, and respects particle settings. Traps now use grounded native
+block models with a small tumble during flight; spent cores disappear when an
+area patch triggers. Saved state and combat tuning are unchanged. Listening and
+rendered readability remain user playtesting work; progression/Workbench feedback
+remains a later pass. See
+[Abilities](<Project-Covenant/Abilities.md#presentation-and-feedback>) and
+[RPG_SKILLS.md](docs/RPG_SKILLS.md#combat-feedback-pass).
+
 ## Identity and toolchain
 
 - Working title: Project Covenant; mod ID: `covenant`.
 - Developer: `kataphrakt0s`.
+- Visual direction accents vanilla Minecraft with dark fantasy/gothic-lite
+  character, occult imagery and magical spectacle: Minecraft with an ancient,
+  forgotten supernatural history. Stalker traps are crafted hunting devices
+  containing occult power. The existing original wolf is the visual foundation
+  for the planned Hunter's Pet. Before art-direction or asset-brief work, consult
+  the user's local reference index and HTML board in ignored
+  `docs/art/references/covenant_gothic_lite_references/`. The board uses remote
+  previews and requires internet; the collection is absent from fresh checkouts. See
+  [Art Direction](<Project-Covenant/Art Direction.md>) for the current visual audit
+  and proposed effects, trap and summon designs; specific asset concepts remain
+  under review and are not runtime implementation claims.
 - Mod logo: `src/main/resources/mod-icon.png`, referenced by `logoFile` in mod metadata.
+  The approved cleaned 400x400 pixel-art logo is also the visual style reference:
+  uniform square pixels, clean silhouettes and shading clusters, charcoal/gothic
+  forms, stone/lavender tones and restrained violet accents. Adapt its treatment
+  to each material and asset family; its C/sword motif, palette and 4x pixel grid
+  are not universal requirements for gameplay assets. Local art guidelines,
+  references and working exports live in Git-ignored `docs/art/`; the approved
+  icon is tracked and packaged independently of that folder.
 - Java package: `dev.covenant`; entry point: `Covenant.java`.
+- Local-only model tooling (Git-ignored; absent from fresh checkouts):
+  `covenant-bbmodel` runs the pinned Blockbench headless MCP over
+  stdio without the editor. `scripts/Blockbench.ps1` installs/runs/checks it;
+  `skills/covenant-modeling/SKILL.md` adapts the installed upstream skills to
+  headless tools and the Java 26.1.2 consumer. Editable sources live in ignored `models/`,
+  runtime exports in Covenant assets, previews in ignored `.local/blockbench/`,
+  and portable Node/Bun/render dependencies in ignored `.tools/blockbench/`.
+  Use the explicit `1.21.11` Java export profile for the compatible schema rather
+  than upstream's `26.3` default. See `docs/BLOCKBENCH.md`; headless previews do
+  not establish Minecraft client appearance or entity-export API compatibility.
 - Version: `0.1.0-dev`; original Project Covenant source code is MIT licensed
   (`LICENSE`). The logo is excluded with no reuse permission granted by this
   repository (`ASSET-LICENSE.md`); Minecraft and third-party content retain their

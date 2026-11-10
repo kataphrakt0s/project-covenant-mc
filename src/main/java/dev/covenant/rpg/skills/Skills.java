@@ -181,6 +181,11 @@ public final class Skills {
             long now = ClassResources.now(player);
             player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(skill.id(), now + Math.max(1, cooldown)));
             player.getData(RpgData.SKILL_RUNTIME).nextActivation = now + 1;
+            // Bow/spell execution and teleport endpoints own their release cue; other skills share this commit boundary.
+            switch (skill.effect()) {
+                case BOW_SHOT, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, TELEPORT -> { }
+                default -> SkillSounds.release(player, skill);
+            }
             switch (skill.effect()) {
                 case COMBO -> throw new IllegalStateException("Combos use staged activation");
                 case PASSIVE -> throw new IllegalStateException("Passives do not activate");
@@ -232,7 +237,7 @@ public final class Skills {
                 } else if (cast.skill().effect() == SkillDefinition.Effect.RAGE_STORM) {
                     SkillVisuals.rageCharge(player);
                 } else if (SpellSkills.isSpell(cast.skill())) {
-                    SkillVisuals.charge(player);
+                    SkillVisuals.charge(player, cast.skill());
                 }
             }
             if (type != null && player.isAlive() && !player.isSpectator() && now % 5 == 0) {

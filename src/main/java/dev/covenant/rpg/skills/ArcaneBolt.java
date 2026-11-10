@@ -40,6 +40,7 @@ public final class ArcaneBolt extends ThrowableItemProjectile {
         super.onHit(hit);
         if (level() instanceof ServerLevel level) {
             SkillVisuals.boltImpact(level, hit.getLocation());
+            SkillSounds.impact(level, hit.getLocation(), SkillDefinition.ARCANE_BOLT);
             discard();
         }
     }

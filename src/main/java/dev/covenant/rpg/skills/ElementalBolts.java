@@ -70,6 +70,9 @@ public final class ElementalBolts {
                 player.getBoundingBox().expandTowards(delta).inflate(1),
                 entity -> entity instanceof LivingEntity target && entity.isPickable() && Skills.canHit(player, target), 0);
         SkillVisuals.lightning(player.level(), start, entityHit == null ? block.getLocation() : entityHit.getLocation());
+        if (entityHit != null || block.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+            SkillSounds.impact(player.level(), entityHit == null ? block.getLocation() : entityHit.getLocation(), skill);
+        }
         if (entityHit != null && entityHit.getEntity() instanceof LivingEntity target) {
             hit(player.level(), player, player, target, skill, 0);
             if (Auras.active(player, Auras.Kind.SHOCK)) { chain(player, target); }

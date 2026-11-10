@@ -35,6 +35,7 @@ public final class CovenantClient {
         modBus.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) ->
                 event.register(dev.covenant.rpg.equipment.Workbench.MENU.get(), WorkbenchScreen::new));
         modBus.addListener(ResourceHud::register);
+        modBus.addListener(StatusHud::register);
         modBus.addListener(ProgressionHud::register);
         modBus.addListener(ClientDash::register);
         modBus.addListener(ClientSkillVisuals::register);
@@ -43,6 +44,7 @@ public final class CovenantClient {
         NeoForge.EVENT_BUS.addListener(this::onMouseButton);
         NeoForge.EVENT_BUS.addListener(SkillKeyMappings::started);
         NeoForge.EVENT_BUS.addListener(SkillVisuals::arrowTick);
+        NeoForge.EVENT_BUS.addListener(AuraRangeVisuals::tick);
         NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST, ClientFarming::use);
     }
 
@@ -50,7 +52,7 @@ public final class CovenantClient {
         event.registerEntityRenderer(Skills.ARCANE_BOLT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(Skills.FIRE_BOLT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(Skills.ICE_BOLT.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(Skills.TRAP.get(), context -> new ThrownItemRenderer<>(context, 0.8f, true));
+        event.registerEntityRenderer(Skills.TRAP.get(), TrapRenderer::new);
         event.registerEntityRenderer(Skills.RAGE_STORM.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
     }
 

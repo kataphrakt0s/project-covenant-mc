@@ -15,6 +15,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -94,6 +95,7 @@ public final class TrapEntity extends Entity implements ItemSupplier {
             if (phase() == Phase.ARMING) {
                 if (++phaseTicks < ARM_TICKS) { return; }
                 phase(Phase.ARMED);
+                SkillSounds.play((ServerLevel) level(), position(), SoundEvents.IRON_TRAPDOOR_OPEN, .3f, 1.6f);
             } else if (phase() == Phase.ARMED && ++phaseTicks >= EXPIRE_TICKS) {
                 discard(); return;
             } else if (phase() == Phase.TRIGGERED) {
@@ -128,6 +130,7 @@ public final class TrapEntity extends Entity implements ItemSupplier {
             setDeltaMovement(Vec3.ZERO);
             if (!supported()) { discard(); return; }
             phase(Phase.ARMING);
+            SkillSounds.play((ServerLevel) level(), position(), SoundEvents.IRON_TRAPDOOR_CLOSE, .25f, .9f);
         }
         if (flightTicks >= 200) { discard(); }
     }
@@ -183,12 +186,18 @@ public final class TrapEntity extends Entity implements ItemSupplier {
     private void trigger(LivingEntity target) {
         phase(Phase.TRIGGERED);
         Traps.triggered(owner, this);
+        SkillVisuals.trapSnap((ServerLevel) level(), this);
+        switch (kind()) {
+            case BEAR -> SkillSounds.play((ServerLevel) level(), position(), SoundEvents.IRON_TRAPDOOR_CLOSE, .55f, .75f);
+            case FROST -> SkillSounds.play((ServerLevel) level(), position(), SoundEvents.GLASS_BREAK, .35f, 1.5f);
+            case FLAME -> SkillSounds.play((ServerLevel) level(), position(), SoundEvents.FIRECHARGE_USE, .5f, 1.1f);
+            case BLAST -> SkillSounds.play((ServerLevel) level(), position(), SoundEvents.GENERIC_EXPLODE.value(), .65f, 1.3f);
+        }
         switch (kind()) {
             case BEAR -> {
                 var before = AuraDamage.before(target);
                 hit(target, kind().damage);
                 if (before.landed(target)) { Rooted.apply(target, duration); }
-                SkillVisuals.trapSnap((ServerLevel) level(), this);
                 discard();
             }
             case FROST, FLAME -> {
@@ -246,7 +255,6 @@ public final class TrapEntity extends Entity implements ItemSupplier {
             target.push(direction.normalize().scale(0.65 * strength).add(0, 0.22 * strength, 0));
             target.hurtMarked = true;
         }
-        SkillVisuals.trapSnap((ServerLevel) level(), this);
     }
 
     @Override public void onRemoval(RemovalReason reason) {

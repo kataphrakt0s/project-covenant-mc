@@ -444,7 +444,11 @@ final class ComboGameTests {
     static void sliding(GameTestHelper helper) {
         var f = new Fixture(helper, 250);
         f.forceLanes();
-        helper.runAfterDelay(2, () -> {
+        helper.runBeforeTestEnd(() -> {
+            f.close();
+            helper.fail("Sliding fixture chunks did not become entity-ticking before timeout");
+        });
+        helper.startSequence().thenWaitUntil(f::assertLanesReady).thenExecute(() -> {
         try (f) {
             for (var skill : List.of(SkillDefinition.LUNGING_COMBO, SkillDefinition.RIP_AND_RUSH)) {
                 var p = f.player(); p.setNoGravity(false); f.floor(p); p.setXRot(45);
@@ -484,6 +488,8 @@ final class ComboGameTests {
             Vec3 rushStart = rush.position();
             var contact = f.target(rush.position().add(.2, 0, 3.5));
             var beside = f.target(rush.position().add(-1.5, 0, 2));
+            check(helper.getLevel().getEntitiesOfClass(LivingEntity.class, contact.getBoundingBox()).contains(contact),
+                    "Sliding fixture contact target is available to native entity queries");
             used(rush, SkillDefinition.RIP_AND_RUSH); steps(rush, 4);
             near(rush.getZ() - rushStart.z, 6 / Math.sqrt(2), "Sliding Rush retains original tangential travel");
             near(contact.getHealth(), 195, "Sliding Rush contacts enemy once along its actual segments; player=" + rush.position()
@@ -589,6 +595,15 @@ final class ComboGameTests {
             for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 160) >> 4; x++) {
                 for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
                     if (helper.getLevel().setChunkForced(x, z, true)) { forced.add(new net.minecraft.world.level.ChunkPos(x, z)); }
+                }
+            }
+        }
+        void assertLanesReady() {
+            // Block loading and a fixed delay do not establish entity-section visibility.
+            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 160) >> 4; x++) {
+                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
+                    helper.assertTrue(helper.getLevel().areEntitiesActuallyLoadedAndTicking(new net.minecraft.world.level.ChunkPos(x, z)),
+                            "Sliding fixture chunks must be loaded and entity-ticking");
                 }
             }
         }

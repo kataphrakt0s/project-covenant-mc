@@ -2,6 +2,14 @@
 .gradle-user-home/
 .tools/
 .local/
+/docs/art/
+/models/
+/docs/BLOCKBENCH.md
+/skills/covenant-modeling/
+/scripts/Blockbench.ps1
+/scripts/blockbench-client.mjs
+/scripts/blockbench-server.mjs
+/scripts/blockbench-toolchain.json
 build/
 run/
 runs/

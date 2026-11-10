@@ -3,6 +3,13 @@
 Status: all eleven aura skills implemented, 2026-11-05.
 Automated validation and remaining manual checks are recorded in `VALIDATION.md`.
 
+The requested 2026-11-09 presentation follow-up adds native top-left buff icons
+and a persistent local-owner outline for slotted area auras. Shared six-block
+fields merge into one bounded client particle ring; self-only auras have no ring.
+This supersedes the original temporary-icon/no-persistent-outline presentation
+scope below. Gameplay, coverage queries and saved-state boundaries are unchanged.
+See [Status presentation](RPG_SKILLS.md#status-icons-aura-outlines-and-trap-models).
+
 The behavior contract lives in [RPG_SKILLS.md](RPG_SKILLS.md#aura-contract)
 and [Skill Trees Brainstorm](<../Project-Covenant/Skill Trees Brainstorm.md>).
 This checklist organizes implementation of all 11 aura skills, including Icy

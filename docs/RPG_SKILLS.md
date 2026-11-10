@@ -564,12 +564,12 @@ server checks in `SkillLoadouts.bind`. Physical key remaps in Minecraft Controls
 do not affect combo progress. Reuse the existing packets; add no Controls
 monitoring or remap notification protocol.
 
-The prototype combo HUD shows one compact line per open combo with the
-skill name, next stage, and remaining follow-up time. Executing movement shows
-its current action until the window opens. Interleaved combos have independent
-lines, removed when each combo ends. Use owner-only transition sync and display
-server deadlines without per-tick countdown packets. Skill icons with circular
-cooldown countdowns remain the intended later presentation; this pass uses text.
+The top-left status HUD shows one native icon per open combo, with its stage
+number and remaining follow-up time. Executing movement shows its current stage
+without a countdown until the window opens. Interleaved combos have independent
+icons, removed when each combo ends. Hovering while a screen is open names the
+skill and next/current action. Owner-only transition snapshots supply server
+deadlines; no per-tick countdown packets or gameplay predictions are added.
 
 ## Combo movement synchronization
 
@@ -610,7 +610,7 @@ raycast runs. Self passives use assignment transitions instead of spatial querie
 mitigation and before ordinary absorption. A scoped hit frame handles nested
 hits without double counting. A landed-hit snapshot is shared by Rend, elemental
 status impacts, Bear Trap, and bleed feedback. Only the separate remaining shield
-capacity is owner-synced for the Fortitude HUD row; ordinary absorption is untouched.
+capacity is owner-synced for the Fortitude status icon; ordinary absorption is untouched.
 Freeze sync changes only on transitions; activation particles are bounded bursts.
 
 `CovenantSlows` resolves one native movement modifier from the strongest live
@@ -1349,7 +1349,7 @@ ends or is canceled. Impact bursts occur on projectile collisions; Cleave's hit
 sparks require an accepted damage call. Trails are generated locally on clients
 from tracked projectile movement, without per-tick trail packets or world scans.
 Lightning sends one dimension-scoped endpoint payload per beam segment to nearby
-players; clients generate the bounded spark samples. Protocol version `2` registers
+players; clients generate the bounded spark samples. The skills channel registers
 this cosmetic payload alongside the existing skill/dash messages. Damage and target
 selection remain server-owned; the visual message cannot activate a skill.
 
@@ -1365,6 +1365,98 @@ in level game ticks. Client-only Mixins scope the native bow-use pose/model read
 to first-person rendering and player render-state extraction, restoring the render
 context even if rendering throws. Simulation and input continue to see real item-use
 state. No player use flags or inventory values are changed to animate the bow.
+
+### Combat feedback pass
+
+Presentation prioritizes useful feedback and clear aim space. Native positional
+sounds use the **Players** volume slider, include the caster, and follow ordinary
+distance attenuation. Sound choices and volumes are provisional pending listening
+in the client; no new audio assets or repeating sound loops are introduced.
+
+- Accepted wind-ups play one quiet start cue. Successful execution plays one
+  release cue; canceled casts and rejected requests cannot replay that release.
+  Multishot plays one release for its whole five-arrow volley.
+- Arcane, Fire and Ice projectiles play one collision cue when they terminate.
+  Lightning plays an endpoint cue only on an entity or block collision. Collision
+  cues do not imply damage; ordinary arrow collision audio remains native.
+- Melee whiffs retain the release sweep. Positive health, absorption or Covenant
+  shield damage adds one contact accent per attack, regardless of victim count.
+  Combo dashes play that accent only for their first damaging contact. Bleed,
+  aura refreshes and damage-area pulses do not add repeated sound cues.
+- Traps have separate throw, landing, armed and trigger sounds. Their deployment
+  outline matches the square contact region; active patches retain circular
+  covered-area boundaries. Flight has no ground outline. Trigger particles now
+  distinguish Bear, Frost, Flame and Blast.
+- Teleport plays endpoint sounds, with a single source cue for travel under two
+  blocks to avoid overlapping duplicates. Buff activations use brief recipient
+  particles matching their element or class; passive refreshes remain quiet.
+
+Fire, Ice, Lightning and Arcane use distinct cast particles. Fire/Ice trails and
+impacts add small flame/snowflake accents. Arcane Arrow uses blue magic accents,
+Aimed Shot adds a brief critical-impact accent, and Multishot uses fewer particles
+per arrow. Rip and Rush's circular stages show a full circle; Cleave and Lunging
+Combo's frontal finisher retain their forward arc.
+
+`covenant:skill_shot_style` supplements the existing cosmetic arrow marker:
+0 = Piercing/default, 1 = Aimed, 2 = Arcane, 3 = Multishot. It is tracking-synced,
+never saved, and clears with the marker on terminal impacts. Saved projectile
+provenance remains independent. Skills network revision **6** requires matching
+clients for cosmetic arrow styles and the buff display below. Damage, costs,
+cooldowns, cast timing and movement are unchanged by the presentation passes.
+
+Manually check repeated casts, mixed-element combat, five-arrow volleys, all trap
+transitions, frontal versus circular attacks, and sound balance for nearby players.
+Check first-person aim visibility and reduced particle settings as well as normal
+third-person viewing. Dedicated GameTests verify emission and gameplay boundaries,
+not audible quality or rendered readability.
+
+### Status icons, aura outlines and trap models
+
+The top-left status HUD uses native Minecraft item and effect icons. Open combos
+show stage/timer indicators; Discharge shows fire/ice/lightning charge counts;
+Threefold shows reserve percentages or active damage bonuses plus remaining time.
+Received aura passives and activations, Battle Cry, Fortitude shield capacity,
+Blood Fever stacks and Rip and Rush's speed bonus use small status icons. Cool
+accents denote passives and gold denotes timed activations; hover tooltips while
+a screen is open name the effects and values. F1, death and spectator mode hide
+the HUD. Vanilla potion icons remain native. The resource bar above hunger stays,
+while its old shield/combo/Weaver text rows are removed.
+
+`covenant:buff_display` is an unsaved owner-only attachment containing a skill-clock
+offset and at most 32 rows (skill/status ID, passive presence, active deadline,
+stack count). Existing aura grant/refresh/expiry/consumption, shield changes,
+Threefold transitions, Blood Fever count changes and combo speed transitions
+update changed snapshots. Passive coverage refreshes do not repeatedly sync
+unchanged presence. Recipients without a class can see allied buffs. Logout,
+death, class/dimension changes and source cleanup retain their existing gameplay
+boundaries and clear the applicable display. No display state authorizes gameplay.
+
+Slotted area auras show one thin local-owner dust ring at their shared six-block
+radius, near foot height. Dodge, Swiftness, Ripping, Fortitude, Freezing, Shock,
+Immolation and Enchanting use this field. Raging, Icy Veins and Flame Cloak are
+self-only; Battle Cry and Discharge are not persistent aura fields. Shock chains
+are centered on struck targets, so they do not add a misleading caster ring.
+The outline shows a horizontal footprint of the existing spherical range; terrain
+can obscure it. It does not change ignored-cover or vertical-distance rules.
+
+Duplicate slots/shared radii merge into one outline. Native dust is bounded to
+48 live points on All particles, 32 on Decreased, and none on Minimal. Points
+follow the owner and renew on staggered 20-27-tick lifetimes without leaving a
+trail. Unslotting, death, spectator mode, and player/level replacement remove
+them. There are no server particle packets, world/entity scans or chunk forcing.
+
+Trap rendering reuses native iron trapdoor, blue ice, magma and TNT block models.
+Grounded plates match the 1.5-block contact square and 0.25-block contact height;
+smaller thrown plates tumble in flight. Triggered patch cores disappear, leaving
+the existing area particles. Models use ordinary lighting and visual culling
+bounds; the entity's collision, phases and gameplay are unchanged.
+
+Manual checks: inspect top-left layout at normal/high GUI scale, F1 and open-screen
+tooltips; follow combo windows and Threefold active expiry; consume a Dodge charge
+and Fortitude shield; slot/un-slot overlapping and self-only auras while moving;
+compare All/Decreased/Minimal particles and terrain slopes; inspect grounded traps
+on full blocks and slabs, in darkness and after trigger. These rendered behaviors
+remain user playtesting work.
 
 ## Skills window and bindings
 

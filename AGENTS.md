@@ -4,6 +4,14 @@ Read `CONTEXT.md` before feature work. Use `skills/covenant-development/SKILL.md
 for the build, validation, and Prism deployment workflow. See `docs/DEVELOPMENT.md`
 for machine setup and commands.
 
+For 3D model work, when available locally, use `skills/covenant-modeling/SKILL.md`
+and `docs/BLOCKBENCH.md`. These modeling tools, docs and sources are Git-ignored
+and are not included in a fresh checkout. Use the `covenant-bbmodel` headless stdio MCP to edit,
+validate, convert, export and render `.bbmodel` files without starting Blockbench.
+Load the installed upstream Blockbench skills as relevant, adapting their desktop
+tool examples to the discovered headless schemas. Keep editable sources in
+ignored `models/`; previews and tool dependencies stay in ignored `.local`/`.tools`.
+
 Use `skills/grill-plan/SKILL.md` when the user asks to "grill me", stress-test a
 plan, or work down a design tree. Ask one question at a time with a recommendation,
 check the existing code first, and record decisions in the relevant design docs.

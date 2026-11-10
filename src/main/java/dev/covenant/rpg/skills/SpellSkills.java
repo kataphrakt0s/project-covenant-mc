@@ -15,6 +15,7 @@ final class SpellSkills {
     }
 
     static void execute(ServerPlayer player, SkillDefinition skill) {
+        SkillSounds.release(player, skill);
         switch (skill.effect()) {
             case LIGHTNING_BOLT -> ElementalBolts.lightning(player);
             case ELEMENTAL_BOLT -> {

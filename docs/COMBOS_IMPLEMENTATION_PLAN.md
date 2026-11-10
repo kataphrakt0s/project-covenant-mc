@@ -210,22 +210,18 @@ notification packet.
 
 ## Agreed prototype feedback
 
-Show one compact HUD text line per open combo, naming the skill, next stage,
-and remaining follow-up time, for example `Lunging Combo — Strike — 1.4s`.
-Interleaved combos need separate lines with independent countdowns. During an
-executing movement stage, show its current action rather than a follow-up
-countdown that has not started. Remove ended combos' lines on completion,
-expiry, or cancellation.
-
-This text presentation is temporary. Skill icons with circular cooldown
-countdowns are the intended later presentation, outside the foundational pass.
-Keep cooldown gameplay independent of that future visual work.
+The 2026-11-09 polish follow-up replaces the temporary text lines with top-left
+native skill icons, stage numbers and remaining follow-up time. Interleaved combos
+have separate icons and countdowns. Movement stages show their current stage
+without a follow-up countdown until the window opens. Hover tooltips name the
+skill and next/current action. Remove ended icons on completion, expiry or
+cancellation. Cooldown gameplay remains independent of this presentation.
 
 Sync only the owning player's minimal display state on combo transitions and
 let the client display remaining time from server deadlines. Do not send a
 countdown update every tick or let the display advance authoritative stages.
-Integrate with existing HUD spacing/F1 behavior so text does not overlap the
-resource/Fortitude rows or native air/mount indicators. Rendered layout remains
+Integrate with existing HUD spacing/F1 behavior; status icons occupy the top-left
+and the class resource bar retains its original position. Rendered layout remains
 subject to user playtesting.
 
 ## Implementation direction

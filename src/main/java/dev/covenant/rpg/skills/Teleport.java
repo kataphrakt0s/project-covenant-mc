@@ -88,8 +88,12 @@ public final class Teleport {
     }
     static void execute(ServerPlayer player, Vec3 destination) {
         var old = player.position();
+        SkillSounds.play(player.level(), old, net.minecraft.sounds.SoundEvents.ENDERMAN_TELEPORT, .35f, 1.3f);
         player.connection.teleport(new PositionMoveRotation(destination, Vec3.ZERO, player.getYRot(), player.getXRot()), Set.of());
         player.setDeltaMovement(Vec3.ZERO); player.resetFallDistance();
+        if (old.distanceToSqr(destination) >= 4) {
+            SkillSounds.play(player.level(), destination, net.minecraft.sounds.SoundEvents.ENDERMAN_TELEPORT, .35f, 1.5f);
+        }
         for (var point : new Vec3[] { old, destination }) {
             player.level().sendParticles(ParticleTypes.PORTAL, point.x, point.y + 1, point.z, 24, .3, .7, .3, .05);
         }

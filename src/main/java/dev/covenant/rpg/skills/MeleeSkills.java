@@ -13,16 +13,25 @@ final class MeleeSkills {
     static void cleave(ServerPlayer player, SkillDefinition skill) {
         SkillVisuals.cleave(player, skill.range());
         float damage = (float) (player.getAttributeValue(RpgStats.DAMAGE) * skill.power() * AuraDamage.multiplier(player, false));
+        boolean landed = false;
         for (var target : targets(player, skill)) {
             if (!player.isAlive()) { break; }
-            if (hurtMeleeSkill(player, target, damage)) { SkillVisuals.cleaveHit(player.level(), target); }
+            var before = AuraDamage.before(target);
+            hurtMeleeSkill(player, target, damage);
+            if (before.landed(target)) {
+                SkillVisuals.cleaveHit(player.level(), target);
+                landed = true;
+            }
         }
+        if (landed) { SkillSounds.meleeHit(player); }
     }
 
     static void rend(ServerPlayer player, LivingEntity target) {
         if (target != null) {
-            applyRend(player, target, (float) (player.getAttributeValue(RpgStats.DAMAGE) * AuraDamage.multiplier(player, false)),
-                    AuraDamage.bleedPower(player), Combos.duration(player, Bleeding.REND_DURATION_TICKS));
+            if (applyRend(player, target, (float) (player.getAttributeValue(RpgStats.DAMAGE) * AuraDamage.multiplier(player, false)),
+                    AuraDamage.bleedPower(player), Combos.duration(player, Bleeding.REND_DURATION_TICKS))) {
+                SkillSounds.meleeHit(player);
+            }
         }
     }
 
@@ -43,7 +52,7 @@ final class MeleeSkills {
         finally { runtime.skillDamageSource = previous; }
     }
 
-    static void applyRend(ServerPlayer player, LivingEntity target, float damage, float bleed, int duration) {
+    static boolean applyRend(ServerPlayer player, LivingEntity target, float damage, float bleed, int duration) {
         var before = AuraDamage.before(target);
         var runtime = player.getData(RpgData.SKILL_RUNTIME);
         boolean previous = runtime.applyingRend;
@@ -53,7 +62,9 @@ final class MeleeSkills {
         if (before.landed(target)) {
             if (bleed > 0) { Bleeding.apply(target, player, bleed, duration); }
             SkillVisuals.cleaveHit(player.level(), target);
+            return true;
         }
+        return false;
     }
 
     static java.util.List<LivingEntity> targets(ServerPlayer player, SkillDefinition skill) {

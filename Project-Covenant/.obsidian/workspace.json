@@ -25,12 +25,14 @@
             "id": "b79fb49f8af121a0",
             "type": "leaf",
             "state": {
-              "type": "image",
+              "type": "markdown",
               "state": {
-                "file": "Pasted image 20261104154316.png"
+                "file": "Mod Compatibility.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-image",
-              "title": "Pasted image 20261104154316"
+              "icon": "lucide-file",
+              "title": "Mod Compatibility"
             }
           }
         ],
@@ -186,6 +188,12 @@
   },
   "active": "b79fb49f8af121a0",
   "lastOpenFiles": [
+    "Art Direction.md",
+    "Enemy Progression.md",
+    "Endgame.md",
+    "Encounter Design.md",
+    "Dungeons.md",
+    "Pasted image 20261104154316.png",
     "Project_Covenant_Reaver_Balance_Proposal.md",
     "Project_Covenant_Stalker_Balance_Proposal.md",
     "Milestone 1 - RPG Foundation.md",
@@ -194,7 +202,6 @@
     "Milestone 4 - World Progression.md",
     "Milestone 3 - Itemization and Crafting.md",
     "Milestone 2 - Character Gameplay.md",
-    "Pasted image 20261104154316.png",
     "Character Progression.md",
     "Open Questions.md",
     "Unconfirmed 89590.crdownload",
@@ -202,7 +209,6 @@
     "Progression Vertical Slice.md",
     "README.md",
     "Crafting Profession.md",
-    "Dungeons.md",
     "Skill Trees Brainstorm.md",
     "Affix System and Equipment Customization.md",
     "Salvaging.md",
@@ -210,10 +216,6 @@
     "Progression Systems.md",
     "Farming.md",
     "Experience and Reward Systems.md",
-    "Mining.md",
-    "Dimensional Progression Gates.md",
-    "Profession Progression.md",
-    "Combat Skill Progression.md",
-    "Skill Trees Brainstorm 1.md"
+    "Mining.md"
   ]
 }

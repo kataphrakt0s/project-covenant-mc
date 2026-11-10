@@ -28,4 +28,42 @@ The current keybinding/loadout implementation has eight combat slots: Q, R, F, C
 
 Learning/assignments currently persist with the player. Unlearning clears matching assignments and cancels a pending cast without resetting cooldowns in the prototype. The final respec behavior is defined by [[Combat Skill Progression]]. Visual and playtesting status for individual skills remains in [[Skill Trees Brainstorm]] and [the implementation contract](../docs/RPG_SKILLS.md).
 
+## Presentation and feedback
+
+The current polish priority is **player feel and effect clarity**. Effects should
+communicate the feedback a player needs from using a skill without crowding the
+visual space. Minecraft's native sounds, models, animations, and particles are
+appropriate for this pass; custom assets are not a prerequisite.
+
+Choose cues around meaningful skill events: cast start, release, impact, deployment
+readiness, and relevant buff or control-state changes. Give each cue a clear purpose
+and keep repeated or persistent effects restrained. Effects should communicate the
+actual affected area and distinguish skill or elemental behavior where that helps
+the player act. A stronger effect is useful when it communicates a more significant
+outcome.
+
+Implementation and exact asset choices remain iterative. In-game feedback should
+guide timing, volume, particle density, first-person visibility, and readability
+with several active skills or players. Automated checks establish behavior and
+technical boundaries; the user evaluates how the result looks, sounds, and feels.
+
+The first combat pass now provides native sound cues, elemental and arrow
+distinction, trap transition feedback, and attack/deployment shapes matching the
+existing gameplay. See [Combat feedback](../docs/RPG_SKILLS.md#combat-feedback-pass)
+for its scope and manual checks.
+
+Simple native Minecraft icons in the top-left now track open combos, Discharge
+charges, Threefold reserves/bonuses and received buffs. Small counts and timers
+provide actionable feedback; the old status text above hunger is removed.
+The class resource bar keeps its existing position. Buff icons describe actual
+server-owned effects, including effects received from allies before class choice.
+
+While an area aura is slotted, a thin persistent particle outline shows its
+six-block horizontal footprint near the owner's feet. Shared radii combine into
+one local-owner ring to keep the scene readable. Self-only auras show no area;
+particle settings still apply. This visual does not change the underlying
+spherical range, solid-cover rules, or passive refresh/grace. Deployed traps use
+grounded native block models, with a small tumble during flight and particles
+left to show triggered patches. Progression/Workbench feedback remains a later pass.
+
 Related: [[Classes and Specializations]], [[Class Resources]], [[Combat]], [[Profession Progression]].

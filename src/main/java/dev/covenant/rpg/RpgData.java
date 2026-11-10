@@ -76,6 +76,10 @@ public final class RpgData {
     public static final Supplier<AttachmentType<dev.covenant.rpg.skills.ComboDisplay>> COMBO_DISPLAY = ATTACHMENTS.register(
             "combo_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.ComboDisplay.EMPTY)
                     .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.skills.ComboDisplay.STREAM_CODEC).build());
+    /** Unsaved owner-only buff icons/timers, derived from authoritative grants and runtime transitions. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.BuffDisplay>> BUFF_DISPLAY = ATTACHMENTS.register(
+            "buff_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.BuffDisplay.EMPTY)
+                    .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.skills.BuffDisplay.STREAM_CODEC).build());
     /** Tracking-synced execution flag for input/control hooks; owner trajectory uses start/stop payloads. */
     public static final Supplier<AttachmentType<Boolean>> COMBO_MOVING = ATTACHMENTS.register(
             "combo_moving", () -> AttachmentType.builder(() -> false).sync(ByteBufCodecs.BOOL).build());
@@ -89,6 +93,9 @@ public final class RpgData {
     /** Transient, tracking-synced arrow visual marker; never serialized or copied to player saves. */
     public static final Supplier<AttachmentType<Boolean>> SKILL_SHOT = ATTACHMENTS.register(
             "skill_shot", () -> AttachmentType.builder(() -> false).sync(ByteBufCodecs.BOOL).build());
+    /** Unsaved tracking-synced arrow style: 0 Piercing/default, 1 Aimed, 2 Arcane, 3 Multishot. No combat authority. */
+    public static final Supplier<AttachmentType<Integer>> SKILL_SHOT_STYLE = ATTACHMENTS.register(
+            "skill_shot_style", () -> AttachmentType.builder(() -> 0).sync(ByteBufCodecs.VAR_INT).build());
     /** Cosmetic bow-draw deadline in level ticks, tracking-synced but never saved. */
     public static final Supplier<AttachmentType<Long>> BOW_DRAW_UNTIL = ATTACHMENTS.register(
             "bow_draw_until", () -> AttachmentType.builder(() -> 0L).sync(ByteBufCodecs.VAR_LONG).build());

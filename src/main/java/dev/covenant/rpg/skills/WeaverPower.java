@@ -123,6 +123,7 @@ public final class WeaverPower {
     static void clear(ServerPlayer player) {
         player.getData(RpgData.SKILL_RUNTIME).weaver = null;
         if (!player.getData(RpgData.WEAVER_DISPLAY).equals(WeaverDisplay.EMPTY)) { player.setData(RpgData.WEAVER_DISPLAY, WeaverDisplay.EMPTY); }
+        BuffDisplay.sync(player);
     }
     static void reconcile(ServerPlayer player) {
         var s = state(player); if (s == null) { sync(player); return; }
@@ -146,6 +147,8 @@ public final class WeaverPower {
             }
             view = new WeaverDisplay(discharge, threefold, charges(player, Element.FIRE), charges(player, Element.ICE), charges(player, Element.LIGHTNING), config.discharge().stacks(), f, i, l, buff);
         }
-        if (!player.getData(RpgData.WEAVER_DISPLAY).equals(view)) { player.setData(RpgData.WEAVER_DISPLAY, view); }
+        var previous = player.getData(RpgData.WEAVER_DISPLAY);
+        if (!previous.equals(view)) { player.setData(RpgData.WEAVER_DISPLAY, view); }
+        if (previous.buff() != view.buff()) { BuffDisplay.sync(player); }
     }
 }

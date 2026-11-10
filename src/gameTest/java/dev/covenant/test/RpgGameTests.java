@@ -52,6 +52,10 @@ public final class RpgGameTests {
             DeferredRegister.create(Registries.TEST_FUNCTION, "covenant_test");
 
     static {
+        FUNCTIONS.register("feedback_volley", () -> SkillFeedbackGameTests::volley);
+        FUNCTIONS.register("feedback_casting", () -> SkillFeedbackGameTests::casting);
+        FUNCTIONS.register("feedback_impacts", () -> SkillFeedbackGameTests::impacts);
+        FUNCTIONS.register("feedback_melee", () -> SkillFeedbackGameTests::melee);
         FUNCTIONS.register("weaver_activation", () -> WeaverGameTests::activation);
         FUNCTIONS.register("weaver_discharge_cast", () -> WeaverGameTests::dischargeCast);
         FUNCTIONS.register("weaver_discharge_mixed", () -> WeaverGameTests::dischargeMixed);
@@ -152,6 +156,9 @@ public final class RpgGameTests {
         FUNCTIONS.register("trap_targeting", () -> TrapGameTests::targeting);
         FUNCTIONS.register("trap_activation", () -> TrapGameTests::activation);
         FUNCTIONS.register("aura_ownership", () -> AuraGameTests::ownership);
+        FUNCTIONS.register("status_transitions", () -> StatusDisplayGameTests::transitions);
+        FUNCTIONS.register("status_consumption", () -> StatusDisplayGameTests::consumption);
+        FUNCTIONS.register("status_storage", () -> StatusDisplayGameTests::storage);
         FUNCTIONS.register("aura_coverage", () -> AuraGameTests::coverage);
         FUNCTIONS.register("aura_dodge", () -> AuraGameTests::dodge);
         FUNCTIONS.register("aura_fortitude", () -> AuraGameTests::fortitude);

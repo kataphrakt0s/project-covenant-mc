@@ -27,6 +27,7 @@ public final class SkillLifecycle {
         BloodFever.clear(player);
         WeaverPower.clear(player);
         Auras.clear(player);
+        BuffDisplay.clear(player);
         if (reason == Reason.CONFIRMED_DEATH) { clearTargetOnDeath(player); }
     }
 

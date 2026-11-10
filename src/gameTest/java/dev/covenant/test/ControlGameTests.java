@@ -46,7 +46,9 @@ final class ControlGameTests {
     private ControlGameTests() {}
 
     static void movement(GameTestHelper helper) {
-        try (var fixture = new Fixture(helper, 280)) {
+        var fixture = new Fixture(helper, 280);
+        fixture.runWhenReady(() -> {
+        try (fixture) {
             for (boolean frozen : new boolean[] {false, true}) {
                 var player = fixture.player();
                 fixture.floor(player);
@@ -103,10 +105,13 @@ final class ControlGameTests {
             check(delayed.position().equals(teleported), "An unrelated native teleport retains its own authoritative endpoint");
             helper.succeed();
         }
+        });
     }
 
     static void actions(GameTestHelper helper) {
-        try (var fixture = new Fixture(helper, 295)) {
+        var fixture = new Fixture(helper, 295);
+        fixture.runWhenReady(() -> {
+        try (fixture) {
             var player = fixture.player();
             fixture.freeze(player);
             for (var item : List.of(Items.SPLASH_POTION, Items.ENDER_PEARL, Items.SNOWBALL)) {
@@ -134,10 +139,13 @@ final class ControlGameTests {
                     "Root still permits item actions through the same packet path");
             helper.succeed();
         }
+        });
     }
 
     static void dashHandoff(GameTestHelper helper) {
-        try (var fixture = new Fixture(helper, 310)) {
+        var fixture = new Fixture(helper, 310);
+        fixture.runWhenReady(() -> {
+        try (fixture) {
             var prediction = new DashPrediction();
             var motion = new DashMotion(1, helper.getLevel().dimension().identifier(), Vec3.ZERO, new Vec3(0, 0, 1), 3, false, Vec3.ZERO);
             prediction.accept(motion, Vec3.ZERO); prediction.cancel();
@@ -185,6 +193,7 @@ final class ControlGameTests {
             check(!invalid.connection.isAcceptingMessages(), "Active dash does not bypass vanilla invalid-coordinate disconnection");
             helper.succeed();
         }
+        });
     }
 
     private static Object field(Object owner, String name) {
@@ -215,12 +224,31 @@ final class ControlGameTests {
         final List<ServerPlayer> players = new ArrayList<>();
         final List<BlockPos> blocks = new ArrayList<>();
         final List<LivingEntity> targets = new ArrayList<>();
+        final java.util.Set<net.minecraft.world.level.ChunkPos> forced = new java.util.HashSet<>();
         final Vec3 origin;
 
         Fixture(GameTestHelper helper, int height) {
             this.helper = helper;
             var position = helper.absolutePos(new BlockPos(2, height, 2));
             origin = Vec3.atBottomCenterOf(position);
+        }
+
+        void runWhenReady(Runnable test) {
+            // Player lanes and the spear/projectile targets extend beyond the tiny template.
+            var chunks = new ArrayList<net.minecraft.world.level.ChunkPos>();
+            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 40) >> 4; x++) {
+                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
+                    var chunk = new net.minecraft.world.level.ChunkPos(x, z); chunks.add(chunk);
+                    if (helper.getLevel().setChunkForced(x, z, true)) { forced.add(chunk); }
+                }
+            }
+            helper.runBeforeTestEnd(() -> {
+                close();
+                helper.fail("Control fixture chunks did not become entity-ticking before timeout");
+            });
+            helper.startSequence().thenWaitUntil(() -> helper.assertTrue(
+                    chunks.stream().allMatch(helper.getLevel()::areEntitiesActuallyLoadedAndTicking),
+                    "Control fixture chunks must be loaded and entity-ticking")).thenExecute(test);
         }
 
         ServerPlayer player() {
@@ -241,6 +269,8 @@ final class ControlGameTests {
             FixtureSkills.learn(source, SkillDefinition.ICY_VEINS.id(), true);
             FixtureSkills.learn(source, SkillDefinition.FREEZING_AURA.id(), true);
             SkillLoadouts.bind(source, 0, SkillDefinition.FREEZING_AURA.id());
+            check(helper.getLevel().getEntitiesOfClass(LivingEntity.class, target.getBoundingBox()).contains(target),
+                    "Freeze fixture target is available to native entity queries");
             Skills.activate(source, SkillDefinition.FREEZING_AURA);
             check(Auras.frozen(target), "Freeze fixture applies");
         }
@@ -279,6 +309,7 @@ final class ControlGameTests {
                 }
             }
             blocks.forEach(position -> helper.getLevel().setBlockAndUpdate(position, Blocks.AIR.defaultBlockState()));
+            forced.forEach(chunk -> helper.getLevel().setChunkForced(chunk.x(), chunk.z(), false)); forced.clear();
         }
     }
 }

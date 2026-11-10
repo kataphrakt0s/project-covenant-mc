@@ -15,6 +15,7 @@ record PendingCast(SkillDefinition skill, PlayerClass playerClass, long endsAt, 
             AIMED_SLOW, -0.8, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
     void begin(ServerPlayer player, long ticks) {
+        SkillSounds.castStart(player, skill);
         if (skill == SkillDefinition.AIMED_SHOT) {
             player.getAttribute(Attributes.MOVEMENT_SPEED).addOrUpdateTransientModifier(AIMED_MOVEMENT);
             SkillVisuals.bowDraw(player, ticks);

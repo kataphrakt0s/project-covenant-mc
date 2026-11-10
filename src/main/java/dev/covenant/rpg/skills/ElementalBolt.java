@@ -47,6 +47,7 @@ public final class ElementalBolt extends ThrowableItemProjectile {
         super.onHit(hit);
         if (level() instanceof ServerLevel level) {
             SkillVisuals.elementalImpact(level, hit.getLocation(), skill());
+            SkillSounds.impact(level, hit.getLocation(), skill());
             discard();
         }
     }

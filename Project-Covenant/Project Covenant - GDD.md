@@ -15,7 +15,7 @@ A modular, Minecraft-native RPG experience built around the activities, systems,
 
 Covenant should feel like Minecraft roleplay with deeper character development—not an ARPG dropped into a 3D world that ignores the game around it.
 
-See [[Project Vision]] and [[Design Pillars]].
+See [[Project Vision]], [[Design Pillars]], and [[Art Direction]].
 
 ## Core gameplay loop
 

@@ -52,6 +52,7 @@ public final class Combos {
         final Set<UUID> attempted = new HashSet<>();
         int ticks;
         boolean stepping;
+        boolean hitSoundPlayed;
         long lastTick = Long.MIN_VALUE;
         Movement(Progress progress, Vec3 step, int ticks, boolean noGravity, float damage, int shredDuration) {
             this.progress = progress; this.step = step; this.ticks = ticks; this.noGravity = noGravity;
@@ -91,6 +92,7 @@ public final class Combos {
         runtime.executing = true;
         progress.deadline = 0;
         try {
+            SkillSounds.release(player, skill);
             if (movement) {
                 startMovement(player, progress, kind == Kind.LUNGING ? 4 : 6, kind == Kind.LUNGING ? 3 : 4);
             } else {
@@ -111,7 +113,14 @@ public final class Combos {
         int shredDuration = duration(player, ArmorShred.DURATION_TICKS);
         if (progress.kind == Kind.LUNGING && progress.stage == 1) {
             var target = MeleeSkills.rendTarget(player);
-            if (target != null) { MeleeSkills.hurtMeleeSkill(player, target, damage * 1.25f); }
+            if (target != null) {
+                var before = AuraDamage.before(target);
+                MeleeSkills.hurtMeleeSkill(player, target, damage * 1.25f);
+                if (before.landed(target)) {
+                    SkillVisuals.cleaveHit(player.level(), target);
+                    SkillSounds.meleeHit(player);
+                }
+            }
             return;
         }
         var targets = progress.kind == Kind.LUNGING ? MeleeSkills.targets(player, SkillDefinition.CLEAVE) : circularTargets(player);
@@ -119,18 +128,21 @@ public final class Combos {
         int bleedDuration = duration(player, Bleeding.REND_DURATION_TICKS);
         int speedDuration = duration(player, 80);
         int consumed = 0;
-        SkillVisuals.cleave(player, 3);
+        boolean landed = false;
+        if (progress.kind == Kind.RUSH) { SkillVisuals.circularSweep(player, 3); }
+        else { SkillVisuals.cleave(player, 3); }
         for (var target : targets) {
             if (player.getData(RpgData.SKILL_RUNTIME).combos.get(progress.kind) != progress) { break; }
             if (!Skills.canHit(player, target)) { continue; }
             if (progress.kind == Kind.RUSH && progress.stage == 0) {
-                MeleeSkills.applyRend(player, target, damage, bleed, bleedDuration);
+                landed |= MeleeSkills.applyRend(player, target, damage, bleed, bleedDuration);
                 continue;
             }
             boolean bleeding = Bleeding.count(target) > 0;
             var before = AuraDamage.before(target);
             MeleeSkills.hurtMeleeSkill(player, target, damage);
             if (!before.landed(target)) { continue; }
+            landed = true;
             SkillVisuals.cleaveHit(player.level(), target);
             if (progress.kind == Kind.LUNGING) {
                 ArmorShred.apply(target, player, shredDuration);
@@ -140,10 +152,12 @@ public final class Combos {
                 consumed++;
             }
         }
+        if (landed) { SkillSounds.meleeHit(player); }
         if (consumed > 0 && player.isAlive() && player.getData(RpgData.SKILL_RUNTIME).combos.get(progress.kind) == progress) {
             player.getAttribute(Attributes.MOVEMENT_SPEED).addOrUpdateTransientModifier(new AttributeModifier(
                     RUSH_SPEED, Math.min(3, consumed) * .1, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
             player.getData(RpgData.SKILL_RUNTIME).rushSpeedUntil = ClassResources.now(player) + speedDuration;
+            BuffDisplay.sync(player);
         }
     }
 
@@ -292,6 +306,10 @@ public final class Combos {
                 if (before.landed(target)) {
                     ArmorShred.apply(target, player, movement.shredDuration);
                     SkillVisuals.cleaveHit(player.level(), target);
+                    if (!movement.hitSoundPlayed) {
+                        movement.hitSoundPlayed = true;
+                        SkillSounds.meleeHit(player);
+                    }
                 }
             }
         } finally { runtime.executing = false; }
@@ -392,8 +410,10 @@ public final class Combos {
     }
 
     private static void clearSpeed(ServerPlayer player) {
+        boolean changed = player.getData(RpgData.SKILL_RUNTIME).rushSpeedUntil != 0;
         player.getData(RpgData.SKILL_RUNTIME).rushSpeedUntil = 0;
         player.getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(RUSH_SPEED);
+        if (changed) { BuffDisplay.sync(player); }
     }
 
     private static void display(ServerPlayer player) {

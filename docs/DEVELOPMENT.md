@@ -37,6 +37,16 @@ instance whose loader differs from the project pin; `Setup-Prism.ps1` retains
 existing instances and does not upgrade them. Changing the repository pin does
 not update Prism or a remote server. Minecraft remains `26.1.2` and Java remains 25.
 
+## 3D model tooling
+
+When present locally, use the [headless Blockbench workflow](BLOCKBENCH.md) and
+[`covenant-modeling` skill](../skills/covenant-modeling/SKILL.md) for `.bbmodel`
+creation, editing, validation, conversion, export and preview rendering without
+Blockbench running. `scripts/Blockbench.ps1 setup -InstallSkills` provisions local
+tools and upstream skills; `smoke` checks the real MCP/render path, and `register`
+connects the `covenant-bbmodel` server to Codex. The modeling scripts, skill, guide
+and editable `models/` sources are Git-ignored local files, absent from fresh checkouts.
+
 ## Profiling Covenant
 
 Covenant uses Minecraft's native `Profiler.get().zone(...)` scopes with stable
@@ -50,14 +60,15 @@ For the live visual pie, press **F3+1**. Use the numbered entries to descend int
 a branch and **0** to go back; follow labels because entry numbers change with
 their relative time. Covenant's entries begin with `covenant:`. Useful branches:
 
-- `root > frame > extract > gui > inGameGui`: `covenant:resource_hud` and
-  `covenant:progression_hud`, including their eligibility checks.
+- `root > frame > extract > gui > inGameGui`: `covenant:resource_hud`,
+  `covenant:progression_hud` and `covenant:status_hud`, including their eligibility checks.
 - `root > frame > extract > gui`: Covenant screen rendering while a menu is open.
 - `root > tick > screen`: `covenant:skills_screen_tick`,
   `covenant:professions_screen_tick`, `covenant:stats_screen_tick`, and other open
   Covenant screen updates.
 - `root > tick > entities`: named aura/bleed/frost/arrow callback checks, movement
   and freeze checks, plus Covenant projectile ticks when those entities are present.
+- Client tick callbacks include `covenant:aura_range_visuals` for the local aura outline.
 - Bow rendering callers contain `covenant:bow_pose_enter`, `bow_pose_exit`,
   `bow_pose_check` and `bow_pose_time`; each label uses the `covenant:` prefix.
 
@@ -84,8 +95,8 @@ profiling text for `covenant:`. In this Minecraft version `/debug start` and
 | Gathering and profession allocations | `covenant:gathering_prepare`, `covenant:gathering_harvest`, `covenant:harvest_reward_check`, `covenant:tree_recognition`, `covenant:farming_harvest`, `covenant:profession_allocation` |
 | Native Covenant entities | `covenant:trap`, `covenant:rage_storm`, `covenant:arcane_bolt`, `covenant:elemental_bolt` |
 | Equipment and Workbench | `covenant:equipment_modifiers`, `covenant:workbench_preview`, `covenant:workbench_action` |
-| Client movement, HUD and screens | `covenant:client_dash`, `covenant:resource_hud`, `covenant:progression_hud`, `covenant:stats_refresh`, `covenant:stats_screen`, `covenant:skills_screen`, `covenant:professions_screen`, `covenant:radial_menu` |
-| Input, effects and control checks | `covenant:keyboard_input`, `covenant:mouse_input`, `covenant:skill_key_input`, `covenant:arrow_visuals`, `covenant:lightning_visuals`, `covenant:freeze_check`, `covenant:movement_control_check`, `covenant:movement_packet` |
+| Client movement, HUD and screens | `covenant:client_dash`, `covenant:resource_hud`, `covenant:progression_hud`, `covenant:status_hud`, `covenant:stats_refresh`, `covenant:stats_screen`, `covenant:skills_screen`, `covenant:professions_screen`, `covenant:radial_menu` |
+| Input, effects and control checks | `covenant:keyboard_input`, `covenant:mouse_input`, `covenant:skill_key_input`, `covenant:arrow_visuals`, `covenant:lightning_visuals`, `covenant:aura_range_visuals`, `covenant:freeze_check`, `covenant:movement_control_check`, `covenant:movement_packet` |
 | Screen updates and bow bookkeeping | `covenant:skills_screen_tick`, `covenant:professions_screen_tick`, `covenant:stats_screen_tick`, `covenant:radial_menu_tick`, `covenant:workbench_screen_update`, `covenant:bow_pose_enter`, `covenant:bow_pose_exit`, `covenant:bow_pose_check`, `covenant:bow_pose_time` |
 
 Scopes use try-with-resources so rejection, cancellation and exceptions close

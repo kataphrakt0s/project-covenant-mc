@@ -31,7 +31,9 @@ public final class BloodFever {
         player.getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(MOVEMENT);
         player.getAttribute(Attributes.ATTACK_SPEED).removeModifier(ATTACK);
         var runtime = player.getData(RpgData.SKILL_RUNTIME);
+        boolean changed = runtime.bloodFeverCount != 0;
         runtime.bloodFeverCount = 0; runtime.nextBloodFever = 0;
+        if (changed) { BuffDisplay.sync(player); }
     }
     public static int count(ServerPlayer player) { return player.getData(RpgData.SKILL_RUNTIME).bloodFeverCount; }
 
@@ -46,9 +48,11 @@ public final class BloodFever {
                         && player.distanceToSqr(target) <= config.radius() * config.radius())) {
             if (++count >= config.enemies()) { break; }
         }
+        int previous = player.getData(RpgData.SKILL_RUNTIME).bloodFeverCount;
         player.getData(RpgData.SKILL_RUNTIME).bloodFeverCount = count;
         modifier(player.getAttribute(Attributes.MOVEMENT_SPEED), MOVEMENT, count * config.movement());
         modifier(player.getAttribute(Attributes.ATTACK_SPEED), ATTACK, count * config.attack());
+        if (previous != count) { BuffDisplay.sync(player); }
     }
     private static void modifier(net.minecraft.world.entity.ai.attributes.AttributeInstance attribute, Identifier id, double amount) {
         var old = attribute.getModifier(id);
