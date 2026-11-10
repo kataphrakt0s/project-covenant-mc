@@ -9,8 +9,8 @@ dimensions part of a connected progression experience.
 
 Vanilla activities and recipes remain available without Covenant levels.
 Minecraft's XP and enchanting levels stay separate from Covenant progression.
-The longer-term design builds on existing vanilla and modded equipment through
-gear customization, specialized crafting, and more structured world challenges.
+Gear customization builds on existing equipment through affixed loot, salvaging,
+and the Covenant Workbench. More structured world challenges remain planned.
 
 ## Current state
 
@@ -28,31 +28,60 @@ migration from earlier prototype save formats is unsupported.
 | **Weaver** | Elemental spellcasting and control | Mana |
 
 Each class has its own skill tree, with active attacks and auras available now.
+Stalker has bow skills, four traps, and Disengage; Reaver has bleeds, movement
+combos, Battle Cry, and Rage Storm; Weaver has elemental bolts, Discharge,
+Threefold System, and Teleport.
 Earn skill points through character levels, learn up to eight distinct skills,
 and assign them to eight combat bindings. Prerequisites and level requirements
 shape each build; crafted respec items let you reallocate points. Planned skills
 remain visible in the trees but cannot be purchased or used.
 
+Piercing Shot and Aimed Shot support ranks 1–8. Other playable combat skills
+currently support rank 1; further rank upgrades remain planned.
+
 ### Progression and professions
 
 - **Character progression:** Combat XP rewards eligible damage and support
-  contributors. Character progression begins when you choose a class and has a
-  default level cap of 60, with level caps of 20 for XP earned in the Overworld,
+  contributors. Choosing a class starts you at level 1 with one skill point.
+  The default level cap is 60, with level caps of 20 for XP earned in the Overworld,
   40 in the Nether, and 60 in the End. Dimension caps govern XP gains; all
-  dimensions remain open to exploration.
+  dimensions remain open to exploration. Each eligible contributor's first
+  Wither kill grants one full level past dimension caps, up to the global cap.
 - **Four independent professions:** Mining, Logging, Farming, and Crafting can
   progress before class selection, each with a default level cap of 20. Eligible
   ore and tree harvesting, mature crops, breeding, and enchanting-table use
-  award profession XP.
-- **Profession abilities:** Profession points, allocation menus, and respec are
-  implemented. Logging's Offensive Mastery is the first usable ability; the
-  remaining profession abilities are planned.
+  award profession XP, as do successful Workbench affix operations and salvaging
+  affixed gear. Ordinary vanilla crafting does not award Crafting XP.
+- **Gathering abilities:** Vein Mining and Tree Felling harvest bounded groups
+  with normal tool costs, drops, and XP; sneak to harvest one block. Farming
+  Scything expands hoe right-click harvesting to 3×3, 5×5, or 9×9 mature-crop
+  areas. Automatic Replanting uses inventory planting items after harvesting.
+  Logging's Offensive Mastery grants an outgoing damage bonus.
+- **Crafting abilities:** Basic Affix Crafting, Salvaging, Recovery, and Focused
+  Recovery are purchasable and drive Workbench access and material returns.
+  Other profession abilities remain visible as planned. Profession Respec
+  refunds all four tracks' allocations together while preserving XP and levels.
 - **Shared foundations:** Progression is saved and controlled by the server.
-  Datapacks configure progression balance and activity rewards. Equipment stats
-  and per-item Affix Page storage exist, with debug commands for testing.
+  Datapacks configure progression balance, activity rewards, gathering targets,
+  and itemization. Equipment bonuses stay on items, separate from character
+  progression.
 
-Expanded profession abilities, the Covenant Workbench, gear rarity, affix
-acquisition and customization, salvaging, and Covenant-specific dungeons,
+### Equipment and the Covenant Workbench
+
+Eligible fresh equipment from mob loot tables and vanilla loot chests can roll
+affixes across five rarities, from Common to Legendary. The shared Covenant
+Workbench lets you add, upgrade, reroll, and remove affixes, spending ingredients
+and the equipment's finite **Potential**. Salvaging recovers materials and affix
+components for further customization. Workbench contents persist when closed
+and across world saves.
+
+The Workbench recipe is available without profession levels; its operations
+require the corresponding Crafting abilities. Start Crafting progression through
+vanilla enchanting. The station currently uses a netherite-block placeholder
+model. See [itemization](docs/ITEMIZATION.md) for the recipe, costs, and loot rules.
+
+Additional profession abilities and recipe milestones, further combat skills
+and rank upgrades, accessory integrations, and Covenant-specific dungeons,
 bosses, and world events remain future work.
 
 ## Trying the prototype
@@ -85,6 +114,7 @@ local environment before using the project scripts:
 
 `build` compiles, runs geometry checks, and packages
 `build/libs/covenant-0.1.0-dev.jar`. `test` runs the dedicated-server GameTests.
+Use `.\scripts\Dev.ps1 verify` to run both in one command.
 The development guide also covers deployment to an isolated Prism instance.
 
 ## Documentation
@@ -95,8 +125,9 @@ The development guide also covers deployment to an isolated Prism instance.
 - [Progression vertical slice](<Project-Covenant/Progression Vertical Slice.md>)
   defines the current development scope.
 - [Project context](CONTEXT.md), [progression implementation](docs/PROGRESSION.md),
-  [skills](docs/RPG_SKILLS.md), and [professions](docs/PROFESSIONS.md) describe
-  implemented behavior and its limits.
+  [skills](docs/RPG_SKILLS.md), [professions](docs/PROFESSIONS.md), and
+  [itemization and the Workbench](docs/ITEMIZATION.md) describe implemented
+  behavior and its limits.
 - [Validation results](docs/VALIDATION.md) record automated evidence and pending
   manual checks. [AGENTS.md](AGENTS.md) contains repository working conventions.
 

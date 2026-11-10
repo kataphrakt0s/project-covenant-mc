@@ -401,6 +401,10 @@ Prism development instance ID is `Covenant-26_1_2-Dev`, displayed as
 `26.1.2` and ATM11 instances. Deploy scripts check the instance ownership marker
 and pinned versions before copying the built JAR.
 
+For the LAN test server, reset the entire world, including player data and
+progression, on every update until the user says otherwise. See
+`docs/DEVELOPMENT.md` for the shutdown, backup, reset, and validation workflow.
+
 ## Validation status
 
 The user handles manual client playtesting. Routine agent work ends after

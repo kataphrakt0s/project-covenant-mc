@@ -101,22 +101,26 @@ Client scopes describe CPU state extraction/ticking, not GPU execution time.
 
 The isolated test server is at `cmm@192.168.0.193`, in
 `/home/cmm/project-covenant-test`. Connect in Minecraft to
-`192.168.0.193:25565` using Minecraft 26.1.2, NeoForge 26.1.2.125, and the
+`192.168.0.193:25565` using Minecraft 26.1.2, NeoForge 26.1.2.126, and the
 same Covenant JAR as the server. It uses authenticated accounts, a fresh Survival
 world, eight player slots, and a private Temurin Java 25 runtime with a 4 GiB heap
 limit. All the Mons `minecraft.service` is stopped and disabled at boot; its files
 are retained.
 
-The `.125` loader above records the existing LAN setup, not the current build
-requirement. Upgrade the server and connecting clients to `.126` before deploying
-the new Covenant build. The LAN installation has not been upgraded or rechecked
-as part of the repository loader update.
+The LAN installation was upgraded to the repository's `.126` loader pin on
+2026-11-09 with the latest local Covenant build and a reset world. Connecting
+clients need the same loader and Covenant JAR.
 
 The system-wide `covenant.service` runs the server as `cmm`, starts at boot, and
 restarts on failure after ten seconds. Its unit is
 `/etc/systemd/system/covenant.service`; startup uses the existing `start.sh` and
 world. Stops send SIGTERM and allow up to 180 seconds for native world saving.
 The earlier `tmux` session is no longer used. Service changes require sudo.
+
+The Java process may exit with status `143` after SIGTERM, leaving systemd's state
+as `failed` despite the process having stopped. Before changing files, confirm
+`MainPID=0` and that nothing is listening on port 25565. In that specific case,
+`sudo systemctl reset-failed covenant.service` clears the status before starting.
 
 ```powershell
 # Check status and boot configuration.
@@ -132,11 +136,19 @@ ssh cmm@192.168.0.193 'tail -n 40 /home/cmm/project-covenant-test/logs/latest.lo
 ssh -t cmm@192.168.0.193 'journalctl -u covenant.service -f'
 ```
 
-For updates, build locally, stop `covenant.service` and wait for it to become
-inactive, then copy `build/libs/covenant-0.1.0-dev.jar` into the remote
-`mods/` directory. Compare SHA256 hashes before restarting and update clients to
-the same build. Keep server worlds, runtime, logs, and local connection details
-outside source control.
+Until the user says otherwise, **reset the LAN server world on every update**.
+After gracefully stopping `covenant.service` and confirming it is inactive, remove
+the entire active save named by `level-name` (currently `world`), including its
+player data, inventories, and progression. An archived copy outside the active
+save directory may be retained for recovery. Do not carry old player data into
+the newly generated world.
+
+For updates, build and run dedicated GameTests locally, stage any required pinned
+loader update, then stop the service as above. Back up the previous installation,
+reset the world, and copy `build/libs/covenant-0.1.0-dev.jar` into remote `mods/`.
+Compare SHA256 hashes before restarting and update clients to the same build.
+Confirm startup reaches `Done` and the LAN Minecraft status query responds.
+Keep server worlds, runtime, logs, and local connection details outside source control.
 
 ## In-game smoke check
 
