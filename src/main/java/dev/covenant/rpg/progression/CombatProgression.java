@@ -88,6 +88,10 @@ public final class CombatProgression {
         if (!(target.level() instanceof ServerLevel) || !(source.getEntity() instanceof LivingEntity attacker)
                 || attacker == target || Auras.allied(attacker, target)) { return; }
         if (attacker instanceof ServerPlayer player && eligible(player)) { credit(player, target); contact(player, target); }
+        if (attacker instanceof dev.covenant.rpg.skills.HunterPet pet && pet.getOwner() instanceof ServerPlayer owner
+                && dev.covenant.rpg.skills.HunterPets.current(owner) == pet && !Auras.allied(owner, target)) {
+            credit(owner, target); contact(owner, target);
+        }
         creditOwners(attacker, target, Auras.supportOwners(attacker, false));
         creditOwners(target, target, Auras.supportOwners(target, true));
         var projectile = source.getDirectEntity();
@@ -95,6 +99,8 @@ public final class CombatProgression {
             creditOwners(attacker, target, projectile.getData(RpgData.PROJECTILE_COMBAT).supportOwners());
         }
         if (target instanceof ServerPlayer player && eligible(player)) { contact(player, attacker); }
+        if (target instanceof dev.covenant.rpg.skills.HunterPet pet && pet.getOwner() instanceof ServerPlayer owner
+                && dev.covenant.rpg.skills.HunterPets.current(owner) == pet) { ClassResources.markCombat(owner); contact(owner, attacker); }
         creditOwners(target, attacker, Auras.supportOwners(target, false));
     }
     private static void damaged(LivingDamageEvent.Post event) {

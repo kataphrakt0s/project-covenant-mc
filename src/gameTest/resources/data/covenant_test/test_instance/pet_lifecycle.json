@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "type": "minecraft:function",
+  "environment": "covenant_test:pet",
+  "max_ticks": 150,
+  "function": "covenant_test:pet_lifecycle"
+}

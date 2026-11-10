@@ -1,0 +1,7 @@
+{
+  "function": "covenant_test:pet_reload",
+  "structure": "covenant_test:empty",
+  "max_ticks": 150,
+  "type": "minecraft:function",
+  "environment": "covenant_test:pet_reload"
+}

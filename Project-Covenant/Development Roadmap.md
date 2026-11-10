@@ -8,3 +8,9 @@
 6. [[Milestone 6 - Endgame]] — challenge tiers, advanced mastery, gear goals, and long-term content.
 
 See [[Progression Vertical Slice]] for the integrated scope and acceptance criteria.
+
+The presentation track is planned in [[Visual Polish Roadmap]], following
+[[Art Direction]]. It begins with an integrated Frost Trap example and extends
+through combat effects, GUI/UX, Workbench/items and companion assets. This track
+polishes existing gameplay in small deliveries; new companion/world-content
+dependencies remain part of their gameplay milestones.

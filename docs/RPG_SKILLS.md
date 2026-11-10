@@ -1,7 +1,7 @@
 # Skills, class resources, and skill trees
 
 This foundation shares the existing class/profile and native stat/Affix Page systems.
-It adds 34 code-backed skills, persistent skill resources/cooldowns, and an
+It adds 35 code-backed skills, persistent skill resources/cooldowns, and an
 unsaved entity-local cast/combat/combo attachment. The Skills window presents
 the current class's tree with staged point/rank purchases and eight saved
 assignments. Unimplemented nodes remain visible but unavailable. Piercing Shot
@@ -21,8 +21,9 @@ The [Stalker balance proposal](<../Project-Covenant/Project_Covenant_Stalker_Bal
 was accepted unchanged as the numerical starting baseline on 2026-11-06.
 Disengage, Arcane Arrow, and Multishot are implemented with Rank 1 purchasable,
 retaining Rank 8 as the planned maximum. Higher-rank upgrades remain deferred.
-This batch adds only the three new skills; server-datapack skill tuning and
-converting existing Stalker skills to the new balance baseline remain separate work.
+That batch added only those three skills. Hunter's Pet now has separate
+server-datapack tuning below; converting other Stalker skills to the new balance
+baseline remains separate work.
 The implemented definitions below continue to describe current code; notably,
 Piercing Shot still costs 30 Focus with a two-second cooldown, while the accepted
 future baseline is 20 Focus with a three-second cooldown. Proposed rank themes
@@ -49,6 +50,94 @@ uses the existing playable roster; further skill content follows this order.
 This is a dependency guide rather than a promise to implement an entire stage in
 one pass. Rend and the bleed foundation were prioritized next for Reaver's
 dependent skills. Skills whose requirements span stages follow their latest dependency.
+
+## Hunter's Pet
+
+Rank 1 is purchasable at Stalker level 5, with no prerequisite; higher ranks remain
+unavailable. The shipped baseline is an instant summon for 35 Focus, one companion
+with 40 health and 3 native melee damage, and at least 30 ticks between attack
+attempts. Press again to dismiss for free. Summoning starts no cooldown; defeat or
+dismissal starts a 600-tick cooldown. Shared cost/cooldown multipliers apply. The
+cooldown duration snapshots on summon, so a reload or later stat change cannot
+change that companion's penalty. A new summon starts at full health.
+
+Override `data/covenant/skills/hunters_pet.json` and `/reload` to tune `cost`,
+`cooldown_ticks`, `health`, `damage`, and `attack_interval_ticks`. `HunterPetData`
+documents units/defaults/bounds. Each summon snapshots health, damage, interval,
+and scaled cooldown independently of the owner's equipment damage/health.
+Existing pets retain those values and their current health through reloads;
+invalid reloads preserve live tuning. Tooltip numbers describe shipped defaults.
+
+`HunterPet` subclasses the native wolf, reusing its navigation, floating,
+environmental panic, leaping, melee reach/cover checks, following and physiology.
+Landed-damage events select enemies the owner damages (including arrows/spells),
+or enemies damaging the owner/pet. Shared Covenant ally/PvP protections apply,
+including teammate-owned pets; creepers are valid targets. There is no autonomous
+hunting or pack recruitment. Targets clear if no longer eligible or the pet
+strays over 32 blocks from its owner, allowing following to resume. Native hostile
+retaliation can draw aggro; there is no forced target switch or taunt. Native
+damage, armor, hurt immunity, knockback and retaliation remain in effect.
+The pet's own source receives nearby aura bonuses; its owner receives Covenant
+combat participation/XP, once per player, including a pet killing blow. Pet combat
+refreshes the owner's combat timer without granting player basic-attack Rage.
+
+Native wolf food heals the companion with no passive regeneration. Right-click
+does not toggle sitting, breed it, or equip wolf armor; the pet cannot be leashed.
+The skill must remain assigned to at least one Stalker slot. Removing the last
+assignment, respeccing, changing class, or confirmed owner death dismisses it with
+the normal cooldown. Duplicate assignments never grant extra pets. A change
+retaining an assignment preserves it; cancelled deaths preserve the active pet.
+
+`covenant:hunters_pet` is a new server-only owner attachment, with no death copy
+or client-supplied state. Its codec snapshots the live wolf through native entity
+serialization whenever the owner is saved, retaining health, effects, fire,
+attributes, UUID and remaining attack delay. The runtime entity/reference is not
+saved in chunks, so there is only one persistence authority. Logout stores and
+removes the entity; login/server restart restores it near the owner without a
+new charge or heal. Dimension changes and entity chunk unloading use the same
+stored state, clearing the old combat target on restoration. Saved IDs are
+additive; older players start without an active companion.
+
+Placement/recall checks at most 75 candidates within two horizontal blocks and
+one vertical block of the owner, using only loaded chunks, collision-free space,
+solid floor, no liquid and the world border. Failed initial placement/entity add
+spends nothing and starts no cooldown. An existing stored companion waits when
+placement is unsafe, retrying at most once per second on the existing player
+cadence. There is no global entity scan, offline AI, extra tick subscription or
+chunk forcing. Active pets retain the normal cost of native wolf AI; aggregate
+multiplayer performance is unmeasured.
+
+Client-only `HunterPetRenderer` uses the shipped `original_wolf` GeckoLib model,
+atlas, idle/walk/attack/hurt/death clips. Server attacks authorize damage; clips
+are visual feedback. Native corpse removal allows the authored one-second death
+pose without the default sideways flip. Idle/walk selection also uses native cached
+horizontal displacement when GeckoLib's native limb-speed flag is absent; it
+ignores vertical-only motion and recall-sized discontinuities, and hurt/death keep
+priority. Four small shin insets keep body/hip surfaces above overlapping leg faces.
+Rendering and multiplayer timing need manual client checks.
+
+The dedicated `pet_*` fixtures cover summon authority/costs, failed native joins,
+reentrancy, unsafe placement, assignment changes, native feeding, cancelled/confirmed
+deaths, ranged targeting/allies, native attack cadence/retaliation/following,
+health/status save/load, chunk unloading, actual Nether travel, datapack reloads,
+and registered controller idle/walk selection when the native movement flag is absent.
+`pet_restart` normally seeds a native player-file checkpoint in ignored
+`runs/gametest/hunter-pet-restart*`. After a seeding run exits, verify that exact
+file in a new JVM with:
+
+```powershell
+$env:COVENANT_PET_RESTART_CHECK = 'verify'
+try { .\scripts\Dev.ps1 verify }
+finally { Remove-Item Env:COVENANT_PET_RESTART_CHECK }
+```
+
+GameTest worlds are disposable, so this verifies an actual native player file
+across processes, including the original wounded pet identity and single restore;
+it does not establish a complete retained-world restart or real client reconnect.
+For client review, learn/assign Hunter's Pet at Stalker level 5, summon and feed
+it, shoot an enemy and watch retaliation, then test recall/portals, dismissal and
+defeat. Inspect all five animation transitions, model facing/scale and late tracking
+with a second client. No client automation or Prism deployment is part of this run.
 
 ## Weaver Discharge, Threefold System and Teleport
 
@@ -1431,7 +1520,7 @@ unchanged presence. Recipients without a class can see allied buffs. Logout,
 death, class/dimension changes and source cleanup retain their existing gameplay
 boundaries and clear the applicable display. No display state authorizes gameplay.
 
-Slotted area auras show one thin local-owner dust ring at their shared six-block
+Slotted area auras show one thin local-owner ground outline at their shared six-block
 radius, near foot height. Dodge, Swiftness, Ripping, Fortitude, Freezing, Shock,
 Immolation and Enchanting use this field. Raging, Icy Veins and Flame Cloak are
 self-only; Battle Cry and Discharge are not persistent aura fields. Shock chains
@@ -1439,17 +1528,60 @@ are centered on struck targets, so they do not add a misleading caster ring.
 The outline shows a horizontal footprint of the existing spherical range; terrain
 can obscure it. It does not change ignored-cover or vertical-distance rules.
 
-Duplicate slots/shared radii merge into one outline. Native dust is bounded to
-48 live points on All particles, 32 on Decreased, and none on Minimal. Points
-follow the owner and renew on staggered 20-27-tick lifetimes without leaving a
-trail. Unslotting, death, spectator mode, and player/level replacement remove
-them. There are no server particle packets, world/entity scans or chunk forcing.
+Duplicate slots/shared radii merge into one outline. Phase 2 replaces dust with
+a quiet broken ring of depth-tested quads that survives Minimal particles.
+At most 56 of 64 segments sample dry collision support at the owner's elevation;
+there is no trap-style center-to-edge cover ray, because aura gameplay ignores
+cover. Missing support leaves gaps; marks never project onto another floor or
+promise coverage at another elevation. Terrain is sampled each moving owner tick,
+or every five stationary ticks. Extraction snapshots geometry and interpolated
+owner position into native level render state; submission reads that snapshot.
+Unslotting, death, spectator mode and player/level replacement stop the outline.
+There are no new server packets, entity scans or forced chunks.
 
-Trap rendering reuses native iron trapdoor, blue ice, magma and TNT block models.
-Grounded plates match the 1.5-block contact square and 0.25-block contact height;
-smaller thrown plates tumble in flight. Triggered patch cores disappear, leaving
-the existing area particles. Models use ordinary lighting and visual culling
-bounds; the entity's collision, phases and gameplay are unchanged.
+All four traps now use original native item models with opaque 32x32 atlases
+at 16 texels/block. Bear has open opposing toothed jaws and an inset pressure
+plate (14 cuboids); Frost has its low iron frame and fractured crystal (12);
+Flame has an open vented ember cage (11); Blast has an iron-bound wrapped charge
+and a solid pressure primer (5). Blast has no lit fuse or countdown effect.
+A lazily created client-owned visual stack selects `items/<skill_id>.json` ->
+`models/item/<skill_id>.json` -> `textures/item/<skill_id>.png`; there is no new
+registered or saved item. Native lighting and reload-aware model resolution remain
+in use. Visual stacks are allocated only on actual in-world extraction;
+26.1 startup renderer factories run before item components are bound. The model's
+`particle` texture aliases `#0` so resource reload has a valid fallback sprite.
+Smaller devices tumble about their center in flight; each has a lower arming silhouette and incomplete
+corner marks, then full height and the complete 1.5-block square when armed.
+
+Each spent device disappears on trigger. Every armed device has its essential
+contact square; Frost/Flame switch to a 3.5/3-block circular patch footprint.
+Bear and Blast have no lasting area. Thin native depth-tested quads use a dark
+backing and material/element-colored inner edge,
+including on Minimal particles. Up to 64 segments sample loaded collision support
+at the trap's elevation and the existing low cover-ray geometry. Unsupported or
+covered samples leave gaps; nothing projects onto lower floors, and the marking
+does not guarantee coverage on another elevation. Checks cache for five ticks per
+weakly held client entity and rebuild immediately on phase changes. State removal
+stops geometry immediately; no global scan, retained world reference or chunk
+forcing is introduced. These are sampled footprint marks, not terrain decals.
+
+Sparse supported frost fractures/low flame embers and small ready particles use
+native particle settings. Bear's actual contact snap has opposing inward crit
+streaks and an iron close sound; Blast has one brief pressure/poof burst and the
+existing explosion sound. Flame ignition hands off to its patch without leaving
+the device. Natural Frost/Flame expiry emits a native entity event for a small
+breakup/extinguish cue and quiet sound; cancellation/removal does not play false
+natural-expiry cues. No extra gameplay timer is synced, and damage/control/
+ownership/lifetimes are unchanged. Small iron/root, angular freeze and snowflake/
+Chilled target cues use existing synced status state, with freeze taking visual
+priority and no invisible-target reveal or extra networking. Passive aura refresh
+adds no activation or received-buff burst.
+
+Original `textures/gui/skills/<skill_id>.png` provides a native 16x16 tree icon for
+all four traps; initials remain for unauthored skills and very small nodes.
+Editable sources/briefs: ignored `models/<skill_id>/`; mapped headless previews:
+`.local/blockbench/frost-trap/` and `.local/blockbench/phase2/`. No rendered
+Minecraft acceptance or comparative performance claim follows from previews.
 
 Manual checks: inspect top-left layout at normal/high GUI scale, F1 and open-screen
 tooltips; follow combo windows and Threefold active expiry; consume a Dodge charge

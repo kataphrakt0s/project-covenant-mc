@@ -23,6 +23,9 @@ Project Covenant ownership of those materials. References to Minecraft and
 other mods for compatibility or description do not imply ownership or endorsement.
 
 Existing third-party notices remain applicable:
+- GeckoLib (https://github.com/bernie-g/geckolib) is an MIT-licensed runtime
+  dependency distributed as its own mod JAR, not embedded in Covenant. Its
+  upstream copyright and license notices remain with that artifact.
 - TEMPLATE_LICENSE.txt preserves the MIT license and Copyright (c) 2023
   NeoForged project notice for the upstream MDK template files.
 - The Gradle wrapper scripts (gradlew and gradlew.bat) retain their original

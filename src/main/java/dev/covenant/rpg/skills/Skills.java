@@ -29,6 +29,10 @@ public final class Skills {
     /** Prototype Cleave has a 120-degree horizontal sweep, independent of vertical aim. */
     public static final double CLEAVE_HALF_ANGLE_DEGREES = 60;
     private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, Covenant.MOD_ID);
+    public static final DeferredHolder<EntityType<?>, EntityType<HunterPet>> HUNTER_PET = ENTITIES.register("hunters_pet", () ->
+            EntityType.Builder.<HunterPet>of(HunterPet::new, MobCategory.CREATURE).sized(.6f, .85f)
+                    .clientTrackingRange(10).updateInterval(3).noSave().noSummon()
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Covenant.MOD_ID, "hunters_pet"))));
     public static final DeferredHolder<EntityType<?>, EntityType<ElementalBolt>> FIRE_BOLT = elementalBolt("fire_bolt");
     public static final DeferredHolder<EntityType<?>, EntityType<ElementalBolt>> ICE_BOLT = elementalBolt("ice_bolt");
 
@@ -54,6 +58,7 @@ public final class Skills {
 
     public static void register(IEventBus modBus) {
         ENTITIES.register(modBus);
+        HunterPets.register(modBus);
         Bleeding.register();
         Rooted.register(modBus);
         Chilled.register(modBus);
@@ -81,6 +86,7 @@ public final class Skills {
             ClassResources.requireServer(player);
             skill = ReaverSkillData.resolve(player, skill);
             skill = WeaverSkillData.resolve(player, skill);
+            skill = HunterPetData.resolve(player, skill);
             var runtime = player.getData(RpgData.SKILL_RUNTIME);
             if (runtime.executing) { return message("busy"); }
             Auras.reconcile(player);
@@ -90,6 +96,7 @@ public final class Skills {
             if (skill.effect() == SkillDefinition.Effect.PASSIVE) { return message("passive"); }
             if (runtime.cast != null) { return message("casting"); }
             if (ClassResources.now(player) < runtime.nextActivation) { return message("busy"); }
+            if (skill.effect() == SkillDefinition.Effect.HUNTERS_PET) { return HunterPets.activate(player, skill); }
             if (skill.effect() == SkillDefinition.Effect.COMBO) { return Combos.activate(player, skill); }
             double cost = RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, skill.cost());
             if (!ClassResources.canAfford(player, cost)) { return message("resource"); }
@@ -110,12 +117,14 @@ public final class Skills {
         var type = PlayerProfiles.getSelectedClass(player).orElse(null);
         if (type == null || !skill.allowedClasses().contains(type)) { return message("class"); }
         if (!player.getData(RpgData.SKILL_LOADOUT).learned().contains(skill.id())) { return message("unlearned"); }
+        if (skill.effect() == SkillDefinition.Effect.HUNTERS_PET && !HunterPets.assigned(player)) { return message("assigned"); }
         if (skill.effect() == SkillDefinition.Effect.DISCHARGE && !WeaverPower.hasCharges(player)) { return message("charges"); }
         if (skill.effect() == SkillDefinition.Effect.THREEFOLD) {
             if (!WeaverPower.assigned(player)) { return message("assigned"); }
             if (!WeaverPower.canActivate(player)) { return message("reserves"); }
         }
-        if (!ignoresCooldowns(player) && cooldownRemaining(player, skill) > 0) { return message("cooldown", cooldownRemaining(player, skill) / 20.0); }
+        if (!ignoresCooldowns(player) && cooldownRemaining(player, skill) > 0
+                && !(skill.effect() == SkillDefinition.Effect.HUNTERS_PET && HunterPets.active(player))) { return message("cooldown", cooldownRemaining(player, skill) / 20.0); }
         if (skill.effect() == SkillDefinition.Effect.DISENGAGE || skill.effect() == SkillDefinition.Effect.TELEPORT) {
             if (Rooted.contains(player)) { return message("rooted"); }
             if (player.getData(RpgData.SKILL_RUNTIME).movement != null || player.isPassenger() || player.isSleeping()) { return message("busy"); }
@@ -188,6 +197,7 @@ public final class Skills {
             }
             switch (skill.effect()) {
                 case COMBO -> throw new IllegalStateException("Combos use staged activation");
+                case HUNTERS_PET -> throw new IllegalStateException("Companions use their summon/dismiss boundary");
                 case PASSIVE -> throw new IllegalStateException("Passives do not activate");
                 case BATTLE_CRY -> Auras.battleCry(player);
                 case RAGE_STORM -> storm.release();
@@ -223,6 +233,7 @@ public final class Skills {
             long now = ClassResources.now(player);
             if (runtime.lastTick == now) { return; }
             runtime.lastTick = now;
+            if (now % 5 == 0) { HunterPets.tick(player); }
             if (now % 5 == 0) { dev.covenant.rpg.progression.Progression.refreshView(player); }
             var type = PlayerProfiles.getSelectedClass(player).orElse(null);
             var cast = runtime.cast;

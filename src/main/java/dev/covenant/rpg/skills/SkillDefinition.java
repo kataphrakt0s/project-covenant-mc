@@ -14,7 +14,9 @@ import net.minecraft.resources.Identifier;
  */
 public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, double cost,
         int cooldownTicks, int castTicks, Effect effect, double power, double range) {
-    public enum Effect { BOW_SHOT, DISENGAGE, CLEAVE, REND, RAGE_STORM, BATTLE_CRY, PASSIVE, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, DISCHARGE, THREEFOLD, TELEPORT, TRAP, AURA, COMBO }
+    public enum Effect { BOW_SHOT, DISENGAGE, HUNTERS_PET, CLEAVE, REND, RAGE_STORM, BATTLE_CRY, PASSIVE, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, DISCHARGE, THREEFOLD, TELEPORT, TRAP, AURA, COMBO }
+    /** Rank 1: 35 Focus; 600-tick cooldown starts on defeat/dismissal, not summon. See HunterPetData. */
+    public static final SkillDefinition HUNTERS_PET = define("hunters_pet", PlayerClass.STALKER, 35, 600, 0, Effect.HUNTERS_PET, 0, 0);
     /** Rank 1: 20 Focus, six-second cooldown, four-block backward hop over six ticks. */
     public static final SkillDefinition DISENGAGE = define("disengage", PlayerClass.STALKER, 20, 120, 0, Effect.DISENGAGE, 0, 4);
     /** Rank 1: 30 Focus, eight-second cooldown, four magic damage and a four-second vulnerability. */
@@ -66,7 +68,7 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     public static final SkillDefinition SHOCK_AURA = define("shock_aura", PlayerClass.WEAVER, 30, 500, 0, Effect.AURA, 0, 6);
     public static final SkillDefinition IMMOLATION_AURA = define("immolation_aura", PlayerClass.WEAVER, 40, 600, 0, Effect.AURA, 0, 6);
     public static final SkillDefinition ENCHANTING_AURA = define("enchanting_aura", PlayerClass.WEAVER, 40, 500, 0, Effect.AURA, 0, 6);
-    public static final List<SkillDefinition> ALL = List.of(PIERCING_SHOT, AIMED_SHOT, DISENGAGE, ARCANE_ARROW, MULTISHOT, CLEAVE, REND, ARCANE_BOLT,
+    public static final List<SkillDefinition> ALL = List.of(PIERCING_SHOT, AIMED_SHOT, DISENGAGE, HUNTERS_PET, ARCANE_ARROW, MULTISHOT, CLEAVE, REND, ARCANE_BOLT,
             LUNGING_COMBO, RIP_AND_RUSH, BATTLE_CRY, RAGE_STORM, BLOOD_FEVER, BEAR_TRAP, FROST_TRAP, FLAME_TRAP, BLAST_TRAP, FIRE_BOLT, ICE_BOLT, LIGHTNING_BOLT,
             DODGE_AURA, SWIFTNESS_AURA, RIPPING_AURA, FORTITUDE_AURA, RAGING_AURA, ICY_VEINS, FLAME_CLOAK, FREEZING_AURA, SHOCK_AURA, IMMOLATION_AURA, ENCHANTING_AURA,
             DISCHARGE, THREEFOLD_SYSTEM, TELEPORT);

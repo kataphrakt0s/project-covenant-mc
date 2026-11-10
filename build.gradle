@@ -9,6 +9,18 @@ group = mod_group_id
 base { archivesName = mod_id }
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'GeckoLib'
+                url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+            }
+        }
+        filter { includeGroup('com.geckolib') }
+    }
+}
+
 sourceSets.main.resources.srcDir 'src/generated/resources'
 sourceSets.main.resources.exclude '**/.cache/**'
 sourceSets {
@@ -20,7 +32,34 @@ sourceSets {
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
+    // Compile checked integration examples without registering or packaging them.
+    geckoExample {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
 }
+
+configurations {
+    gameTestImplementation.extendsFrom implementation
+    devRuntimeMods {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
+
+dependencies {
+    implementation "com.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+    devRuntimeMods "com.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+}
+
+// Standalone runtime dependencies for launcher/server installation; never shade into Covenant.
+def stageDevRuntimeMods = tasks.register('stageDevRuntimeMods', Sync) {
+    from configurations.devRuntimeMods
+    into layout.buildDirectory.dir('runtime-mods')
+}
+tasks.named('build') { dependsOn stageDevRuntimeMods }
+tasks.named('check') { dependsOn tasks.named('compileGeckoExampleJava') }
 
 neoForge {
     version = project.neo_version
@@ -58,7 +97,7 @@ neoForge {
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     def properties = [mod_id: mod_id, mod_name: mod_name, mod_version: mod_version,
                       mod_license: mod_license, minecraft_version_range: minecraft_version_range,
-                      neo_version: neo_version]
+                      neo_version: neo_version, geckolib_version: geckolib_version]
     inputs.properties properties
     expand properties
     from 'src/main/templates'
@@ -103,3 +142,25 @@ tasks.withType(AbstractArchiveTask).configureEach {
 }
 idea.module.downloadSources = true
 idea.module.downloadJavadoc = true
+
+// Runs the actual pinned GeckoLib parser/baker against a disposable headless MCP smoke export.
+tasks.register('geckoAssetTest', JavaExec) {
+    group = 'verification'
+    description = 'Bakes and samples Blockbench gecko-smoke exports with the pinned GeckoLib runtime.'
+    classpath = sourceSets.geckoExample.runtimeClasspath
+    mainClass = 'dev.covenant.example.gecko.GeckoAssetTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+    if (providers.gradleProperty('geckoAssets').isPresent()) {
+        args providers.gradleProperty('geckoAssets').get()
+    }
+}
+
+// Exercises the production wolf export separately from disposable tooling fixtures.
+tasks.register('wolfAnimationAssetTest', JavaExec) {
+    group = 'verification'
+    description = 'Bakes and samples the shipped wolf rig and five animation clips with GeckoLib.'
+    classpath = sourceSets.geckoExample.runtimeClasspath
+    mainClass = 'dev.covenant.example.gecko.WolfAnimationAssetTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+tasks.named('check') { dependsOn wolfAnimationAssetTest }

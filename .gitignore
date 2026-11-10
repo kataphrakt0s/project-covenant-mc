@@ -8,6 +8,7 @@
 /skills/covenant-modeling/
 /scripts/Blockbench.ps1
 /scripts/blockbench-client.mjs
+/scripts/blockbench-gecko.mjs
 /scripts/blockbench-server.mjs
 /scripts/blockbench-toolchain.json
 build/
@@ -27,3 +28,4 @@ src/generated/resources/.cache/
 *.log
 hs_err_pid*
 .DS_Store
+docs/GECKOLIB.md

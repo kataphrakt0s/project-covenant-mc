@@ -106,16 +106,24 @@ once with `/covenant class select covenant:stalker` (or `reaver` / `weaver` in t
 namespace). Selection initializes the existing profile and class resource balances.
 Its saved class ID retains the profile's persistence and owner sync guarantees.
 Classes each have a playable basic skill, and Stalker also has Aimed Shot and all
-four traps (Bear, Frost, Flame, Blast), plus Disengage, Arcane Arrow and Multishot
-at Rank 1. Disengage makes a four-block backward hop over six ticks, works
+four traps (Bear, Frost, Flame, Blast), plus Disengage, Arcane Arrow, Multishot and
+Hunter's Pet at Rank 1. Disengage makes a four-block backward hop over six ticks, works
 airborne and breaks falls while keeping stationary attacks usable. Arcane Arrow
 replaces its native arrow impact with four magic damage and applies four seconds
 of +15% damage taken after health/absorption damage; Shock adds to +25%.
 Multishot uses one ammo item for five native arrows over thirty degrees, with
 one attempt per target per fan even when blocked/dodged. Shared movement handles
 prediction and lifecycle cleanup; saved native arrow payloads and target fan
-claims preserve effects across save/load. Existing Stalker tuning and
-server-datapack skill configuration remain separate work. See `docs/RPG_SKILLS.md`
+claims preserve effects across save/load. Hunter's Pet reuses wolf movement and
+melee AI, with owner-directed targeting and ordinary retaliation. It costs 35 Focus
+for a 40-health, 3-damage companion biting every 30 ticks; defeat/dismissal starts
+a 600-tick cooldown. Native food heals it; no passive regeneration, sitting,
+breeding or armor. The skill must stay assigned. Owner-saved native snapshots
+retain wounded health/effects across logout, restart and dimension changes;
+offline pets do not tick and no pet forces chunks. Owner death, class change or
+last unassignment dismisses it; pet damage grants owner Covenant combat credit.
+Its tuning lives in `data/covenant/skills/hunters_pet.json`. Other existing Stalker
+tuning and server-datapack skill configuration remain separate work. See `docs/RPG_SKILLS.md`
 for detailed lifetimes and boundaries. Weaver also has Fire Bolt, Ice Bolt, and
 Lightning Bolt. Fire ignites through native burning; Ice applies one saved/synced
 30% Chilled slow; Lightning is an instant aimed hit after its cast, with no status.
@@ -363,13 +371,16 @@ remains a later pass. See
   character, occult imagery and magical spectacle: Minecraft with an ancient,
   forgotten supernatural history. Stalker traps are crafted hunting devices
   containing occult power. The existing original wolf is the visual foundation
-  for the planned Hunter's Pet. Before art-direction or asset-brief work, consult
+  for Hunter's Pet. Before art-direction or asset-brief work, consult
   the user's local reference index and HTML board in ignored
   `docs/art/references/covenant_gothic_lite_references/`. The board uses remote
   previews and requires internet; the collection is absent from fresh checkouts. See
   [Art Direction](<Project-Covenant/Art Direction.md>) for the current visual audit
   and proposed effects, trap and summon designs; specific asset concepts remain
   under review and are not runtime implementation claims.
+  [Visual Polish Roadmap](<Project-Covenant/Visual Polish Roadmap.md>) owns the
+  proposed delivery sequence: Frost Trap first, then combat/GUI/UX/items, advanced
+  effects and gameplay-dependent companions, with per-slice validation.
 - Mod logo: `src/main/resources/mod-icon.png`, referenced by `logoFile` in mod metadata.
   The approved cleaned 400x400 pixel-art logo is also the visual style reference:
   uniform square pixels, clean silhouettes and shading clusters, charcoal/gothic
@@ -389,6 +400,18 @@ remains a later pass. See
   Use the explicit `1.21.11` Java export profile for the compatible schema rather
   than upstream's `26.3` default. See `docs/BLOCKBENCH.md`; headless previews do
   not establish Minecraft client appearance or entity-export API compatibility.
+- GeckoLib 5.5.2 is the required animation runtime for the pinned NeoForge 26.1.2
+  target. `docs/GECKOLIB.md` defines the headless authoring/export contract for
+  entities, block entities and items, including server-owned gameplay and
+  client-only rendering. The original wolf now has exported idle/walk/attack/hurt/
+  death clips and a separate editable GeckoLib source in ignored
+  `models/original_wolf_animated/`; its atlas, UVs and rig remain intact, with four
+  tiny shin insets to prevent leg/body surface fighting. The
+  `wolfAnimationAssetTest` build check bakes and samples the shipped assets with
+  the pinned runtime. Hunter's Pet now uses these assets through a client-only
+  GeckoLib renderer/controller with native wolf movement and melee AI. Locomotion
+  recognizes actual cached horizontal travel when the native movement flag is absent. Local
+  tooling rejects animation features its exporter cannot preserve.
 - Version: `0.1.0-dev`; original Project Covenant source code is MIT licensed
   (`LICENSE`). The logo is excluded with no reuse permission granted by this
   repository (`ASSET-LICENSE.md`); Minecraft and third-party content retain their
@@ -453,6 +476,29 @@ progression, on every update until the user says otherwise. See
 `docs/DEVELOPMENT.md` for the shutdown, backup, reset, and validation workflow.
 
 ## Validation status
+
+Visual polish Phase 1 now delivers an original low iron/crystal Frost Trap, a
+native-size skill-tree icon, and supported same-elevation square/circular range
+marks. Essential Frost boundaries survive Minimal particles and use ordinary
+depth testing; decoration respects particle settings. Unsupported/covered samples
+leave gaps rather than projecting onto lower floors. The device disappears on
+trigger; natural patch expiry has a quiet cosmetic event. Gameplay geometry,
+timings, ownership and cleanup remain unchanged. See the Visual Polish Roadmap
+and `docs/RPG_SKILLS.md`; Minecraft appearance still needs user playtesting.
+Client renderer factories run before item components are bound in 26.1: defer
+presentation ItemStack creation until an active-world render/state extraction.
+
+Visual polish Phase 2 extends that native model/footprint path through Bear's
+toothed jaws/pressure plate, Flame's vented ember cage and Blast's bound charge
+with a solid unlit primer, each with a 16x16 skill-tree icon. All four essential
+contact outlines survive Minimal; Frost/Flame switch to their real patch radii.
+One quiet broken owner-only aura footprint now uses depth-tested ground marks,
+preserving self-only exclusions and the aura's ignored-cover behavior. Like trap
+marks, it samples support at the owner's elevation instead of projecting onto
+other floors. Modest root/freeze/chill cues reuse synced target state. Flame has
+a natural-expiry-only extinguish cue. These are presentation changes; gameplay
+dimensions, damage, timing, ownership and cleanup contracts stay unchanged.
+Minecraft appearance and overlap-scene performance remain unverified.
 
 The user handles manual client playtesting. Routine agent work ends after
 implementation and appropriate automated checks, with a short handoff of relevant

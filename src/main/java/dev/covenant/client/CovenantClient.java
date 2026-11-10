@@ -44,11 +44,16 @@ public final class CovenantClient {
         NeoForge.EVENT_BUS.addListener(this::onMouseButton);
         NeoForge.EVENT_BUS.addListener(SkillKeyMappings::started);
         NeoForge.EVENT_BUS.addListener(SkillVisuals::arrowTick);
+        NeoForge.EVENT_BUS.addListener(TrapVisuals::tick);
+        NeoForge.EVENT_BUS.addListener(ControlVisuals::tick);
         NeoForge.EVENT_BUS.addListener(AuraRangeVisuals::tick);
+        NeoForge.EVENT_BUS.addListener(AuraRangeVisuals::extract);
+        NeoForge.EVENT_BUS.addListener(AuraRangeVisuals::submit);
         NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST, ClientFarming::use);
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(Skills.HUNTER_PET.get(), HunterPetRenderer::new);
         event.registerEntityRenderer(Skills.ARCANE_BOLT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(Skills.FIRE_BOLT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(Skills.ICE_BOLT.get(), ThrownItemRenderer::new);

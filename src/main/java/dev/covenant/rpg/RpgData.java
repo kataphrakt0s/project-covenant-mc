@@ -58,6 +58,10 @@ public final class RpgData {
                     .sync((holder, recipient) -> holder == recipient, SkillState.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<SkillRuntime>> SKILL_RUNTIME = ATTACHMENTS.register(
             "skill_runtime", () -> AttachmentType.builder(SkillRuntime::new).build());
+    /** Sole owner-saved companion snapshot; runtime reference is not serialized and death never copies a pet. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.HunterPets.State>> HUNTER_PET = ATTACHMENTS.register(
+            "hunters_pet", () -> AttachmentType.builder(dev.covenant.rpg.skills.HunterPets.State::new)
+                    .serialize(dev.covenant.rpg.skills.HunterPets.State.CODEC.fieldOf("companion")).build());
     /** Unsaved owner-only elemental charge/reserve view; authority remains in SkillRuntime. */
     public static final Supplier<AttachmentType<dev.covenant.rpg.skills.WeaverDisplay>> WEAVER_DISPLAY = ATTACHMENTS.register(
             "weaver_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.WeaverDisplay.EMPTY)

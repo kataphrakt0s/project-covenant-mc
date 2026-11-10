@@ -11,6 +11,8 @@ validate, convert, export and render `.bbmodel` files without starting Blockbenc
 Load the installed upstream Blockbench skills as relevant, adapting their desktop
 tool examples to the discovered headless schemas. Keep editable sources in
 ignored `models/`; previews and tool dependencies stay in ignored `.local`/`.tools`.
+For animated entities, block entities and items, follow `docs/GECKOLIB.md` and
+the pinned GeckoLib 5 workflow; validate exports before wiring runtime consumers.
 
 Use `skills/grill-plan/SKILL.md` when the user asks to "grill me", stress-test a
 plan, or work down a design tree. Ask one question at a time with a recommendation,

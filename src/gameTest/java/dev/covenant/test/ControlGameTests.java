@@ -27,6 +27,7 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.MoverType;
@@ -220,6 +221,9 @@ final class ControlGameTests {
     private static void check(boolean value, String message) { if (!value) { throw new IllegalStateException(message); } }
 
     private static final class Fixture implements AutoCloseable {
+        // Independent fixture ownership prevents another fixture from removing our shared lane's ticket.
+        final TicketType laneTicket = new TicketType(TicketType.NO_TIMEOUT,
+                TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION | TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<BlockPos> blocks = new ArrayList<>();
@@ -239,7 +243,7 @@ final class ControlGameTests {
             for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 40) >> 4; x++) {
                 for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
                     var chunk = new net.minecraft.world.level.ChunkPos(x, z); chunks.add(chunk);
-                    if (helper.getLevel().setChunkForced(x, z, true)) { forced.add(chunk); }
+                    if (forced.add(chunk)) { helper.getLevel().getChunkSource().addTicketWithRadius(laneTicket, chunk, 2); }
                 }
             }
             helper.runBeforeTestEnd(() -> {
@@ -309,7 +313,7 @@ final class ControlGameTests {
                 }
             }
             blocks.forEach(position -> helper.getLevel().setBlockAndUpdate(position, Blocks.AIR.defaultBlockState()));
-            forced.forEach(chunk -> helper.getLevel().setChunkForced(chunk.x(), chunk.z(), false)); forced.clear();
+            forced.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(laneTicket, chunk, 2)); forced.clear();
         }
     }
 }

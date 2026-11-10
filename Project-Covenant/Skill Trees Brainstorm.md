@@ -620,15 +620,58 @@ interruption cancels without spending. Cost and cooldown begin when the arrow fi
 #### Hunter's Pet
 Minimum character level: 5.
 
-Planned behavior: summon a fixed, skill-defined companion. One companion follows
+Implemented Rank 1: summon a fixed, skill-defined companion. One companion follows
 the player and assists in combat, remaining until defeated or dismissed. Pet
 survival is part of managing the skill.
 
 Combat behavior: automatically attack enemies the player damages and retaliate
 against enemies that damage the player.
 
-Initial defeat rule: defeat starts a cooldown. Once that cooldown expires, the
-player can summon the pet again. Cooldown duration is deferred.
+Implementation: reuse native wolf movement and combat AI wherever
+possible. The pet draws attacks through normal enemy retaliation; its attacks do
+not force target changes or apply a taunt. Enemies may continue pursuing the owner.
+
+Defeat rule: defeat starts a cooldown. Once that cooldown expires, the
+player can summon the pet again. The agreed Rank 1 baseline is 30 seconds, subject
+to the shared skill cooldown multiplier. Pressing the skill while the pet is alive
+dismisses it without a Focus cost and starts the same cooldown. After the cooldown,
+a new summon costs 35 Focus and creates a full-health replacement; dismissal
+cannot provide an immediate heal through resummoning.
+
+Persistence: retain the living companion's health and state across logout and
+server restarts in a small owner-saved record. Remove its world entity while the
+owner is offline and restore it beside the owner on login without healing or
+duplicating it. Offline companions do not tick or force chunks; use lifecycle
+events rather than global scans.
+
+Dimension travel: transfer the companion beside its owner without a Focus cost or
+cooldown, preserving health and clearing its combat target. If no safe placement
+is available, keep the companion stored until it can appear safely. Do not force
+chunks to find a placement.
+
+Owner death: a confirmed owner death dismisses the companion and starts its normal
+30-second resummon cooldown. A new summon after respawn costs 35 Focus and starts
+at full health. Cancelled deaths do not dismiss the pet or start this cooldown.
+
+Healing: use native wolf food and feeding behavior to restore health. The
+companion has no automatic health regeneration.
+
+Targeting: assist against any valid enemy the owner damages, including creepers,
+and defend the owner or itself against attackers. Use Covenant's shared ally and
+PvP protections. Do not independently hunt skeletons or wildlife. Retain native
+wolf movement and melee AI; native species exclusions do not govern companion
+target selection. Engaging a creeper may expose the pet to its explosion.
+
+Loadout: the companion requires Hunter's Pet to remain assigned to a skill slot.
+Removing its last assignment, unlearning it through respec, or switching away
+from Stalker dismisses it and starts its normal cooldown. A change that retains
+at least one assignment preserves the companion; duplicate assignments grant no
+additional pets.
+
+Interactions: the summoned companion always follows when not fighting. Native
+wolf food heals it; there is no sit/stay toggle, breeding, or wolf armor. Use the
+skill key to dismiss it. Rank 1 uses the accepted provisional balance of 40 health,
+3 attack damage and a 30-tick attack interval; higher ranks remain deferred.
 
 #### Barrage
 Minimum character level: 5.

@@ -1,0 +1,7 @@
+{
+  "cost": 35,
+  "cooldown_ticks": 600,
+  "health": 40,
+  "damage": 3,
+  "attack_interval_ticks": 30
+}

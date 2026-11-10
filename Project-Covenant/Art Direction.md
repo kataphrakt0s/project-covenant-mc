@@ -23,9 +23,10 @@ supernatural purpose through its construction, wear, markings or behavior.
 Use the existing original wolf as the visual foundation for Hunter's Pet.
 Stalker traps are **crafted hunting devices containing occult power**: practical
 mechanisms and recognizable construction with supernatural elements bound into
-them. This family direction is agreed. The specific models, materials, motifs,
-effect treatments and production order below remain proposals for review, not
-approved asset designs or implemented features.
+them. This family direction is agreed. The Frost and Phase 2 trap examples are
+now implemented prototypes for client review; the remaining asset-specific
+materials, motifs and effects below remain proposals unless explicitly recorded
+as delivered. Headless validation alone does not establish visual acceptance.
 
 The approved packaged logo establishes clean silhouettes, deliberate pixel
 clusters, charcoal forms, stone/lavender tones and selective violet accents.
@@ -86,10 +87,10 @@ Minecraft client playtest.
 | Area | Present implementation | Opportunity |
 | --- | --- | --- |
 | Combat feedback | Cast/release/impact sounds, native poses, bounded particles, elemental cues and status icons already have lifecycle hooks. | Give these cues original shapes, timing and materials. |
-| Traps | Iron trapdoor, blue ice, magma and TNT block models, scaled into shallow grounded objects with flight tumble. | Replace placeholders with four related, recognizable devices. |
-| AoE and auras | Particle outlines communicate contact squares, patch circles and one owner-only aura range. | Establish more stable boundaries and deliberate magical markings. |
+| Traps | Original iron/crystal Frost, toothed Bear jaws/plate, vented Flame cage and bound Blast charge/solid primer. | Review the family together at gameplay scale. |
+| AoE and auras | Supported depth-tested trap squares/patch circles and one broken owner-only aura footprint, including on Minimal. | Review terrain gaps, overlap readability and renderer cost in Minecraft. |
 | Projectiles | Arcane/Fire/Ice bolts use thrown vanilla item models; lightning uses sampled electric sparks. | Original cores, angular lightning, authored trails and impact frames. |
-| Original assets | The packaged logo and local original wolf demonstrate the pixel/model direction. No custom combat texture/particle family is packaged under Covenant assets yet. | Produce one complete playable example before expanding the family. |
+| Original assets | Packaged logo, original wolf and the four trap models/atlases/icons demonstrate the pixel/model direction. | Review Minecraft appearance before expanding the combat family. |
 | Summons | Hunter's Pet and Elemental Golem remain planned skills. The wolf has geometry, UVs and texture, but no animation clips or runtime integration. | Plan assets now; companion gameplay and entity integration are separate implementation work. |
 
 Current consumers: [TrapRenderer](../src/main/java/dev/covenant/client/TrapRenderer.java),
@@ -243,30 +244,34 @@ motion locally from existing entity state or bounded events. Cap recurring effec
 reuse geometry, cull distant visuals and measure busy scenes before making
 performance claims. New VFX should not require global scans or forced chunks.
 
-Recommended production sequence, not yet commissioned:
-
-1. **Frost Trap complete slice:** model, texture, arming cue, trigger burst,
-   persistent patch boundary and expiry. This proves physical art and occult AoE
-   language in one already playable skill.
-2. Extend the successful boundary treatment to the other traps and auras while
-   preserving each shape, lifetime and visibility rule.
-3. Give Arcane Bolt, Cleave and Piercing Shot representative original effects;
-   then apply their family treatments to broader elemental and advanced skills.
-4. Integrate/animate the existing wolf alongside the separate companion gameplay
-   slice. Use it to establish the first custom entity pipeline.
-5. Block out one golem body before producing four form variants.
+The proposed production order, independently deliverable slices and completion
+checks live in [[Visual Polish Roadmap]]. Start with a complete Frost Trap
+example, then expand the trap/AoE and core combat families alongside GUI/UX,
+Workbench/items and progression feedback. Advanced effects and companion assets
+follow their actual dependencies; the wolf establishes the entity pipeline before
+four golem forms. This document owns the art direction; the roadmap owns sequence.
 
 Review the first slice at normal gameplay scale on grass, pale terrain and dark
 stone, in daylight and caves, on steps/ledges, with overlapping effects and reduced
 particles. Check geometry and lifetime automatically; judge silhouette, spectacle,
-occlusion and readability in the client. This planning pass changes no runtime
-assets and establishes no new rendered or performance validation.
+occlusion and readability in the client. Phase 1 runtime delivery establishes no
+new Minecraft rendered or comparative performance validation.
 
 ## Next decisions
 
-Review the Frost Trap concept first: **low iron frame with a bound crystal** is
-the recommended expression of the agreed crafted-device direction. Then settle
-the AoE ornament density and particle-setting behavior through that example.
+Phase 1 implements the **low iron frame with a bound fractured crystal** example.
+The user approved preserving essential depth-tested boundaries on Minimal,
+with gaps at unsupported/covered samples at the trap's elevation. Decoration
+follows native particle settings; passive aura visibility remains owner-only.
+The prototype uses sparse interior fractures, ordinary lit original iron/crystal
+textures, and a matching native-size icon. Client review will settle visual
+acceptance and ornament density. Phase 2 implements the Bear jaws/pressure plate,
+Flame ember cage and Blast charge/solid unlit primer, retaining Frost's iron ramp
+and texel density. One merged broken aura outline uses the same supported
+same-elevation treatment while deliberately omitting trap cover rays. Small
+status hints and actual-trigger/expiry cues stay separate from passive refresh.
+Headless mapped
+previews and technical validation do not establish Minecraft appearance.
 Arcane's possible violet shift and the golem's stone-guardian concept remain open.
 
 Related: [[Project Covenant - GDD]], [[Abilities]], [[Classes and Specializations]],

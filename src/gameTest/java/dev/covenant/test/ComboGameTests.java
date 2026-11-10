@@ -18,6 +18,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
@@ -89,7 +90,15 @@ final class ComboGameTests {
     }
 
     static void movement(GameTestHelper helper) {
-        try (var f = new Fixture(helper, 130)) {
+        var f = new Fixture(helper, 130);
+        // Freeze uses a native entity query in a lane beyond the one-block template.
+        f.forceLanes(120, 12);
+        helper.runBeforeTestEnd(() -> {
+            f.close();
+            helper.fail("Combo movement fixture chunks did not become entity-ticking before timeout");
+        });
+        helper.startSequence().thenWaitUntil(f::assertLanesReady).thenExecute(() -> {
+        try (f) {
             var p = f.player(); p.setNoGravity(false); p.fallDistance = 100; p.setDeltaMovement(8, -10, 4);
             Vec3 start = p.position();
             used(p, SkillDefinition.LUNGING_COMBO);
@@ -135,10 +144,18 @@ final class ComboGameTests {
             check(Combos.moving(resistant), "Fully resisted knockback does not interrupt");
             helper.succeed();
         }
+        });
     }
 
     static void effects(GameTestHelper helper) {
-        try (var f = new Fixture(helper, 145)) {
+        var f = new Fixture(helper, 145);
+        f.forceLanes(40, 12);
+        helper.runBeforeTestEnd(() -> {
+            f.close();
+            helper.fail("Combo effect fixture chunks did not become entity-ticking before timeout");
+        });
+        helper.startSequence().thenWaitUntil(f::assertLanesReady).thenExecute(() -> {
+        try (f) {
             var p = f.player();
             var front = f.target(p.position().add(0, 0, 2));
             var behind = f.target(p.position().add(0, 0, -2));
@@ -166,6 +183,8 @@ final class ComboGameTests {
             var striker = f.player();
             used(striker, SkillDefinition.LUNGING_COMBO); steps(striker, 3);
             var hit = f.target(striker.position().add(0, 0, 2));
+            check(helper.getLevel().getEntitiesOfClass(LivingEntity.class, hit.getBoundingBox()).contains(hit),
+                    "Strike fixture target is available to native entity queries");
             ready(striker); used(striker, SkillDefinition.LUNGING_COMBO);
             near(hit.getHealth(), 187.5, "125 percent strike");
             hit.invulnerableTime = 0;
@@ -183,6 +202,7 @@ final class ComboGameTests {
             hit.removeAllEffects(); near(hit.getAttributeValue(Attributes.ARMOR), 20, "Native cleansing restores armor");
             helper.succeed();
         }
+        });
     }
 
     static void lifecycle(GameTestHelper helper) {
@@ -281,7 +301,14 @@ final class ComboGameTests {
     }
 
     static void interactions(GameTestHelper helper) {
-        try (var f = new Fixture(helper, 205)) {
+        var f = new Fixture(helper, 205);
+        f.forceLanes(40, 28);
+        helper.runBeforeTestEnd(() -> {
+            f.close();
+            helper.fail("Combo interaction fixture chunks did not become entity-ticking before timeout");
+        });
+        helper.startSequence().thenWaitUntil(f::assertLanesReady).thenExecute(() -> {
+        try (f) {
             var p = f.player();
             p.getAttribute(RpgStats.SKILL_DURATION).setBaseValue(2);
             finishRush(f, p, 3);
@@ -329,12 +356,15 @@ final class ComboGameTests {
             var trap = new TrapEntity(Skills.TRAP.get(), helper.getLevel());
             invoke(trap, "initialize", new Class<?>[] {ServerPlayer.class, TrapKind.class, int.class}, trapOwner, TrapKind.BLAST, 0);
             trap.setPos(blasted.position().add(1, 0, 0));
+            check(helper.getLevel().getEntitiesOfClass(LivingEntity.class, blasted.getBoundingBox()).contains(blasted),
+                    "Blast fixture player is available to native entity queries");
             used(blasted, SkillDefinition.LUNGING_COMBO);
             invoke(trap, "trigger", new Class<?>[] {LivingEntity.class}, blasted);
             check(!Combos.moving(blasted) && !blasted.isNoGravity(), "Real Blast Trap effect ends skill movement");
             check(blasted.getDeltaMovement().lengthSqr() > 0 && row(blasted, 0).stage() == 1, "Blast impulse survives and follow-up opens");
             helper.succeed();
         }
+        });
     }
 
     static void prediction(GameTestHelper helper) {
@@ -579,31 +609,45 @@ final class ComboGameTests {
     private static void check(boolean condition, String message) { if (!condition) { throw new IllegalStateException(message); } }
 
     private static final class Fixture implements AutoCloseable {
+        // TicketStorage compares type identity: each fixture owns independent, unsaved
+        // entity-ticking tickets even when its lanes overlap another fixture's lanes.
+        final TicketType laneTicket = new TicketType(TicketType.NO_TIMEOUT,
+                TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION | TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<LivingEntity> mobs = new ArrayList<>();
         final List<BlockPos> blocks = new ArrayList<>();
         final java.util.Set<net.minecraft.world.level.ChunkPos> forced = new java.util.HashSet<>();
         final Vec3 origin;
+        int laneWidth = 160;
+        int laneLength = 12;
         Fixture(GameTestHelper helper, int height) {
             this.helper = helper;
             var pos = helper.absolutePos(new BlockPos(2, height, 2));
             origin = new Vec3(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
         }
         void forceLanes() {
+            forceLanes(160, 12);
+        }
+        void forceLanes(int width, int length) {
+            laneWidth = width;
+            laneLength = length;
             // The tiny template does not cover the contact/prediction lanes appended to its east.
-            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 160) >> 4; x++) {
-                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
-                    if (helper.getLevel().setChunkForced(x, z, true)) { forced.add(new net.minecraft.world.level.ChunkPos(x, z)); }
+            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + laneWidth) >> 4; x++) {
+                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + laneLength) >> 4; z++) {
+                    var chunk = new net.minecraft.world.level.ChunkPos(x, z);
+                    if (forced.add(chunk)) {
+                        helper.getLevel().getChunkSource().addTicketWithRadius(laneTicket, chunk, 2);
+                    }
                 }
             }
         }
         void assertLanesReady() {
             // Block loading and a fixed delay do not establish entity-section visibility.
-            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 160) >> 4; x++) {
-                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
+            for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + laneWidth) >> 4; x++) {
+                for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + laneLength) >> 4; z++) {
                     helper.assertTrue(helper.getLevel().areEntitiesActuallyLoadedAndTicking(new net.minecraft.world.level.ChunkPos(x, z)),
-                            "Sliding fixture chunks must be loaded and entity-ticking");
+                            "Combo fixture chunks must be loaded and entity-ticking");
                 }
             }
         }
@@ -657,7 +701,8 @@ final class ComboGameTests {
                 if (helper.getLevel().getServer().getPlayerList().getPlayer(player.getUUID()) == player) { helper.getLevel().getServer().getPlayerList().remove(player); }
             }
             players.clear(); blocks.forEach(p -> helper.getLevel().setBlockAndUpdate(p, Blocks.AIR.defaultBlockState())); blocks.clear();
-            forced.forEach(chunk -> helper.getLevel().setChunkForced(chunk.x(), chunk.z(), false)); forced.clear();
+            forced.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(laneTicket, chunk, 2));
+            forced.clear();
         }
     }
 }

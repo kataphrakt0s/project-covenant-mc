@@ -283,6 +283,7 @@ final class GatheringGameTests {
                     positions.getFirst().getY(), positions.getFirst().getZ() - 1, new ItemStack(Items.EMERALD));
             helper.getLevel().addFreshEntity(unrelated); var unrelatedPoint = unrelated.position();
             Vec3[] originPoint = {null};
+            var batchLoot = new ArrayList<ItemEntity>();
             Consumer<BlockDropsEvent> modify = event -> {
                 if (event.getBreaker() != player) { return; }
                 if (event.getPos().equals(positions.getFirst())) { originPoint[0] = event.getDrops().getFirst().position(); }
@@ -291,6 +292,7 @@ final class GatheringGameTests {
                             event.getPos().getZ(), new ItemStack(Items.EMERALD)));
                 }
                 if (event.getPos().equals(positions.get(2))) { event.setCanceled(true); }
+                if (!event.isCanceled()) { batchLoot.addAll(event.getDrops()); }
             };
             NeoForge.EVENT_BUS.addListener(modify);
             try { player.gameMode.destroyBlock(positions.getFirst()); } finally { NeoForge.EVENT_BUS.unregister(modify); }
@@ -299,7 +301,10 @@ final class GatheringGameTests {
             gatheredDrops(f, Items.RAW_IRON, positions.getFirst());
             var loot = helper.getLevel().getEntitiesOfClass(ItemEntity.class,
                     new AABB(Vec3.atLowerCornerOf(f.pos(0, -2, 0)), Vec3.atLowerCornerOf(f.pos(16, 36, 16))));
-            check(loot.stream().filter(e -> e != unrelated).allMatch(e -> e.position().equals(originPoint[0])),
+            // Other concurrently running fixtures may drop items inside this broad query box.
+            // Check the exact native/event-added entities produced by this player's batch.
+            check(batchLoot.size() == 3 && loot.containsAll(batchLoot), "Both native drops and the event-added drop spawn");
+            check(batchLoot.stream().allMatch(e -> e.position().equals(originPoint[0])),
                     "Native and event-added loot use the initiating block's actual drop point");
             check(unrelated.position().equals(unrelatedPoint), "Nearby preexisting loose items are untouched");
             clearDrops(f);

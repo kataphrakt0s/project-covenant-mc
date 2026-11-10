@@ -2,6 +2,147 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Trap family and area clarity - visual polish Phase 2 (2026-11-10)
+
+- Bear: 14 cuboids / 168 triangles, opposing toothed jaws, pressure plate,
+  actual-trigger snap streaks/sound. Flame: 11 cuboids / 132 triangles, vented
+  ember vessel, ignition-to-patch handoff and natural-expiry-only extinguish.
+  Blast: 5 cuboids / 60 triangles, bound charge/solid unlit primer and brief
+  pressure burst. All share Frost's native item-model path, iron ramp, 32x32
+  opaque atlas density (16 texels/block), and matching 16x16 tree icons.
+- Headless geometry reported zero errors/warnings on all three. Mirror naming
+  is not applicable; interpenetration gate self-tests cannot discriminate in
+  these single-group sources. Native/enlarged atlases/icons and iso/front/back/
+  left/right/top/three-quarter mapped previews were inspected. The packaged
+  resource audit checks exact source/export PNG agreement, proportional UVs at
+  one texel/model unit, dimensions, alpha/palettes and each definition/model/
+  texture/icon chain. Sources/briefs stay ignored under models/<skill_id>/;
+  previews/evidence stay .local/blockbench/phase2 and .local/phase2.
+- Essential supported contact squares now survive Minimal for every trap;
+  Frost/Flame switch to their actual circular patch footprints. One merged
+  owner-only broken aura outline replaces dust, preserves self-only exclusions,
+  and omits trap cover rays because aura gameplay ignores cover. Both use dry
+  same-elevation support sampling without downward projection. Aura extraction
+  snapshots geometry/position into native level render state. Root/freeze/chill
+  target hints use existing synced state; no new gameplay or saved IDs.
+- scripts/Dev.ps1 build passed. Final scripts/Dev.ps1 verify passed:
+  **All 173 required tests passed :)** and **BUILD SUCCESSFUL**. This exercises
+  dedicated-server loading and existing trap/aura/control/lifecycle suites;
+  it does not exercise Minecraft client rendering. No gameplay assertions or
+  fixtures were weakened. One compile error in the new aura's local-variable
+  declaration was corrected before the successful build and final verification.
+- Pending user client review: all silhouettes and throw/arming/readiness states,
+  square versus patch-circle semantics, snap/ignition/burst/expiry timing, visible
+  targets, grass/snow/pale/dark ground, walls/slabs/stairs/ledges, Minimal, nearby
+  observers, shared/self-only auras, root/freeze/chill, reload and lifecycle
+  removal. Overlap-scene frame cost is unmeasured; no performance improvement
+  is claimed. No client automation/launch, Prism deployment, retained-world
+  restart, remote deployment or ATM11 compatibility validation was performed.
+
+## Frost Trap startup resource reload fix (2026-11-10)
+
+- User-reported black main menu was traced to the installed Prism latest.log:
+  Failed to create model for covenant:trap, caused by Components not bound yet
+  in ItemStack construction inside TrapRenderer. Startup resource reload invokes
+  renderer factories before Minecraft 26.1 binds item components.
+- Deferred the visual ItemStack allocation to the first in-world extraction.
+  Added the exported model particle texture alias #0 to fix its separate warning.
+- scripts/Dev.ps1 build passed. Packaged model/texture/UV/PNG audit passed;
+  compiled renderer constructor/static initializer inspection confirms no startup
+  ItemStack allocation. No client launch or rendered main-menu recheck performed.
+- Corrected JAR is in build/libs; Prism still needs the rebuilt artifact deployed.
+
+## Frost Trap visual polish Phase 1 (2026-11-10)
+
+- Original low iron/crystal device: 12 cuboids, 72 faces / 144 triangles, one
+  opaque 32x32 atlas at 16 texels/block. A 16x16 cutout skill-tree icon retains
+  text fallbacks for other skills and very small nodes. Native-size, enlarged
+  nearest-neighbor and mapped isometric/top headless previews were inspected.
+- Headless geometry reported zero errors/warnings; mirror matching is not
+  applicable to these node names. Interpenetration self-test cannot discriminate
+  across groups in this single-group device; mapped overlaps were inspected.
+  A separate audit checked all exported face UV spans at one texel/model unit,
+  palette/alpha values and the packaged definition -> model -> texture chain.
+- Frost's depth-tested square/patch footprint remains visible on Minimal, with
+  sampled gaps where same-elevation support or low cover rays fail. Other trap
+  and aura presentation remains as before. Trigger/expiry use bounded cosmetic
+  cues; no gameplay values, saved state or gameplay lifecycle rules changed.
+- `scripts/Dev.ps1 build` passed. Final elevated `scripts/Dev.ps1 verify` passed:
+  **All 173 required tests passed :)** and **BUILD SUCCESSFUL**. Logs and the
+  resource/UV audit are in ignored `.local/frost-polish/`; mapped model previews
+  are in `.local/blockbench/frost-trap/`.
+- Earlier runs had one failure each: Control fixture chunk warmup, then Combo's
+  native freeze setup beyond the template. Test-only corrections give Control
+  independently owned simulation tickets and make Combo movement await its lane
+  chunks. Production chunk loading and gameplay assertions were preserved. The
+  first sandboxed run also logged a SavedData atomic-rename access error; final
+  verification was run outside that sandbox.
+- Pending user Minecraft review: first/third-person throw and readiness, trigger
+  square versus patch circle, grass/snow/pale/dark ground, slabs/stairs/ledges,
+  All/Decreased/Minimal, nearby observers, resource reload, expiry and lifecycle
+  removal. No client launch/automation, Prism deployment, retained-world restart,
+  remote deployment, ATM11 compatibility or runtime performance measurement.
+
+## Wolf leg surfaces and walk selection (2026-11-10)
+
+- All four shin cubes in the animated source and runtime geometry use a -0.02
+  model-unit inset. Front shins sit behind the ruff; rear shins sit behind the
+  body/hip surfaces. Body, hips, paws, UVs, atlas, pivots and animation keys are
+  preserved. The source audit confirms only those four approved adjustments,
+  with 20 cubes, 11 bones and all 1,964 numeric animation keys retained.
+- Headless front/rear idle and intermediate walk previews show the corrected
+  surface ordering in .local/blockbench/wolf-leg-fix/. Geometry has zero errors
+  and eight inherited volume-overlap warnings for rigid joints; GeckoLib and
+  animation validation have zero errors/warnings. No new geometry was added.
+- The registered controller now recognizes native cached horizontal displacement
+  when GeckoLib's native movement flag is absent. It returns to idle on stop,
+  ignores vertical-only travel and recall-sized jumps, and preserves hurt/death
+  priority. pet_locomotion exercises the actual registered controller handler.
+- Animated GameTests use fully compatible NeoForge mock channels and explicitly
+  in-memory embedded connections, in an isolated pet environment. Earlier full
+  runs exposed missing GeckoLib channels and config-sync setup in the fixtures;
+  those fixture errors are corrected without changing production networking.
+- Final scripts/Dev.ps1 verify succeeded. Explicit final line:
+  All 173 required tests passed :)
+  Evidence: .local/wolf-visual-fixes-verify-complete.log. Wolf asset checks passed
+  all five clips and 34,926 runtime samples. Packaged model/clip/atlas bytes match
+  the source exports; test fixtures remain excluded from the production JAR.
+- The final log includes four Windows SavedData atomic-rename AccessDenied
+  warnings during early reload checks. The run subsequently completed all tests
+  and reported all dimensions saved; it is not proof of a retained-world restart.
+- Minecraft client appearance and observed walk transitions remain manual checks.
+  No client launch, Prism deployment, commit or push was performed.
+
+## Hunter's Pet (2026-11-10)
+
+- Rank 1 now summons the original animated wolf through a native Wolf subclass:
+  35 Focus, 40 health, 3 damage, 30-tick melee interval; defeat/dismissal starts
+  600 ticks of cooldown. Existing skill cost/cooldown modifiers apply. Native
+  feeding heals; no passive regeneration, sitting, breeding or wolf armor.
+- Owner-local snapshots use native entity serialization in the ordinary player
+  save path. Pets are not saved in chunks, do not tick offline, and do not force
+  chunks. Logout/restart, actual Nether travel and chunk unloading preserve the
+  wounded companion; unsafe restore waits on a bounded one-second retry.
+- Twelve focused pet tests passed, including native ranged targeting, hostile
+  retaliation/following, attack cadence, ally protection, resource/slot authority,
+  failed joins and reentrancy, native feeding, cancelled/confirmed deaths,
+  health/effects/fire save/load, stored placement, class cleanup and valid/invalid
+  datapack reloads with existing summon snapshots preserved.
+- Final validation: scripts/Dev.ps1 verify with COVENANT_PET_RESTART_CHECK=verify
+  completed successfully. Explicit final line: All 172 required tests passed :)
+  Log: .local/pet-verify-final.log. The fresh JVM loaded the previously seeded
+  native player file and restored exactly one original pet at 11 health, with
+  no extra Focus cost. The GameTest world is disposable; this is a cross-process
+  native player-file check, not a retained-world restart or real client reconnect.
+- The build's wolfAnimationAssetTest passed: 11 bones, 5 clips, 34,926 runtime
+  samples and the 128x64 atlas. JAR inspection found the pet runtime classes and
+  exact shipped model/animation/texture/tuning bytes, without tests/examples.
+  Language JSON parses; git diff --check passes.
+- Manual checks remain wolf facing/scale, idle/walk/attack/hurt/death transitions,
+  late tracking and two-client timing, and real client reconnect/retained-world
+  restart. Aggregate multiplayer performance has not been benchmarked. No client
+  launch, Prism/LAN deployment, publishing, commit or push was performed.
+
 ## Status icons, aura outlines and native traps (2026-11-10)
 
 - `scripts/Dev.ps1 build` and final `scripts/Dev.ps1 verify`: compilation,

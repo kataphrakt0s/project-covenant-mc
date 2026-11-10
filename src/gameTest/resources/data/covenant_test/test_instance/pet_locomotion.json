@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "function": "covenant_test:pet_locomotion",
+  "environment": "covenant_test:pet",
+  "type": "minecraft:function",
+  "max_ticks": 150
+}

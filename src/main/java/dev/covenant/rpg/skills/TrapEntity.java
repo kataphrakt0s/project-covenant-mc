@@ -45,6 +45,9 @@ public final class TrapEntity extends Entity implements ItemSupplier {
     public static final double CONTACT_HEIGHT = 0.25;
     public static final int ARM_TICKS = 10;
     public static final int EXPIRE_TICKS = 600;
+    /** This entity's cosmetic natural-patch-expiry event; no timer or saved state is sent. */
+    private static final byte FROST_EXPIRED = 70;
+    private static final byte FLAME_EXPIRED = 71;
     private ServerPlayer owner;
     private int duration;
     private int phaseTicks;
@@ -87,7 +90,7 @@ public final class TrapEntity extends Entity implements ItemSupplier {
     @Override public void tick() {
         try (var zone = Profiler.get().zone("covenant:trap")) {
             super.tick();
-            if (level().isClientSide()) { SkillVisuals.trap(this); return; }
+            if (level().isClientSide()) { return; }
             if (!validOwner() || getY() < level().getMinY() - 4) { discard(); return; }
             if (wet()) { discard(); return; }
             if (phase() == Phase.FLIGHT) { fly(); return; }
@@ -99,7 +102,16 @@ public final class TrapEntity extends Entity implements ItemSupplier {
             } else if (phase() == Phase.ARMED && ++phaseTicks >= EXPIRE_TICKS) {
                 discard(); return;
             } else if (phase() == Phase.TRIGGERED) {
-                if (++phaseTicks >= duration) { discard(); return; }
+                if (++phaseTicks >= duration) {
+                    if (kind() == TrapKind.FROST) {
+                        level().broadcastEntityEvent(this, FROST_EXPIRED);
+                        SkillSounds.play((ServerLevel) level(), position(), SoundEvents.AMETHYST_BLOCK_CHIME, .18f, 1.8f);
+                    } else if (kind() == TrapKind.FLAME) {
+                        level().broadcastEntityEvent(this, FLAME_EXPIRED);
+                        SkillSounds.play((ServerLevel) level(), position(), SoundEvents.FIRE_EXTINGUISH, .18f, 1.6f);
+                    }
+                    discard(); return;
+                }
                 patch(); return;
             }
             if (phase() == Phase.ARMED) {
@@ -116,6 +128,14 @@ public final class TrapEntity extends Entity implements ItemSupplier {
         return owner != null && !owner.isRemoved() && owner.isAlive() && !owner.hasDisconnected()
                 && owner.level() == level() && PlayerProfiles.getSelectedClass(owner).orElse(null) == PlayerClass.STALKER
                 && owner.getData(RpgData.SKILL_LOADOUT).learned().contains(kind().skillId);
+    }
+
+    @Override public void handleEntityEvent(byte event) {
+        if (event == FROST_EXPIRED && kind() == TrapKind.FROST && level().isClientSide()) {
+            SkillVisuals.frostExpiry(this);
+        } else if (event == FLAME_EXPIRED && kind() == TrapKind.FLAME && level().isClientSide()) {
+            SkillVisuals.flameExpiry(this);
+        } else { super.handleEntityEvent(event); }
     }
 
     private void fly() {

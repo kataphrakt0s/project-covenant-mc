@@ -58,40 +58,6 @@ public final class SkillVisuals {
         }
     }
 
-    /** Tracked entity state drives local particles for every viewer, without recurring server packets. */
-    static void trap(TrapEntity trap) {
-        if (trap.tickCount % 5 != 0 || trap.phase() == TrapEntity.Phase.REMOVED
-                || trap.phase() == TrapEntity.Phase.FLIGHT) { return; }
-        var dust = new DustParticleOptions(trap.kind().color,
-                trap.phase() == TrapEntity.Phase.ARMED ? 1.0f : 0.6f);
-        boolean patch = trap.phase() == TrapEntity.Phase.TRIGGERED;
-        double radius = patch ? trap.kind().radius : TrapEntity.CONTACT_RADIUS;
-        int count = patch ? 40 : 12;
-        var center = trap.position().add(0, 0.1, 0);
-        for (int i = 0; i < count; i++) {
-            Vec3 point;
-            if (patch) {
-                double angle = Math.PI * 2 * i / count;
-                point = center.add(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-            } else {
-                // Three samples per edge show the actual square contact footprint, including its corners.
-                double along = -radius + (i % 3) * (2 * radius / 3);
-                point = switch (i / 3) {
-                    case 0 -> center.add(along, 0, -radius);
-                    case 1 -> center.add(radius, 0, along);
-                    case 2 -> center.add(-along, 0, radius);
-                    default -> center.add(-radius, 0, -along);
-                };
-            }
-            if (!patch || trap.clearLine(center, point)) {
-                trap.level().addParticle(dust, point.x, point.y, point.z, 0, 0, 0);
-            }
-        }
-        if (trap.phase() == TrapEntity.Phase.ARMED) {
-            trap.level().addParticle(ParticleTypes.END_ROD, trap.getX(), trap.getY() + 0.2, trap.getZ(), 0, 0.005, 0);
-        }
-    }
-
     static void trapSnap(ServerLevel level, TrapEntity trap) {
         var particle = switch (trap.kind()) {
             case BEAR -> ParticleTypes.CRIT;
@@ -102,6 +68,36 @@ public final class SkillVisuals {
         level.sendParticles(particle,
                 trap.getX(), trap.getY() + 0.2, trap.getZ(), trap.kind() == TrapKind.BLAST ? 1 : 8,
                 0.15, 0.1, 0.15, 0.01);
+        if (trap.kind() == TrapKind.FROST) {
+            level.sendParticles(ICE, trap.getX(), trap.getY() + .2, trap.getZ(), 12, .25, .1, .25, .04);
+        } else if (trap.kind() == TrapKind.BEAR) {
+            // Opposing inward contact streaks reinforce the mechanical snap, never imply a lasting area.
+            for (int side = -1; side <= 1; side += 2) {
+                level.sendParticles(ParticleTypes.CRIT, trap.getX(), trap.getY() + .15,
+                        trap.getZ() + side * .3, 0, 0, 0, -side, .12);
+            }
+        } else if (trap.kind() == TrapKind.FLAME) {
+            level.sendParticles(FIRE, trap.getX(), trap.getY() + .15, trap.getZ(), 6, .2, .05, .2, .02);
+        } else if (trap.kind() == TrapKind.BLAST) {
+            // Short outward pressure/debris, without TNT fuse smoke or a persistent damage ring.
+            level.sendParticles(ParticleTypes.POOF, trap.getX(), trap.getY() + .15, trap.getZ(), 8, .2, .08, .2, .08);
+        }
+    }
+
+    static void frostExpiry(TrapEntity trap) {
+        for (int i = 0; i < 8; i++) {
+            double angle = Math.PI * 2 * i / 8;
+            trap.level().addParticle(ParticleTypes.SNOWFLAKE, trap.getX() + Math.cos(angle) * .35,
+                    trap.getY() + .08, trap.getZ() + Math.sin(angle) * .35, 0, .015, 0);
+        }
+    }
+
+    static void flameExpiry(TrapEntity trap) {
+        for (int i = 0; i < 4; i++) {
+            double angle = Math.PI * 2 * i / 4;
+            trap.level().addParticle(ParticleTypes.SMOKE, trap.getX() + Math.cos(angle) * .2,
+                    trap.getY() + .08, trap.getZ() + Math.sin(angle) * .2, 0, .01, 0);
+        }
     }
 
     static void bowDraw(ServerPlayer player, long ticks) {

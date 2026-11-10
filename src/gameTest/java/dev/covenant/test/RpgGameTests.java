@@ -52,6 +52,19 @@ public final class RpgGameTests {
             DeferredRegister.create(Registries.TEST_FUNCTION, "covenant_test");
 
     static {
+        FUNCTIONS.register("pet_activation", () -> HunterPetGameTests::activation);
+        FUNCTIONS.register("pet_rejected_spawn", () -> HunterPetGameTests::rejectedSpawn);
+        FUNCTIONS.register("pet_lifecycle", () -> HunterPetGameTests::lifecycle);
+        FUNCTIONS.register("pet_persistence", () -> HunterPetGameTests::persistence);
+        FUNCTIONS.register("pet_targeting", () -> HunterPetGameTests::targeting);
+        FUNCTIONS.register("pet_native_ai", () -> HunterPetGameTests::nativeAi);
+        FUNCTIONS.register("pet_death_feeding", () -> HunterPetGameTests::deathAndFeeding);
+        FUNCTIONS.register("pet_config", () -> HunterPetGameTests::config);
+        FUNCTIONS.register("pet_locomotion", () -> HunterPetGameTests::locomotion);
+        FUNCTIONS.register("pet_stored_safety", () -> HunterPetGameTests::storedSafety);
+        FUNCTIONS.register("pet_travel", () -> HunterPetGameTests::travel);
+        FUNCTIONS.register("pet_reload", () -> HunterPetGameTests::reload);
+        FUNCTIONS.register("pet_restart", () -> HunterPetGameTests::restart);
         FUNCTIONS.register("feedback_volley", () -> SkillFeedbackGameTests::volley);
         FUNCTIONS.register("feedback_casting", () -> SkillFeedbackGameTests::casting);
         FUNCTIONS.register("feedback_impacts", () -> SkillFeedbackGameTests::impacts);

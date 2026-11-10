@@ -8,7 +8,7 @@ and isolate Gradle's cache, avoiding the default Java 24 installation.
 .\scripts\Dev.ps1 build    # Compile/check and package build/libs/covenant-0.1.0-dev.jar
 .\scripts\Dev.ps1 test     # Dedicated GameTests for RPG data/stats (separate from build)
 .\scripts\Dev.ps1 verify   # Build plus dedicated GameTests; recommended before handing off gameplay
-.\scripts\Dev.ps1 deploy   # Build and copy the JAR to the isolated Prism instance
+.\scripts\Dev.ps1 deploy   # Build and copy Covenant + pinned GeckoLib to the isolated Prism instance
 .\scripts\Dev.ps1 prism    # Build, deploy, and launch through Prism
 .\scripts\Dev.ps1 client   # Launch the source-based Gradle development client
 .\scripts\Dev.ps1 server   # Launch the development dedicated server
@@ -16,9 +16,20 @@ and isolate Gradle's cache, avoiding the default Java 24 installation.
 ```
 
 Close the development game before deploying another build. Prism's instance is
-`Project Covenant - Dev (26.1.2)`; it contains only NeoForge and this mod. The
-deployment script replaces only `covenant-*.jar` in that marker-owned instance.
-Other mods and worlds are retained. New dependencies require explicit setup.
+`Project Covenant - Dev (26.1.2)`; its baseline is NeoForge, Covenant and GeckoLib.
+The deployment script replaces only `covenant-*.jar` in that marker-owned instance
+and installs the exact GeckoLib dependency when absent. A different GeckoLib
+filename or conflicting bytes stop deployment for explicit resolution; other
+mods and worlds are retained.
+
+GeckoLib **5.5.2 for NeoForge 26.1.2** is required on both client and server.
+`gradle.properties` pins it; `build` resolves it from the official GeckoLib Maven
+repository and stages its standalone JAR in `build/runtime-mods/`. It is not
+bundled into Covenant's JAR. Manual launcher or server installations must copy
+that GeckoLib JAR beside Covenant. Gradle client/server/GameTest runs load the
+same dependency automatically. Java integration examples under `src/geckoExample`
+compile during `check`/`build` but are never registered or packaged. See
+[GECKOLIB.md](GECKOLIB.md) for the animation authoring and runtime workflow.
 
 Connecting clients must use the same Covenant `mod_version` and network wire
 revisions as the server. Required payload negotiation rejects mismatches before
@@ -46,6 +57,9 @@ Blockbench running. `scripts/Blockbench.ps1 setup -InstallSkills` provisions loc
 tools and upstream skills; `smoke` checks the real MCP/render path, and `register`
 connects the `covenant-bbmodel` server to Codex. The modeling scripts, skill, guide
 and editable `models/` sources are Git-ignored local files, absent from fresh checkouts.
+For GeckoLib assets, use `gecko-create`, `gecko-export` and `gecko-smoke`;
+[GECKOLIB.md](GECKOLIB.md) documents the supported animation subset and the
+compile-checked entity, block-entity and item integration examples.
 
 ## Profiling Covenant
 

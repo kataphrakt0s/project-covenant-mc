@@ -325,7 +325,9 @@ final class SkillsScreen extends Screen {
             if (isHoveredOrFocused() || selected == node) {
                 graphics.outline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, 0xFFF5DBA6);
             }
-            // Initials stand in for future icons; full names and rules remain in native hover/focus tooltips.
+            if (SkillIcons.draw(graphics, node.id(), getX() + 3, getY() + 3, getWidth() - 6,
+                    locked && !learned ? 0xFF8997A5 : 0xFFFFFFFF)) { return; }
+            // Unauthored skills retain initials; names and rules remain in hover/focus tooltips.
             String label = font.width(initials) <= getWidth() - 4 ? initials : initials.substring(0, 1);
             graphics.centeredText(font, label, getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2,
                     learned ? 0xFFF5DBA6 : locked ? 0xFF77828E : 0xFFE2E8ED);
