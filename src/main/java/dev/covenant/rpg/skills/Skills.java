@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -76,28 +77,30 @@ public final class Skills {
 
     /** Returns localized feedback and changes nothing on rejection. Casts spend only at completion. */
     public static Component activate(ServerPlayer player, SkillDefinition skill) {
-        ClassResources.requireServer(player);
-        skill = ReaverSkillData.resolve(player, skill);
-        skill = WeaverSkillData.resolve(player, skill);
-        var runtime = player.getData(RpgData.SKILL_RUNTIME);
-        if (runtime.executing) { return message("busy"); }
-        Auras.reconcile(player);
-        Combos.expire(player);
-        var failure = validate(player, skill);
-        if (failure != null) { return failure; }
-        if (skill.effect() == SkillDefinition.Effect.PASSIVE) { return message("passive"); }
-        if (runtime.cast != null) { return message("casting"); }
-        if (ClassResources.now(player) < runtime.nextActivation) { return message("busy"); }
-        if (skill.effect() == SkillDefinition.Effect.COMBO) { return Combos.activate(player, skill); }
-        double cost = RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, skill.cost());
-        if (!ClassResources.canAfford(player, cost)) { return message("resource"); }
-        long cast = Auras.active(player, Auras.Kind.ICY_VEINS) && SpellSkills.isSpell(skill) ? 0 : (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, skill.castTicks()));
-        long cooldown = (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, skill.cooldownTicks()));
-        if (cast == 0) { return execute(player, skill, cost, cooldown); }
-        runtime.cast = new PendingCast(skill, PlayerProfiles.getSelectedClass(player).orElseThrow(),
-                ClassResources.now(player) + cast, cost, cooldown);
-        runtime.cast.begin(player, cast);
-        return message("started", skill.displayName(), cast / 20.0);
+        try (var zone = Profiler.get().zone("covenant:skill_activate")) {
+            ClassResources.requireServer(player);
+            skill = ReaverSkillData.resolve(player, skill);
+            skill = WeaverSkillData.resolve(player, skill);
+            var runtime = player.getData(RpgData.SKILL_RUNTIME);
+            if (runtime.executing) { return message("busy"); }
+            Auras.reconcile(player);
+            Combos.expire(player);
+            var failure = validate(player, skill);
+            if (failure != null) { return failure; }
+            if (skill.effect() == SkillDefinition.Effect.PASSIVE) { return message("passive"); }
+            if (runtime.cast != null) { return message("casting"); }
+            if (ClassResources.now(player) < runtime.nextActivation) { return message("busy"); }
+            if (skill.effect() == SkillDefinition.Effect.COMBO) { return Combos.activate(player, skill); }
+            double cost = RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, skill.cost());
+            if (!ClassResources.canAfford(player, cost)) { return message("resource"); }
+            long cast = Auras.active(player, Auras.Kind.ICY_VEINS) && SpellSkills.isSpell(skill) ? 0 : (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, skill.castTicks()));
+            long cooldown = (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, skill.cooldownTicks()));
+            if (cast == 0) { return execute(player, skill, cost, cooldown); }
+            runtime.cast = new PendingCast(skill, PlayerProfiles.getSelectedClass(player).orElseThrow(),
+                    ClassResources.now(player) + cast, cost, cooldown);
+            runtime.cast.begin(player, cast);
+            return message("started", skill.displayName(), cast / 20.0);
+        }
     }
 
     private static Component validate(ServerPlayer player, SkillDefinition skill) {
@@ -150,54 +153,56 @@ public final class Skills {
     }
 
     private static Component prepareAndExecute(ServerPlayer player, SkillDefinition skill, double cost, long cooldown) {
-        var failure = validate(player, skill);
-        if (failure != null) { return failure; }
-        var rendTarget = skill.effect() == SkillDefinition.Effect.REND ? MeleeSkills.rendTarget(player) : null;
-        var shot = skill.effect() == SkillDefinition.Effect.BOW_SHOT ? BowSkills.prepare(player) : null;
-        if (skill.effect() == SkillDefinition.Effect.BOW_SHOT && shot == null) { return message("arrow"); }
-        TrapEntity trap = null;
-        if (skill.effect() == SkillDefinition.Effect.TRAP) { trap = Traps.prepare(player, skill); }
-        if (skill.effect() == SkillDefinition.Effect.TRAP && trap == null) { return message("unavailable"); }
-        if (trap != null && (trap.isRemoved() || validate(player, skill) != null)) {
-            trap.discard(); return message("unavailable");
+        try (var zone = Profiler.get().zone("covenant:skill_execute")) {
+            var failure = validate(player, skill);
+            if (failure != null) { return failure; }
+            var rendTarget = skill.effect() == SkillDefinition.Effect.REND ? MeleeSkills.rendTarget(player) : null;
+            var shot = skill.effect() == SkillDefinition.Effect.BOW_SHOT ? BowSkills.prepare(player) : null;
+            if (skill.effect() == SkillDefinition.Effect.BOW_SHOT && shot == null) { return message("arrow"); }
+            TrapEntity trap = null;
+            if (skill.effect() == SkillDefinition.Effect.TRAP) { trap = Traps.prepare(player, skill); }
+            if (skill.effect() == SkillDefinition.Effect.TRAP && trap == null) { return message("unavailable"); }
+            if (trap != null && (trap.isRemoved() || validate(player, skill) != null)) {
+                trap.discard(); return message("unavailable");
+            }
+            var storm = skill.effect() == SkillDefinition.Effect.RAGE_STORM ? RageStorm.prepare(player) : null;
+            if (skill.effect() == SkillDefinition.Effect.RAGE_STORM && storm == null) { return message("unavailable"); }
+            if (storm != null && (storm.isRemoved() || validate(player, skill) != null)) {
+                storm.discard(); return message("unavailable");
+            }
+            var destination = skill.effect() == SkillDefinition.Effect.TELEPORT ? Teleport.destination(player, skill.range()) : null;
+            if (skill.effect() == SkillDefinition.Effect.TELEPORT && destination == null) { return message("destination"); }
+            // Commit before any damaging effect. A rejected entity add never replaces the previous trap.
+            if (!ClassResources.consume(player, cost)) {
+                if (trap != null) { trap.discard(); }
+                if (storm != null) { storm.discard(); }
+                return message("resource");
+            }
+            long now = ClassResources.now(player);
+            player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(skill.id(), now + Math.max(1, cooldown)));
+            player.getData(RpgData.SKILL_RUNTIME).nextActivation = now + 1;
+            switch (skill.effect()) {
+                case COMBO -> throw new IllegalStateException("Combos use staged activation");
+                case PASSIVE -> throw new IllegalStateException("Passives do not activate");
+                case BATTLE_CRY -> Auras.battleCry(player);
+                case RAGE_STORM -> storm.release();
+                case AURA -> Auras.activate(player, skill);
+                case ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT -> SpellSkills.execute(player, skill);
+                case TRAP -> Traps.accept(player, trap);
+                case BOW_SHOT -> BowSkills.fire(player, skill, shot);
+                case DISENGAGE -> Combos.disengage(player);
+                case CLEAVE -> MeleeSkills.cleave(player, skill);
+                case REND -> MeleeSkills.rend(player, rendTarget);
+                case DISCHARGE -> Discharge.execute(player);
+                case THREEFOLD -> WeaverPower.activate(player);
+                case TELEPORT -> Teleport.execute(player, destination);
+            }
+            WeaverPower.castCompleted(player, skill);
+            if (skill.effect() != SkillDefinition.Effect.BOW_SHOT) {
+                player.swing(InteractionHand.MAIN_HAND, true);
+            }
+            return message("used", skill.displayName(), cost);
         }
-        var storm = skill.effect() == SkillDefinition.Effect.RAGE_STORM ? RageStorm.prepare(player) : null;
-        if (skill.effect() == SkillDefinition.Effect.RAGE_STORM && storm == null) { return message("unavailable"); }
-        if (storm != null && (storm.isRemoved() || validate(player, skill) != null)) {
-            storm.discard(); return message("unavailable");
-        }
-        var destination = skill.effect() == SkillDefinition.Effect.TELEPORT ? Teleport.destination(player, skill.range()) : null;
-        if (skill.effect() == SkillDefinition.Effect.TELEPORT && destination == null) { return message("destination"); }
-        // Commit before any damaging effect. A rejected entity add never replaces the previous trap.
-        if (!ClassResources.consume(player, cost)) {
-            if (trap != null) { trap.discard(); }
-            if (storm != null) { storm.discard(); }
-            return message("resource");
-        }
-        long now = ClassResources.now(player);
-        player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(skill.id(), now + Math.max(1, cooldown)));
-        player.getData(RpgData.SKILL_RUNTIME).nextActivation = now + 1;
-        switch (skill.effect()) {
-            case COMBO -> throw new IllegalStateException("Combos use staged activation");
-            case PASSIVE -> throw new IllegalStateException("Passives do not activate");
-            case BATTLE_CRY -> Auras.battleCry(player);
-            case RAGE_STORM -> storm.release();
-            case AURA -> Auras.activate(player, skill);
-            case ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT -> SpellSkills.execute(player, skill);
-            case TRAP -> Traps.accept(player, trap);
-            case BOW_SHOT -> BowSkills.fire(player, skill, shot);
-            case DISENGAGE -> Combos.disengage(player);
-            case CLEAVE -> MeleeSkills.cleave(player, skill);
-            case REND -> MeleeSkills.rend(player, rendTarget);
-            case DISCHARGE -> Discharge.execute(player);
-            case THREEFOLD -> WeaverPower.activate(player);
-            case TELEPORT -> Teleport.execute(player, destination);
-        }
-        WeaverPower.castCompleted(player, skill);
-        if (skill.effect() != SkillDefinition.Effect.BOW_SHOT) {
-            player.swing(InteractionHand.MAIN_HAND, true);
-        }
-        return message("used", skill.displayName(), cost);
     }
 
     public static boolean canHit(LivingEntity owner, LivingEntity target) {
@@ -207,31 +212,33 @@ public final class Skills {
     }
 
     private static void tick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
-        var runtime = player.getData(RpgData.SKILL_RUNTIME);
-        long now = ClassResources.now(player);
-        if (runtime.lastTick == now) { return; }
-        runtime.lastTick = now;
-        if (now % 5 == 0) { dev.covenant.rpg.progression.Progression.refreshView(player); }
-        var type = PlayerProfiles.getSelectedClass(player).orElse(null);
-        var cast = runtime.cast;
-        if (cast != null) {
-            if (!player.isAlive() || player.isSpectator() || type != cast.playerClass() || !SkillControls.canAct(player)
-                    || (cast.skill() == SkillDefinition.AIMED_SHOT && validate(player, cast.skill()) != null)) {
-                runtime.cancelCast(player);
-                player.sendSystemMessage(message("cancelled"));
-            } else if (now >= cast.endsAt()) {
-                runtime.cancelCast(player);
-                player.sendSystemMessage(execute(player, cast.skill(), cast.cost(), cast.cooldown()));
-            } else if (cast.skill().effect() == SkillDefinition.Effect.RAGE_STORM) {
-                SkillVisuals.rageCharge(player);
-            } else if (SpellSkills.isSpell(cast.skill())) {
-                SkillVisuals.charge(player);
+        try (var zone = Profiler.get().zone("covenant:skills_tick")) {
+            if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
+            var runtime = player.getData(RpgData.SKILL_RUNTIME);
+            long now = ClassResources.now(player);
+            if (runtime.lastTick == now) { return; }
+            runtime.lastTick = now;
+            if (now % 5 == 0) { dev.covenant.rpg.progression.Progression.refreshView(player); }
+            var type = PlayerProfiles.getSelectedClass(player).orElse(null);
+            var cast = runtime.cast;
+            if (cast != null) {
+                if (!player.isAlive() || player.isSpectator() || type != cast.playerClass() || !SkillControls.canAct(player)
+                        || (cast.skill() == SkillDefinition.AIMED_SHOT && validate(player, cast.skill()) != null)) {
+                    runtime.cancelCast(player);
+                    player.sendSystemMessage(message("cancelled"));
+                } else if (now >= cast.endsAt()) {
+                    runtime.cancelCast(player);
+                    player.sendSystemMessage(execute(player, cast.skill(), cast.cost(), cast.cooldown()));
+                } else if (cast.skill().effect() == SkillDefinition.Effect.RAGE_STORM) {
+                    SkillVisuals.rageCharge(player);
+                } else if (SpellSkills.isSpell(cast.skill())) {
+                    SkillVisuals.charge(player);
+                }
             }
-        }
-        if (type != null && player.isAlive() && !player.isSpectator() && now % 5 == 0) {
-            ClassResources.tick(player, type);
-            WeaverPower.reconcile(player);
+            if (type != null && player.isAlive() && !player.isSpectator() && now % 5 == 0) {
+                ClassResources.tick(player, type);
+                WeaverPower.reconcile(player);
+            }
         }
     }
 

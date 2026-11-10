@@ -5,6 +5,7 @@ import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -57,15 +58,17 @@ public final class BloodFever {
         }
     }
     private static void tick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
-        if (!assigned(player)) {
-            if (player.getData(RpgData.SKILL_RUNTIME).bloodFeverCount > 0) { clear(player); }
-            return;
+        try (var zone = Profiler.get().zone("covenant:blood_fever")) {
+            if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
+            if (!assigned(player)) {
+                if (player.getData(RpgData.SKILL_RUNTIME).bloodFeverCount > 0) { clear(player); }
+                return;
+            }
+            var runtime = player.getData(RpgData.SKILL_RUNTIME);
+            long now = ClassResources.now(player);
+            if (now < runtime.nextBloodFever) { return; }
+            runtime.nextBloodFever = now + ReaverSkillData.get(player.level().getServer()).fever().interval();
+            refresh(player);
         }
-        var runtime = player.getData(RpgData.SKILL_RUNTIME);
-        long now = ClassResources.now(player);
-        if (now < runtime.nextBloodFever) { return; }
-        runtime.nextBloodFever = now + ReaverSkillData.get(player.level().getServer()).fever().interval();
-        refresh(player);
     }
 }

@@ -6,6 +6,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
@@ -29,7 +31,8 @@ public record HarvestDefinitions(List<Ore> ores, List<Crop> crops, List<Tree> tr
     }
     public record Ore(Match blocks, Identifier activity) {}
     public record Tree(Match logs, Match leaves) {}
-    public record Crop(Identifier block, IntegerProperty age, int mature) {
+    /** Planting item is optional for legacy XP-only definitions; configured items must plant this block. */
+    public record Crop(Identifier block, IntegerProperty age, int mature, Item plantingItem) {
         public boolean test(BlockState state) {
             return BuiltInRegistries.BLOCK.getKey(state.getBlock()).equals(block) && state.getValue(age) == mature;
         }
@@ -55,7 +58,16 @@ public record HarvestDefinitions(List<Ore> ores, List<Crop> crops, List<Tree> tr
             if (!(property instanceof IntegerProperty age) || !age.getPossibleValues().contains(mature)) {
                 throw new IllegalArgumentException("Invalid crop maturity: " + id);
             }
-            crops.add(new Crop(id, age, mature));
+            Item plantingItem = null;
+            if (object.has("planting_item")) {
+                var itemId = Identifier.parse(object.get("planting_item").getAsString());
+                if (!BuiltInRegistries.ITEM.containsKey(itemId)
+                        || !(BuiltInRegistries.ITEM.getValue(itemId) instanceof BlockItem item) || item.getBlock() != block) {
+                    throw new IllegalArgumentException("Planting item must place crop: " + id);
+                }
+                plantingItem = item;
+            }
+            crops.add(new Crop(id, age, mature, plantingItem));
         }
         for (var element : json.getAsJsonArray("trees")) {
             var object = element.getAsJsonObject();

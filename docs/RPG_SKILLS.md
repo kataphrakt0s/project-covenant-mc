@@ -63,7 +63,7 @@ numbers explicitly describe shipped defaults.
 
 | Skill | Shipped Rank 1 defaults |
 |---|---|
-| Discharge | 30 Mana, 240-tick cooldown, ten-tick cast; three-block spherical radius; one direct damage per stored stack of each element |
+| Discharge | 30 Mana, 240-tick cooldown, ten-tick cast; five-block spherical radius; one direct damage per stored stack of each element |
 | Threefold System | Assigned self-only passive; instant activation for 10 Mana, 500-tick cooldown; up to +30% damage per element for 160 base ticks |
 | Teleport | Instant eight-block aimed blink for 25 Mana, 200-tick cooldown; no damage |
 
@@ -118,9 +118,12 @@ shots, and later buffs do not boost them retroactively. Active duration uses the
 existing duration multiplier. Existing active snapshots survive balance reloads;
 new contributions/activations adopt live data and reads clamp to the live cap.
 
-Teleport sweeps the full player collision box along full 3D aim, stopping before
-the first solid/entity collision without sliding, stepping up or passing through
-thin shapes. The destination needs body space but no floor. World border and
+Teleport sweeps the full player collision box up to eight blocks along full 3D aim,
+stopping before solid walls without wall sliding, stepping up or passing through
+thin shapes. Floor/ceiling contact clips vertical movement and lets the remaining
+horizontal aim component continue, without adding speed or crossing the surface.
+Entities do not obstruct the blink. The destination needs body space but no floor;
+unsupported upward/downward endpoints are allowed. World border and
 build-height bounds constrain travel. A route whose collision-query bounds enter
 an unloaded chunk rejects without forcing/loading it. Less than 0.1 blocks of
 available movement also rejects without spending or cooldown. Root, freeze,

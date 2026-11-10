@@ -35,6 +35,8 @@ public final class Covenant {
         NeoForge.EVENT_BUS.addListener(ClassCommands::register);
         NeoForge.EVENT_BUS.addListener(StatCommands::register);
         NeoForge.EVENT_BUS.addListener(AffixCommands::register);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST,
+                dev.covenant.rpg.progression.ProfessionGathering::drops);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProgressionData::register);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProfessionData::register);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProfessionEffects::incoming);

@@ -69,10 +69,10 @@ lookup `ServerChunkCache.getChunkNow`.
 
 | Rank | Minimum Mining level | Point cost | Maximum blocks per activation |
 |---|---:|---:|---:|
-| I | 2 | 1 | 8 |
-| II | 5 | 1 | 16 |
-| III | 10 | 1 | 32 |
-| IV | 15 | 1 | 64 |
+| I | 2 | 1 | 4 |
+| II | 5 | 1 | 8 |
+| III | 10 | 1 | 16 |
+| IV | 15 | 1 | 32 |
 
 Block limits include the initially mined block. These are configurable prototype
 defaults; a deposit larger than the limit requires another mining action.

@@ -10,6 +10,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -215,8 +216,10 @@ public final class Auras {
     }
 
     public static boolean frozen(LivingEntity target) {
-        return target.level().isClientSide() ? target.getData(RpgData.AURA_FROZEN)
-                : active(target, Kind.FREEZING) || active(target, Kind.DISCHARGE_FREEZE);
+        try (var zone = Profiler.get().zone("covenant:freeze_check")) {
+            return target.level().isClientSide() ? target.getData(RpgData.AURA_FROZEN)
+                    : active(target, Kind.FREEZING) || active(target, Kind.DISCHARGE_FREEZE);
+        }
     }
 
     public static boolean consumeDodge(LivingEntity target) {
@@ -331,42 +334,44 @@ public final class Auras {
     }
 
     private static void tick(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof LivingEntity target) || !(target.level() instanceof ServerLevel)) { return; }
-        if (target instanceof ServerPlayer source) {
-            reconcile(source);
-            if (now(source) % REFRESH_TICKS == 0) { refresh(source); }
-        }
-        if (!target.hasData(RpgData.AURAS)) { return; }
-        if (!target.isAlive()) { clear(target); return; }
-        var state = target.getData(RpgData.AURAS);
-        if (state.passive.isEmpty() && state.active.isEmpty() && state.shieldOwner == null
-                && state.assigned.isEmpty() && state.recipients.isEmpty()) {
-            target.removeData(RpgData.AURAS); return;
-        }
-        long now = now(target);
-        if (now < state.nextExpiry && !(state.shieldOwner != null && state.shield <= 0)) {
-            AuraDamage.immolate(target, state, now); return;
-        }
-        var removedOwners = new HashSet<UUID>();
-        boolean changed = false;
-        state.nextExpiry = Long.MAX_VALUE;
-        for (var maps : List.of(state.passive, state.active)) {
-            for (var grants : maps.values()) {
-                var iterator = grants.entrySet().iterator();
-                while (iterator.hasNext()) { var grant = iterator.next(); if (grant.getValue() <= now) { removedOwners.add(grant.getKey()); iterator.remove(); changed = true; }
-                    else { state.nextExpiry = Math.min(state.nextExpiry, grant.getValue()); } }
+        try (var zone = Profiler.get().zone("covenant:auras")) {
+            if (!(event.getEntity() instanceof LivingEntity target) || !(target.level() instanceof ServerLevel)) { return; }
+            if (target instanceof ServerPlayer source) {
+                reconcile(source);
+                if (now(source) % REFRESH_TICKS == 0) { refresh(source); }
             }
-            maps.values().removeIf(Map::isEmpty);
+            if (!target.hasData(RpgData.AURAS)) { return; }
+            if (!target.isAlive()) { clear(target); return; }
+            var state = target.getData(RpgData.AURAS);
+            if (state.passive.isEmpty() && state.active.isEmpty() && state.shieldOwner == null
+                    && state.assigned.isEmpty() && state.recipients.isEmpty()) {
+                target.removeData(RpgData.AURAS); return;
+            }
+            long now = now(target);
+            if (now < state.nextExpiry && !(state.shieldOwner != null && state.shield <= 0)) {
+                AuraDamage.immolate(target, state, now); return;
+            }
+            var removedOwners = new HashSet<UUID>();
+            boolean changed = false;
+            state.nextExpiry = Long.MAX_VALUE;
+            for (var maps : List.of(state.passive, state.active)) {
+                for (var grants : maps.values()) {
+                    var iterator = grants.entrySet().iterator();
+                    while (iterator.hasNext()) { var grant = iterator.next(); if (grant.getValue() <= now) { removedOwners.add(grant.getKey()); iterator.remove(); changed = true; }
+                        else { state.nextExpiry = Math.min(state.nextExpiry, grant.getValue()); } }
+                }
+                maps.values().removeIf(Map::isEmpty);
+            }
+            if (state.shieldOwner != null && (state.shieldUntil <= now || state.shield <= 0)) {
+                removedOwners.add(state.shieldOwner); state.shieldOwner = null; state.shield = 0; changed = true;
+            }
+            if (state.shieldOwner != null) { state.nextExpiry = Math.min(state.nextExpiry, state.shieldUntil); }
+            var cries = state.active.get(Kind.BATTLE_CRY);
+            state.battleCryPower.keySet().removeIf(owner -> cries == null || !cries.containsKey(owner));
+            removedOwners.forEach(owner -> unlink(target, owner));
+            if (changed) { update(target); }
+            AuraDamage.immolate(target, state, now);
         }
-        if (state.shieldOwner != null && (state.shieldUntil <= now || state.shield <= 0)) {
-            removedOwners.add(state.shieldOwner); state.shieldOwner = null; state.shield = 0; changed = true;
-        }
-        if (state.shieldOwner != null) { state.nextExpiry = Math.min(state.nextExpiry, state.shieldUntil); }
-        var cries = state.active.get(Kind.BATTLE_CRY);
-        state.battleCryPower.keySet().removeIf(owner -> cries == null || !cries.containsKey(owner));
-        removedOwners.forEach(owner -> unlink(target, owner));
-        if (changed) { update(target); }
-        AuraDamage.immolate(target, state, now);
     }
 
     /** One shared spatial query for this source's assigned range passives. */

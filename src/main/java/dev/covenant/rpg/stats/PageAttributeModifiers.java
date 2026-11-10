@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
@@ -27,13 +28,15 @@ final class PageAttributeModifiers {
     static void apply(ItemAttributeModifierEvent event) {
         var page = event.getItemStack().get(RpgData.AFFIX_PAGE.get());
         if (page == null) { return; }
-        var slot = SLOTS.get(page.category());
-        // Custom categories retain their data but require an explicit future slot integration.
-        if (slot == null) { return; }
-        String source = "page/" + page.identity() + "/";
-        add(event, page.modifiers(), slot, source + "base/");
-        for (int i = 0; i < page.affixes().size(); i++) {
-            add(event, page.affixes().get(i).modifiers(), slot, source + "affix/" + i + "/");
+        try (var zone = Profiler.get().zone("covenant:equipment_modifiers")) {
+            var slot = SLOTS.get(page.category());
+            // Custom categories retain their data but require an explicit future slot integration.
+            if (slot == null) { return; }
+            String source = "page/" + page.identity() + "/";
+            add(event, page.modifiers(), slot, source + "base/");
+            for (int i = 0; i < page.affixes().size(); i++) {
+                add(event, page.affixes().get(i).modifiers(), slot, source + "affix/" + i + "/");
+            }
         }
     }
 

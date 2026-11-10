@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.profiling.Profiler;
 import org.joml.Matrix3x2f;
 import org.lwjgl.glfw.GLFW;
 
@@ -44,17 +45,19 @@ final class RadialMenuScreen extends Screen {
 
     @Override
     public void tick() {
-        // Opening a Screen clears KeyMapping state, so poll the physical input only while open.
-        boolean held = mouseBinding
-                ? GLFW.glfwGetMouseButton(minecraft.getWindow().handle(), activationCode) == GLFW.GLFW_PRESS
-                : activationCode != GLFW.GLFW_KEY_UNKNOWN
-                    && InputConstants.isKeyDown(minecraft.getWindow(), activationCode);
-        if (!minecraft.isWindowActive() || minecraft.level == null
-                || minecraft.player == null || !minecraft.player.isAlive()) {
-            onClose();
-        } else if (!held) {
-            release(minecraft.mouseHandler.getScaledXPos(minecraft.getWindow()),
-                    minecraft.mouseHandler.getScaledYPos(minecraft.getWindow()));
+        try (var zone = Profiler.get().zone("covenant:radial_menu_tick")) {
+            // Opening a Screen clears KeyMapping state, so poll the physical input only while open.
+            boolean held = mouseBinding
+                    ? GLFW.glfwGetMouseButton(minecraft.getWindow().handle(), activationCode) == GLFW.GLFW_PRESS
+                    : activationCode != GLFW.GLFW_KEY_UNKNOWN
+                        && InputConstants.isKeyDown(minecraft.getWindow(), activationCode);
+            if (!minecraft.isWindowActive() || minecraft.level == null
+                    || minecraft.player == null || !minecraft.player.isAlive()) {
+                onClose();
+            } else if (!held) {
+                release(minecraft.mouseHandler.getScaledXPos(minecraft.getWindow()),
+                        minecraft.mouseHandler.getScaledYPos(minecraft.getWindow()));
+            }
         }
     }
 
@@ -109,26 +112,28 @@ final class RadialMenuScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int radius = RadialMenuLayout.radius(width, height);
-        int hovered = RadialMenuLayout.hoveredSlot(mouseX - centerX, mouseY - centerY, radius);
-        Matrix3x2f pose = new Matrix3x2f(graphics.pose());
-        ScreenRectangle bounds = new ScreenRectangle(centerX - radius, centerY - radius,
-                radius * 2, radius * 2).transformMaxBounds(pose);
-        graphics.submitGuiElementRenderState(new RadialMenuRenderState(pose, centerX, centerY, radius,
-                hovered, graphics.peekScissorStack(), bounds));
+        try (var zone = Profiler.get().zone("covenant:radial_menu")) {
+            int centerX = width / 2;
+            int centerY = height / 2;
+            int radius = RadialMenuLayout.radius(width, height);
+            int hovered = RadialMenuLayout.hoveredSlot(mouseX - centerX, mouseY - centerY, radius);
+            Matrix3x2f pose = new Matrix3x2f(graphics.pose());
+            ScreenRectangle bounds = new ScreenRectangle(centerX - radius, centerY - radius,
+                    radius * 2, radius * 2).transformMaxBounds(pose);
+            graphics.submitGuiElementRenderState(new RadialMenuRenderState(pose, centerX, centerY, radius,
+                    hovered, graphics.peekScissorStack(), bounds));
 
-        for (int slot = 0; slot < options.length; slot++) {
-            double angle = RadialMenuLayout.angle(slot);
-            int x = centerX + (int) Math.round(Math.cos(angle) * radius * 0.72);
-            int y = centerY + (int) Math.round(Math.sin(angle) * radius * 0.72);
-            graphics.centeredText(font, Integer.toString(slot + 1), x, y - font.lineHeight / 2,
-                    slot == hovered ? 0xFFFFD084 : 0xFFE2E8ED);
+            for (int slot = 0; slot < options.length; slot++) {
+                double angle = RadialMenuLayout.angle(slot);
+                int x = centerX + (int) Math.round(Math.cos(angle) * radius * 0.72);
+                int y = centerY + (int) Math.round(Math.sin(angle) * radius * 0.72);
+                graphics.centeredText(font, Integer.toString(slot + 1), x, y - font.lineHeight / 2,
+                        slot == hovered ? 0xFFFFD084 : 0xFFE2E8ED);
+            }
+            graphics.centeredText(font, hovered < 0 ? title : options[hovered], centerX, centerY - 10, 0xFFF5DBA6);
+            graphics.centeredText(font, hovered >= 0 && hovered <= 2 ? Component.translatable("screen.covenant.radial.open") : PLACEHOLDER,
+                    centerX, centerY + 4, 0xFFABB6C2);
+            graphics.centeredText(font, releaseHint, centerX, centerY + radius + 10, 0xFFE2E8ED);
         }
-        graphics.centeredText(font, hovered < 0 ? title : options[hovered], centerX, centerY - 10, 0xFFF5DBA6);
-        graphics.centeredText(font, hovered >= 0 && hovered <= 2 ? Component.translatable("screen.covenant.radial.open") : PLACEHOLDER,
-                centerX, centerY + 4, 0xFFABB6C2);
-        graphics.centeredText(font, releaseHint, centerX, centerY + radius + 10, 0xFFE2E8ED);
     }
 }

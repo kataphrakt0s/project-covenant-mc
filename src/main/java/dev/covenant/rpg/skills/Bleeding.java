@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
@@ -61,33 +62,35 @@ public final class Bleeding {
     }
 
     private static void tick(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof LivingEntity target) || !(target.level() instanceof ServerLevel level)
-                || !target.hasData(RpgData.BLEED)) { return; }
-        if (!target.isAlive()) { target.removeData(RpgData.BLEED); return; }
-        var state = target.getData(RpgData.BLEED);
-        if (state.advancePulse()) {
-            // At most three snapshots once per second; damage/death hooks may consume or reapply bleeds.
-            var pulse = state.stacks().toArray(BleedState.Stack[]::new);
-            var type = level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DAMAGE_TYPE);
-            for (var stack : pulse) {
-                if (!target.isAlive() || !target.hasData(RpgData.BLEED)
-                        || target.getData(RpgData.BLEED) != state || !state.stacks().contains(stack)) { break; }
-                var entity = level.getEntity(stack.attacker());
-                LivingEntity attacker = entity instanceof LivingEntity living ? living : level.getServer().getPlayerList().getPlayer(stack.attacker());
-                // No direct strike/projectile: bleed cannot be dodged. The causing player still gets combat credit.
-                var source = new DamageSource(type, null, attacker);
-                var before = AuraDamage.before(target);
-                // Preserve UUID kill credit even when the applying player is offline.
-                if (attacker == null || attacker instanceof ServerPlayer) { target.setLastHurtByPlayer(stack.attacker(), 100); }
-                target.hurtServer(level, source, stack.damage());
-                if (before.landed(target)) {
-                    SkillVisuals.bleedTick(level, target);
+        try (var zone = Profiler.get().zone("covenant:bleeding")) {
+            if (!(event.getEntity() instanceof LivingEntity target) || !(target.level() instanceof ServerLevel level)
+                    || !target.hasData(RpgData.BLEED)) { return; }
+            if (!target.isAlive()) { target.removeData(RpgData.BLEED); return; }
+            var state = target.getData(RpgData.BLEED);
+            if (state.advancePulse()) {
+                // At most three snapshots once per second; damage/death hooks may consume or reapply bleeds.
+                var pulse = state.stacks().toArray(BleedState.Stack[]::new);
+                var type = level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DAMAGE_TYPE);
+                for (var stack : pulse) {
+                    if (!target.isAlive() || !target.hasData(RpgData.BLEED)
+                            || target.getData(RpgData.BLEED) != state || !state.stacks().contains(stack)) { break; }
+                    var entity = level.getEntity(stack.attacker());
+                    LivingEntity attacker = entity instanceof LivingEntity living ? living : level.getServer().getPlayerList().getPlayer(stack.attacker());
+                    // No direct strike/projectile: bleed cannot be dodged. The causing player still gets combat credit.
+                    var source = new DamageSource(type, null, attacker);
+                    var before = AuraDamage.before(target);
+                    // Preserve UUID kill credit even when the applying player is offline.
+                    if (attacker == null || attacker instanceof ServerPlayer) { target.setLastHurtByPlayer(stack.attacker(), 100); }
+                    target.hurtServer(level, source, stack.damage());
+                    if (before.landed(target)) {
+                        SkillVisuals.bleedTick(level, target);
+                    }
                 }
             }
-        }
-        if (target.hasData(RpgData.BLEED) && target.getData(RpgData.BLEED) == state) {
-            state.age();
-            if (state.count() == 0) { target.removeData(RpgData.BLEED); }
+            if (target.hasData(RpgData.BLEED) && target.getData(RpgData.BLEED) == state) {
+                state.age();
+                if (state.count() == 0) { target.removeData(RpgData.BLEED); }
+            }
         }
     }
 

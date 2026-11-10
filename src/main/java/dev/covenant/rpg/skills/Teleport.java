@@ -3,12 +3,11 @@ package dev.covenant.rpg.skills;
 import java.util.Set;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/** Instant server blink. A swept player box follows the aim exactly; no wall sliding or endpoint tunneling. */
+/** Instant server blink. Sweep terrain along aim; floor/ceiling contact clips pitch, walls stop travel. */
 public final class Teleport {
     private static final double EPSILON = 1e-7;
     private Teleport() {}
@@ -17,7 +16,7 @@ public final class Teleport {
     static Vec3 destination(ServerPlayer player, double range) {
         var level = player.level(); var box = player.getBoundingBox();
         var delta = player.getLookAngle().scale(range);
-        if (!level.noCollision(player, box)) { return null; }
+        if (!clear(player, box)) { return null; }
         double fraction = 1;
         var border = level.getWorldBorder();
         if (!border.isWithinBounds(box)) { return null; }
@@ -33,17 +32,33 @@ public final class Teleport {
                 if (!level.hasChunk(x, z)) { return null; }
             }
         }
-        fraction = 1;
-        for (var shape : Entity.collectAllColliders(player, level, swept)) {
-            for (var obstacle : shape.toAabbs()) { fraction = Math.min(fraction, contact(box, obstacle, delta)); }
+        var move = Vec3.ZERO;
+        // One pitched segment and, on floor/ceiling contact, one horizontal remainder. The same
+        // continuous sweep protects both segments from thin walls and diagonal corner tunneling.
+        for (int pass = 0; pass < 2 && delta.lengthSqr() > EPSILON * EPSILON; pass++) {
+            var contact = new Contact(1, false);
+            for (var shape : level.getBlockCollisions(player, box.expandTowards(delta))) {
+                for (var obstacle : shape.toAabbs()) {
+                    var hit = contact(box, obstacle, delta);
+                    if (hit.fraction < contact.fraction - EPSILON) { contact = hit; }
+                    else if (Math.abs(hit.fraction - contact.fraction) <= EPSILON && !hit.vertical) {
+                        contact = new Contact(contact.fraction, false); // A simultaneous wall always stops travel.
+                    }
+                }
+            }
+            double distance = delta.length();
+            var segment = delta.scale(Math.max(0, contact.fraction - (bounded || contact.fraction < 1 ? .000001 / distance : 0)));
+            move = move.add(segment); box = box.move(segment);
+            if (!contact.vertical || contact.fraction >= 1) { break; }
+            delta = new Vec3(delta.x, 0, delta.z).scale(1 - contact.fraction);
         }
-        double distance = delta.length();
-        if (distance < .1) { return null; }
-        var move = delta.scale(Math.max(0, fraction - (bounded || fraction < 1 ? .001 / distance : 0)));
-        var targetBox = box.move(move);
+        var targetBox = box;
         if (move.lengthSqr() < .01 || !border.isWithinBounds(targetBox) || targetBox.minY < level.getMinY()
-                || targetBox.maxY > level.getMaxY() || !level.noCollision(player, targetBox)) { return null; }
+                || targetBox.maxY > level.getMaxY() || !clear(player, targetBox)) { return null; }
         return player.position().add(move);
+    }
+    private static boolean clear(ServerPlayer player, AABB box) {
+        return !player.level().getBlockCollisions(player, box).iterator().hasNext();
     }
     private static double bound(double current, double movement, double min, double max, double lower, double upper) {
         if (movement > EPSILON) { return Math.min(current, (upper - max) / movement); }
@@ -51,19 +66,25 @@ public final class Teleport {
         return current;
     }
     /** Continuous AABB collision, preserving a straight path even for diagonal aim and thin voxel shapes. */
-    private static double contact(AABB box, AABB obstacle, Vec3 movement) {
+    private record Contact(double fraction, boolean vertical) {}
+    private static Contact contact(AABB box, AABB obstacle, Vec3 movement) {
         double enter = Double.NEGATIVE_INFINITY, exit = Double.POSITIVE_INFINITY;
+        boolean vertical = false;
         for (var axis : net.minecraft.core.Direction.Axis.values()) {
             double speed = movement.get(axis);
             if (Math.abs(speed) < EPSILON) {
-                if (box.max(axis) <= obstacle.min(axis) + EPSILON || box.min(axis) >= obstacle.max(axis) - EPSILON) { return 1; }
+                if (box.max(axis) <= obstacle.min(axis) + EPSILON || box.min(axis) >= obstacle.max(axis) - EPSILON) { return new Contact(1, false); }
             } else {
                 double a = (obstacle.min(axis) - box.max(axis)) / speed;
                 double b = (obstacle.max(axis) - box.min(axis)) / speed;
-                enter = Math.max(enter, Math.min(a, b)); exit = Math.min(exit, Math.max(a, b));
+                double near = Math.min(a, b);
+                if (near > enter + EPSILON) { vertical = axis == net.minecraft.core.Direction.Axis.Y; }
+                else if (Math.abs(near - enter) <= EPSILON && axis != net.minecraft.core.Direction.Axis.Y) { vertical = false; }
+                enter = Math.max(enter, near); exit = Math.min(exit, Math.max(a, b));
             }
         }
-        return enter <= exit && exit > EPSILON && enter >= -EPSILON && enter <= 1 ? Math.max(0, enter) : 1;
+        return enter <= exit && exit > EPSILON && enter >= -EPSILON && enter <= 1
+                ? new Contact(Math.max(0, enter), vertical) : new Contact(1, false);
     }
     static void execute(ServerPlayer player, Vec3 destination) {
         var old = player.position();

@@ -7,6 +7,7 @@ import dev.covenant.rpg.skills.SkillNetworking;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.profiling.Profiler;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.lifecycle.ClientStartedEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
@@ -51,17 +52,19 @@ final class SkillKeyMappings {
     }
 
     static void press(InputConstants.Key key) {
-        var minecraft = Minecraft.getInstance();
-        // A held modifier must never also fire the unmodified slot sharing the same key.
-        for (int pass = 0; pass < 2; pass++) {
-            for (int slot = 0; slot < SLOTS.length; slot++) {
-                var binding = SLOTS[slot];
-                if ((binding.getKeyModifier() != KeyModifier.NONE) != (pass == 0)) { continue; }
-                if (binding.isActiveAndMatches(key)) {
-                    if (minecraft.player.getData(RpgData.SKILL_LOADOUT).bindings().containsKey(slot)) {
-                        ClientPacketDistributor.sendToServer(new SkillNetworking.Use(slot));
+        try (var zone = Profiler.get().zone("covenant:skill_key_input")) {
+            var minecraft = Minecraft.getInstance();
+            // A held modifier must never also fire the unmodified slot sharing the same key.
+            for (int pass = 0; pass < 2; pass++) {
+                for (int slot = 0; slot < SLOTS.length; slot++) {
+                    var binding = SLOTS[slot];
+                    if ((binding.getKeyModifier() != KeyModifier.NONE) != (pass == 0)) { continue; }
+                    if (binding.isActiveAndMatches(key)) {
+                        if (minecraft.player.getData(RpgData.SKILL_LOADOUT).bindings().containsKey(slot)) {
+                            ClientPacketDistributor.sendToServer(new SkillNetworking.Use(slot));
+                        }
+                        return;
                     }
-                    return;
                 }
             }
         }

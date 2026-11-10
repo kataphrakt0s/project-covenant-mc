@@ -10,9 +10,27 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ExtraCodecs;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 /** Owner-only transient presentation. Catalogue revisions invalidate stale purchase previews. */
-public record ProfessionView(long revision, Map<Identifier, ProfessionData.Node> abilities, Map<Identifier, Track> tracks) {
+public record ProfessionView(long revision, Map<Identifier, ProfessionData.Node> abilities, Map<Identifier, Track> tracks,
+        List<CropTarget> crops) {
+    /** Only target recognition is predicted. Tool wear, loot, inventory and terrain remain server-owned. */
+    public record CropTarget(Identifier block, String property, int mature) {
+        public static final Codec<CropTarget> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Identifier.CODEC.fieldOf("block").forGetter(CropTarget::block),
+                Codec.STRING.fieldOf("property").forGetter(CropTarget::property),
+                Codec.INT.fieldOf("mature").forGetter(CropTarget::mature)
+        ).apply(i, CropTarget::new));
+        public CropTarget(HarvestDefinitions.Crop crop) { this(crop.block(), crop.age().getName(), crop.mature()); }
+        public boolean test(BlockState state) {
+            return BuiltInRegistries.BLOCK.getKey(state.getBlock()).equals(block)
+                    && state.getBlock().getStateDefinition().getProperty(property) instanceof IntegerProperty age
+                    && state.getValue(age) == mature;
+        }
+    }
     public record Track(long requiredXp, int dimensionCap, int maximum) {
         public static final Codec<Track> CODEC = RecordCodecBuilder.create(i -> i.group(
                 ExtraCodecs.NON_NEGATIVE_LONG.fieldOf("required").forGetter(Track::requiredXp),
@@ -20,16 +38,17 @@ public record ProfessionView(long revision, Map<Identifier, ProfessionData.Node>
                 Codec.intRange(0, 1000).fieldOf("maximum").forGetter(Track::maximum)
         ).apply(i, Track::new));
     }
-    public static final ProfessionView EMPTY = new ProfessionView(0, Map.of(), Map.of());
+    public static final ProfessionView EMPTY = new ProfessionView(0, Map.of(), Map.of(), List.of());
     public static final Codec<ProfessionView> CODEC = RecordCodecBuilder.create(i -> i.group(
             ExtraCodecs.NON_NEGATIVE_LONG.fieldOf("revision").forGetter(ProfessionView::revision),
             Codec.unboundedMap(Identifier.CODEC, ProfessionData.Node.CODEC).fieldOf("abilities").forGetter(ProfessionView::abilities),
-            Codec.unboundedMap(Identifier.CODEC, Track.CODEC).fieldOf("tracks").forGetter(ProfessionView::tracks)
+            Codec.unboundedMap(Identifier.CODEC, Track.CODEC).fieldOf("tracks").forGetter(ProfessionView::tracks),
+            CropTarget.CODEC.listOf().optionalFieldOf("crops", List.of()).forGetter(ProfessionView::crops)
     ).apply(i, ProfessionView::new));
     public static final StreamCodec<ByteBuf, ProfessionView> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
     public ProfessionView {
-        abilities = Map.copyOf(abilities); tracks = Map.copyOf(tracks);
-        if (revision < 0 || abilities.size() > 128 || tracks.size() > 4) { throw new IllegalArgumentException("Invalid profession view"); }
+        abilities = Map.copyOf(abilities); tracks = Map.copyOf(tracks); crops = List.copyOf(crops);
+        if (revision < 0 || abilities.size() > 128 || tracks.size() > 4 || crops.size() > 256) { throw new IllegalArgumentException("Invalid profession view"); }
     }
     public List<ProfessionData.Node> nodes(Identifier profession) {
         return abilities.values().stream().filter(n -> n.profession().equals(profession))
@@ -53,6 +72,7 @@ public record ProfessionView(long revision, Map<Identifier, ProfessionData.Node>
         for (var id : ProgressionData.PROFESSIONS) {
             tracks.put(id, new Track(balance.required(id, state.tracks().get(id).level()), balance.gate(player.level(), id), balance.maximum(id)));
         }
-        player.setData(RpgData.PROFESSION_VIEW, new ProfessionView(snapshot.revision(), snapshot.catalogue().abilities(), tracks));
+        var crops = snapshot.catalogue().harvesting().crops().stream().filter(crop -> crop.plantingItem() != null).map(CropTarget::new).toList();
+        player.setData(RpgData.PROFESSION_VIEW, new ProfessionView(snapshot.revision(), snapshot.catalogue().abilities(), tracks, crops));
     }
 }

@@ -17,6 +17,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.profiling.Profiler;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
@@ -196,16 +197,18 @@ final class SkillsScreen extends Screen {
     }
 
     @Override public void tick() {
-        if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
-                || minecraft.level == null || !minecraft.isWindowActive()) { onClose(); return; }
-        if (PlayerProfiles.getSelectedClass(minecraft.player).orElse(null) != currentClass) {
-            baseline = null;
-            selected = null;
-            bindingScroll = 0;
-            rebuildWidgets();
-        } else if (bindingsTab && previous != null && !loadout().learned().equals(previous.learned())) {
-            rebuildWidgets();
-        } else { refresh(); }
+        try (var zone = Profiler.get().zone("covenant:skills_screen_tick")) {
+            if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
+                    || minecraft.level == null || !minecraft.isWindowActive()) { onClose(); return; }
+            if (PlayerProfiles.getSelectedClass(minecraft.player).orElse(null) != currentClass) {
+                baseline = null;
+                selected = null;
+                bindingScroll = 0;
+                rebuildWidgets();
+            } else if (bindingsTab && previous != null && !loadout().learned().equals(previous.learned())) {
+                rebuildWidgets();
+            } else { refresh(); }
+        }
     }
 
     private int nodeX(SkillTree.Node node) { return treeLayout.x(treeColumns.indexOf(node.column())); }
@@ -246,27 +249,29 @@ final class SkillsScreen extends Screen {
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
-        graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
-        graphics.centeredText(font, title, left + panelWidth / 2, top + 8, 0xFFF5DBA6);
-        graphics.centeredText(font, currentClass == null ? text("no_class") : currentClass.displayName(),
-                left + panelWidth / 2, top + 24, 0xFFE2E8ED);
-        graphics.fill(viewLeft, viewTop, viewLeft + viewWidth, viewTop + viewHeight, 0xFF0F1620);
-        if (!bindingsTab) { extractTree(graphics); }
-        else {
-            graphics.text(font, text("learned_picker"), viewLeft + 2, viewTop + 3, 0xFFF5DBA6);
-            if (bindingChoices.isEmpty()) {
-                graphics.text(font, text("no_learned"), viewLeft + 2, viewTop + 21, 0xFF94A3B3);
+        try (var zone = Profiler.get().zone("covenant:skills_screen")) {
+            graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
+            graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
+            graphics.centeredText(font, title, left + panelWidth / 2, top + 8, 0xFFF5DBA6);
+            graphics.centeredText(font, currentClass == null ? text("no_class") : currentClass.displayName(),
+                    left + panelWidth / 2, top + 24, 0xFFE2E8ED);
+            graphics.fill(viewLeft, viewTop, viewLeft + viewWidth, viewTop + viewHeight, 0xFF0F1620);
+            if (!bindingsTab) { extractTree(graphics); }
+            else {
+                graphics.text(font, text("learned_picker"), viewLeft + 2, viewTop + 3, 0xFFF5DBA6);
+                if (bindingChoices.isEmpty()) {
+                    graphics.text(font, text("no_learned"), viewLeft + 2, viewTop + 21, 0xFF94A3B3);
+                }
             }
-        }
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        int remaining = PlayerProfiles.get(minecraft.player).level() - draft.values().stream().mapToInt(Integer::intValue).sum();
-        var hint = currentClass == null ? text("choose_class") : bindingsTab ? text("binding_help")
-                : Component.literal(remaining + " points · Click to draft upgrades. Apply out of combat.");
-        int hintY = top + panelHeight - (bindingsTab ? 47 : 23);
-        var lines = font.split(hint, viewWidth - 4);
-        for (int i = 0; i < Math.min(lines.size(), 2); i++) {
-            graphics.text(font, lines.get(i), viewLeft + 2, hintY + i * 10, 0xFFB6C3D1);
+            super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+            int remaining = PlayerProfiles.get(minecraft.player).level() - draft.values().stream().mapToInt(Integer::intValue).sum();
+            var hint = currentClass == null ? text("choose_class") : bindingsTab ? text("binding_help")
+                    : Component.literal(remaining + " points · Click to draft upgrades. Apply out of combat.");
+            int hintY = top + panelHeight - (bindingsTab ? 47 : 23);
+            var lines = font.split(hint, viewWidth - 4);
+            for (int i = 0; i < Math.min(lines.size(), 2); i++) {
+                graphics.text(font, lines.get(i), viewLeft + 2, hintY + i * 10, 0xFFB6C3D1);
+            }
         }
     }
 

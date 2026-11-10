@@ -22,6 +22,8 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
     public static final Identifier OFFENSIVE_MASTERY = id("logging/offensive_mastery");
     public static final Identifier VEIN_MINING = id("mining/vein_mining");
     public static final Identifier TREE_FELLING = id("logging/tree_felling");
+    public static final Identifier SCYTHING = id("farming/scything");
+    public static final Identifier FARM_REPLANT = id("farming/auto_replant");
     private static final ListenerKey<ProfessionData> KEY = ListenerKey.create(id("professions"));
     // Retained listeners are replaced on reload. Tokens must distinguish those instances too.
     private static final AtomicLong REVISIONS = new AtomicLong();
@@ -31,17 +33,19 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
     public static void register(AddServerReloadListenersEvent event) { event.addRetainedListener(KEY, new ProfessionData()); }
     public static Snapshot snapshot(MinecraftServer server) { return server.getServerResources().managers().getListener(KEY).snapshot; }
 
-    /** Level/cost are per rank. Blocks includes the initiating block, defaults to zero for other abilities, and caps at 64. */
-    public record Rank(int level, int cost, double bonus, int blocks) {
+    /** Level/cost are per rank. Blocks counts total gathered blocks (1-64); area is an odd Scything width (1-9).
+     * Both gathering fields default to zero for unrelated abilities. Shipped Scything widths are 3/5/9 blocks. */
+    public record Rank(int level, int cost, double bonus, int blocks, int area) {
         public static final Codec<Rank> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.intRange(1, 1000).fieldOf("level").forGetter(Rank::level),
                 Codec.intRange(1, 1000).fieldOf("cost").forGetter(Rank::cost),
                 Codec.DOUBLE.optionalFieldOf("bonus", 0.0).forGetter(Rank::bonus),
-                Codec.intRange(0, 64).optionalFieldOf("blocks", 0).forGetter(Rank::blocks)
+                Codec.intRange(0, 64).optionalFieldOf("blocks", 0).forGetter(Rank::blocks),
+                Codec.intRange(0, 9).optionalFieldOf("area", 0).forGetter(Rank::area)
         ).apply(i, Rank::new));
         public Rank {
             if (level < 1 || level > 1000 || cost < 1 || cost > 1000 || !Double.isFinite(bonus) || bonus < 0 || bonus > 1024
-                    || blocks < 0 || blocks > 64) {
+                    || blocks < 0 || blocks > 64 || area < 0 || area > 9 || (area != 0 && area % 2 == 0)) {
                 throw new IllegalArgumentException("Invalid profession rank");
             }
         }
@@ -66,11 +70,13 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
                 if ((id.equals(VEIN_MINING) || id.equals(TREE_FELLING)) && rank.blocks() < 1) {
                     throw new IllegalArgumentException("Gathering ranks require blocks in 1-64: " + id);
                 }
+                if (id.equals(SCYTHING) && rank.area() < 1) { throw new IllegalArgumentException("Scything requires an odd area width in 1-9"); }
                 previous = rank.level();
             }
         }
         /** Availability is owned by runtime code, never enabled by trusting a datapack/client flag. */
         public boolean implemented() { return id.equals(OFFENSIVE_MASTERY) || id.equals(VEIN_MINING) || id.equals(TREE_FELLING)
+                || id.equals(SCYTHING) || id.equals(FARM_REPLANT)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.BASIC)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.SALVAGING)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.RECOVERY)
@@ -92,6 +98,7 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
                 rank.getAsJsonObject().get("level").getAsBigDecimal().intValueExact();
                 rank.getAsJsonObject().get("cost").getAsBigDecimal().intValueExact();
                 if (rank.getAsJsonObject().has("blocks")) { rank.getAsJsonObject().get("blocks").getAsBigDecimal().intValueExact(); }
+                if (rank.getAsJsonObject().has("area")) { rank.getAsJsonObject().get("area").getAsBigDecimal().intValueExact(); }
             }
             var node = Node.CODEC.parse(JsonOps.INSTANCE, element).getOrThrow();
             if (nodes.put(node.id(), node) != null) { throw new IllegalArgumentException("Duplicate profession ability: " + node.id()); }

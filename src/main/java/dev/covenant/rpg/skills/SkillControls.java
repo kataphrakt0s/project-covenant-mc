@@ -5,6 +5,7 @@ import java.util.Set;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -39,8 +40,10 @@ public final class SkillControls {
 
     /** Root and freeze stop voluntary input; an unacknowledged dash endpoint also accepts only passive physics. */
     public static boolean blocksMovement(LivingEntity entity) {
-        return Rooted.contains(entity) || Auras.frozen(entity)
-                || (entity instanceof ServerPlayer player && ownsPhysics(player));
+        try (var zone = Profiler.get().zone("covenant:movement_control_check")) {
+            return Rooted.contains(entity) || Auras.frozen(entity)
+                    || (entity instanceof ServerPlayer player && ownsPhysics(player));
+        }
     }
 
     private static boolean constrained(ServerPlayer player) {
@@ -55,42 +58,48 @@ public final class SkillControls {
     }
 
     private static void beforeTick(PlayerTickEvent.Pre event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            player.getData(RpgData.SKILL_RUNTIME).controlMovement.ticking = constrained(player);
+        try (var zone = Profiler.get().zone("covenant:controls_pre_tick")) {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                player.getData(RpgData.SKILL_RUNTIME).controlMovement.ticking = constrained(player);
+            }
         }
     }
 
     private static void afterTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
-        var state = player.getData(RpgData.SKILL_RUNTIME).controlMovement;
-        if (state.ticking || constrained(player)) {
-            // The enclosing native connection tick otherwise restores its pre-travel position.
-            player.connection.resetPosition();
-            player.level().getChunkSource().move(player);
-            player.connection.resetFlyingTicks();
+        try (var zone = Profiler.get().zone("covenant:controls_post_tick")) {
+            if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
+            var state = player.getData(RpgData.SKILL_RUNTIME).controlMovement;
+            if (state.ticking || constrained(player)) {
+                // The enclosing native connection tick otherwise restores its pre-travel position.
+                player.connection.resetPosition();
+                player.level().getChunkSource().move(player);
+                player.connection.resetFlyingTicks();
+            }
+            state.ticking = false;
         }
-        state.ticking = false;
     }
 
     /** Reject position reports, retaining finite look changes. Divergence corrections are bounded to four/second. */
     public static boolean interceptMove(ServerPlayer player, ServerboundMovePlayerPacket packet) {
-        if (!constrained(player)) { return false; }
-        Vec3 reported = new Vec3(packet.getX(player.getX()), packet.getY(player.getY()), packet.getZ(player.getZ()));
-        if (!DashMotion.finite(reported) || !Float.isFinite(packet.getYRot(player.getYRot()))
-                || !Float.isFinite(packet.getXRot(player.getXRot()))) {
-            return false; // Preserve vanilla's invalid-movement disconnection.
-        }
-        // Dash start/stop already has its own ordered acknowledgement and exceptional correction.
-        if (!Combos.awaitingMovement(player) && reported.distanceToSqr(player.position()) > .0625) {
-            var state = player.getData(RpgData.SKILL_RUNTIME).controlMovement;
-            long now = ClassResources.now(player);
-            if (now >= state.nextCorrection) {
-                state.nextCorrection = now + 5;
-                correctPosition(player, Mth.wrapDegrees(packet.getYRot(player.getYRot())),
-                        Mth.clamp(packet.getXRot(player.getXRot()), -90, 90));
+        try (var zone = Profiler.get().zone("covenant:movement_packet")) {
+            if (!constrained(player)) { return false; }
+            Vec3 reported = new Vec3(packet.getX(player.getX()), packet.getY(player.getY()), packet.getZ(player.getZ()));
+            if (!DashMotion.finite(reported) || !Float.isFinite(packet.getYRot(player.getYRot()))
+                    || !Float.isFinite(packet.getXRot(player.getXRot()))) {
+                return false; // Preserve vanilla's invalid-movement disconnection.
             }
+            // Dash start/stop already has its own ordered acknowledgement and exceptional correction.
+            if (!Combos.awaitingMovement(player) && reported.distanceToSqr(player.position()) > .0625) {
+                var state = player.getData(RpgData.SKILL_RUNTIME).controlMovement;
+                long now = ClassResources.now(player);
+                if (now >= state.nextCorrection) {
+                    state.nextCorrection = now + 5;
+                    correctPosition(player, Mth.wrapDegrees(packet.getYRot(player.getYRot())),
+                            Mth.clamp(packet.getXRot(player.getXRot()), -90, 90));
+                }
+            }
+            return true;
         }
-        return true;
     }
 
     /** A native teleport and its native retry retain the current authoritative impulse. */

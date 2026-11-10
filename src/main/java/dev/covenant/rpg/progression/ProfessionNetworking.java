@@ -14,7 +14,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 public final class ProfessionNetworking {
     private ProfessionNetworking() {}
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("3").playToServer(Apply.TYPE, Apply.STREAM_CODEC, (request, context) -> {
+        event.registrar(dev.covenant.CovenantNetwork.version("professions/4")).playToServer(Apply.TYPE, Apply.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && player.getData(RpgData.SKILL_RUNTIME)
                     .acceptRequest(ClassResources.now(player), request)) {
                 player.sendSystemMessage(ProfessionAllocations.apply(player, request.profession(), request.revision(), request.expected(), request.desired()));

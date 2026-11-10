@@ -7,15 +7,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.profiling.Profiler;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 /** Classless owner view. Each tab keeps its own draft; only Apply submits server intent. */
 final class ProfessionsScreen extends Screen {
+    /** Keep the complete tooltip inside the viewport, including when hovering the lowest tree row. */
+    private static final ClientTooltipPositioner TOOLTIP_POSITION = (width, height, x, y, tipWidth, tipHeight) ->
+            new org.joml.Vector2i(Math.max(6, Math.min(x + 12, width - tipWidth - 6)),
+                    Math.max(6, Math.min(y + 12, height - tipHeight - 6)));
     private static final class Draft {
         final Map<Identifier, ProfessionState.Allocation> baseline;
         final Map<Identifier, Integer> desired;
@@ -24,6 +30,7 @@ final class ProfessionsScreen extends Screen {
     private record NodeButton(ProfessionData.Node node, Button button) {}
     private final Map<Identifier, Draft> drafts = new HashMap<>();
     private final List<NodeButton> nodes = new ArrayList<>();
+    private final Map<Identifier, Component> nodeTooltips = new HashMap<>();
     private ProfessionView catalogue = ProfessionView.EMPTY;
     private int selected;
     private int left, top, panelWidth, panelHeight, bodyTop, bodyHeight;
@@ -39,6 +46,7 @@ final class ProfessionsScreen extends Screen {
         catalogue = minecraft.player.getData(RpgData.PROFESSION_VIEW);
         reconcileDrafts();
         nodes.clear();
+        nodeTooltips.clear();
         panelWidth = Math.min(760, width - 16); panelHeight = Math.min(440, height - 16);
         left = (width - panelWidth) / 2; top = (height - panelHeight) / 2;
         bodyTop = top + 94; bodyHeight = panelHeight - 128;
@@ -106,10 +114,12 @@ final class ProfessionsScreen extends Screen {
                     tip.append(" · " + String.format(Locale.ROOT, "+%.2f%%", value.bonus() * 100));
                 }
                 if (value.blocks() > 0) { tip.append(" · ").append(text("blocks", value.blocks())); }
+                if (value.area() > 0) { tip.append(" · " + value.area() + "×" + value.area()); }
             }
             node.prerequisite().map(catalogue.abilities()::get).ifPresent(parent -> tip.append("\n").append(text("requires", parent.name())));
             tip.append("\n").append(text("node_help"));
             entry.button().setTooltip(Tooltip.create(tip));
+            nodeTooltips.put(node.id(), tip);
         }
         boolean combat = minecraft.player.getData(RpgData.PROGRESSION_VIEW).inCombat();
         apply.active = pendingCost() > 0 && !combat && catalogue.revision() > 0;
@@ -135,12 +145,14 @@ final class ProfessionsScreen extends Screen {
         refreshButtons();
     }
     @Override public void tick() {
-        if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
-                || minecraft.level == null || !minecraft.isWindowActive()) { onClose(); return; }
-        var view = minecraft.player.getData(RpgData.PROFESSION_VIEW);
-        if (view.revision() != catalogue.revision()) { catalogue = view; drafts.clear(); rebuildWidgets(); return; }
-        catalogue = view;
-        reconcileDrafts(); refreshButtons();
+        try (var zone = Profiler.get().zone("covenant:professions_screen_tick")) {
+            if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
+                    || minecraft.level == null || !minecraft.isWindowActive()) { onClose(); return; }
+            var view = minecraft.player.getData(RpgData.PROFESSION_VIEW);
+            if (view.revision() != catalogue.revision()) { catalogue = view; drafts.clear(); rebuildWidgets(); return; }
+            catalogue = view;
+            reconcileDrafts(); refreshButtons();
+        }
     }
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
@@ -154,33 +166,44 @@ final class ProfessionsScreen extends Screen {
         graphics.fill(0, 0, width, height, 0x95080D14);
     }
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
-        graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
-        graphics.centeredText(font, title, left + panelWidth / 2, top + 10, 0xFFF5DBA6);
-        var track = track(); var view = catalogue.tracks().get(profession());
-        if (view != null) {
-            var progress = track.level() >= view.maximum()
-                    ? text("progress_max", track.level(), view.maximum(), view.dimensionCap())
-                    : text("progress", track.level(), view.maximum(), track.experience(), view.requiredXp(), view.dimensionCap());
-            graphics.text(font, progress, left + 10, top + 59, 0xFFE2E8ED);
-        }
-        graphics.text(font, text("points", track.points() - pendingCost(), pendingCost()), left + 10, top + 73, 0xFFF5DBA6);
-        graphics.fill(left + 8, bodyTop - 4, left + panelWidth - 8, bodyTop + bodyHeight, 0xFF0F1620);
-        for (var child : nodes) {
-            if (child.node().prerequisite().isEmpty()) { continue; }
-            for (var parent : nodes) {
-                if (!parent.node().id().equals(child.node().prerequisite().orElseThrow())) { continue; }
-                int x1 = parent.button().getX() + parent.button().getWidth() / 2, y1 = parent.button().getY() + parent.button().getHeight();
-                int x2 = child.button().getX() + child.button().getWidth() / 2, y2 = child.button().getY();
-                int middle = (y1 + y2) / 2;
-                graphics.fill(x1, Math.min(y1, middle), x1 + 1, Math.max(y1, middle) + 1, 0xFF8E7851);
-                graphics.fill(Math.min(x1, x2), middle, Math.max(x1, x2) + 1, middle + 1, 0xFF8E7851);
-                graphics.fill(x2, Math.min(middle, y2), x2 + 1, Math.max(middle, y2) + 1, 0xFF8E7851);
+        try (var zone = Profiler.get().zone("covenant:professions_screen")) {
+            graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
+            graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
+            graphics.centeredText(font, title, left + panelWidth / 2, top + 10, 0xFFF5DBA6);
+            var track = track(); var view = catalogue.tracks().get(profession());
+            if (view != null) {
+                var progress = track.level() >= view.maximum()
+                        ? text("progress_max", track.level(), view.maximum(), view.dimensionCap())
+                        : text("progress", track.level(), view.maximum(), track.experience(), view.requiredXp(), view.dimensionCap());
+                graphics.text(font, progress, left + 10, top + 59, 0xFFE2E8ED);
+            }
+            graphics.text(font, text("points", track.points() - pendingCost(), pendingCost()), left + 10, top + 73, 0xFFF5DBA6);
+            graphics.fill(left + 8, bodyTop - 4, left + panelWidth - 8, bodyTop + bodyHeight, 0xFF0F1620);
+            for (var child : nodes) {
+                if (child.node().prerequisite().isEmpty()) { continue; }
+                for (var parent : nodes) {
+                    if (!parent.node().id().equals(child.node().prerequisite().orElseThrow())) { continue; }
+                    int x1 = parent.button().getX() + parent.button().getWidth() / 2, y1 = parent.button().getY() + parent.button().getHeight();
+                    int x2 = child.button().getX() + child.button().getWidth() / 2, y2 = child.button().getY();
+                    int middle = (y1 + y2) / 2;
+                    graphics.fill(x1, Math.min(y1, middle), x1 + 1, Math.max(y1, middle) + 1, 0xFF8E7851);
+                    graphics.fill(Math.min(x1, x2), middle, Math.max(x1, x2) + 1, middle + 1, 0xFF8E7851);
+                    graphics.fill(x2, Math.min(middle, y2), x2 + 1, Math.max(middle, y2) + 1, 0xFF8E7851);
+                }
+            }
+            if (nodes.isEmpty()) { graphics.centeredText(font, text("loading"), left + panelWidth / 2, bodyTop + 10, 0xFFB6C3D1); }
+            graphics.text(font, text("provisional"), left + 10, top + panelHeight - 20, 0xFFB6C3D1);
+            super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+            for (var entry : nodes) {
+                var button = entry.button();
+                if (button.isHovered() || button.isFocused() && minecraft.getLastInputType().isKeyboard()) {
+                    // Wider wrapping keeps the four-rank gathering descriptions readable at normal GUI scales.
+                    var lines = font.split(nodeTooltips.get(entry.node().id()), Math.min(320, width - 12));
+                    graphics.setTooltipForNextFrame(font, lines, TOOLTIP_POSITION, mouseX, mouseY, true);
+                    break;
+                }
             }
         }
-        if (nodes.isEmpty()) { graphics.centeredText(font, text("loading"), left + panelWidth / 2, bodyTop + 10, 0xFFB6C3D1); }
-        graphics.text(font, text("provisional"), left + 10, top + panelHeight - 20, 0xFFB6C3D1);
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
     @Override public void removed() { drafts.clear(); super.removed(); }
     @Override public boolean isPauseScreen() { return false; }

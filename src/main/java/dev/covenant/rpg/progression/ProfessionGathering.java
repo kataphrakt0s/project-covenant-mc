@@ -7,13 +7,36 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 /** Bounded, synchronous extra harvests through the native player path; no ticking, chunk loading or saved jobs. */
 public final class ProfessionGathering {
     private ProfessionGathering() {}
+
+    /** The native harvest wrapper exposes only its synchronous batch and currently harvested block. */
+    public interface HarvestAccess {
+        Batch covenant$gatheringBatch();
+        BlockPos covenant$harvestingBlock();
+        /** Confirm actual removal and suppress recursive expansion/native mining wear for a hoe-use harvest. */
+        boolean covenant$harvestCrop(BlockPos pos);
+    }
+
+    /** Relocate only this batch's generated loot, after loot modifiers, without collecting nearby loose items. */
+    public static void drops(BlockDropsEvent event) {
+        if (!(event.getBreaker() instanceof ServerPlayer player)) { return; }
+        var access = (HarvestAccess) player.gameMode;
+        var batch = access.covenant$gatheringBatch();
+        if (batch == null || event.getLevel() != batch.level || !event.getPos().equals(access.covenant$harvestingBlock())) { return; }
+        if (event.getPos().equals(batch.origin) && !event.getDrops().isEmpty()) {
+            batch.dropPoint = event.getDrops().getFirst().position();
+        }
+        for (var drop : event.getDrops()) { drop.setPos(batch.dropPoint); }
+    }
 
     private record Target(BlockPos pos, BlockState state) {}
 
@@ -23,23 +46,28 @@ public final class ProfessionGathering {
         private final ItemStack tool;
         private final boolean mining;
         private final List<Target> targets;
+        private final BlockPos origin;
+        private Vec3 dropPoint;
 
-        private Batch(ServerPlayer player, boolean mining, List<Target> targets) {
+        private Batch(ServerPlayer player, BlockPos origin, boolean mining, List<Target> targets) {
             level = player.level(); tool = player.getMainHandItem(); this.mining = mining; this.targets = List.copyOf(targets);
+            this.origin = origin.immutable(); dropPoint = Vec3.atCenterOf(origin);
         }
 
         public void harvest(ServerPlayer player, java.util.function.Predicate<BlockPos> harvest) {
-            for (var target : targets) {
-                // Never continue with a replacement tool, even if an item-break handler supplied another one.
-                if (!participant(player) || player.level() != level || player.isShiftKeyDown()
-                        || player.getMainHandItem() != tool || !suitable(tool, mining)) { return; }
-                var state = read(level, target.pos());
-                if (state != target.state() || !level.getWorldBorder().isWithinBounds(target.pos()) || !level.mayInteract(player, target.pos())
-                        || state.getDestroySpeed(level, target.pos()) < 0
-                        || !state.canHarvestBlock(level, target.pos(), player)) { return; }
-                // The mixin suppresses recursive expansion. Native events, Adventure checks, durability,
-                // loot, enchantments, exhaustion and per-original-block profession XP run for every block.
-                if (!harvest.test(target.pos())) { return; }
+            try (var zone = Profiler.get().zone("covenant:gathering_harvest")) {
+                for (var target : targets) {
+                    // Never continue with a replacement tool, even if an item-break handler supplied another one.
+                    if (!participant(player) || player.level() != level || player.isShiftKeyDown()
+                            || player.getMainHandItem() != tool || !suitable(tool, mining)) { return; }
+                    var state = read(level, target.pos());
+                    if (state != target.state() || !level.getWorldBorder().isWithinBounds(target.pos()) || !level.mayInteract(player, target.pos())
+                            || state.getDestroySpeed(level, target.pos()) < 0
+                            || !state.canHarvestBlock(level, target.pos(), player)) { return; }
+                    // The mixin suppresses recursive expansion. Native events, Adventure checks, durability,
+                    // loot, enchantments, exhaustion and per-original-block profession XP run for every block.
+                    if (!harvest.test(target.pos())) { return; }
+                }
             }
         }
     }
@@ -62,34 +90,36 @@ public final class ProfessionGathering {
     /** Final BreakEvent/tool acceptance has happened. The supplied tool is the native pre-durability copy. */
     public static Batch prepare(ServerPlayer player, BlockPos origin, BlockState original, boolean canHarvest, ItemStack tool) {
         if (!canHarvest || !participant(player) || player.isShiftKeyDown() || player.getMainHandItem().isEmpty()) { return null; }
-        var snapshot = ProfessionData.snapshot(player.level().getServer());
-        int miningLimit = limit(player, snapshot, ProfessionData.VEIN_MINING);
-        if (miningLimit > 1 && suitable(tool, true)) {
-            for (var ore : snapshot.catalogue().harvesting().ores()) {
-                if (!ore.blocks().test(original)) { continue; }
-                // Reward/activity ID is the existing family identity; multiple pack mappings may share it.
-                return collect(player, origin, original, miningLimit, true, state -> {
-                    for (var candidate : snapshot.catalogue().harvesting().ores()) {
-                        if (candidate.blocks().test(state)) { return candidate.activity().equals(ore.activity()); }
-                    }
-                    return false;
-                }, null);
+        try (var zone = Profiler.get().zone("covenant:gathering_prepare")) {
+            var snapshot = ProfessionData.snapshot(player.level().getServer());
+            int miningLimit = limit(player, snapshot, ProfessionData.VEIN_MINING);
+            if (miningLimit > 1 && suitable(tool, true)) {
+                for (var ore : snapshot.catalogue().harvesting().ores()) {
+                    if (!ore.blocks().test(original)) { continue; }
+                    // Reward/activity ID is the existing family identity; multiple pack mappings may share it.
+                    return collect(player, origin, original, miningLimit, true, state -> {
+                        for (var candidate : snapshot.catalogue().harvesting().ores()) {
+                            if (candidate.blocks().test(state)) { return candidate.activity().equals(ore.activity()); }
+                        }
+                        return false;
+                    }, null);
+                }
             }
-        }
-        int loggingLimit = limit(player, snapshot, ProfessionData.TREE_FELLING);
-        if (loggingLimit <= 1 || !suitable(tool, false)) { return null; }
-        for (var tree : snapshot.catalogue().harvesting().trees()) {
-            if (!tree.logs().test(original)) { continue; }
-            var evidence = ProfessionHarvesting.recognizedTree(player.level(), origin, original, snapshot, tree);
-            if (evidence == null) { return null; }
-            var remaining = remaining(player.level(), evidence, snapshot.revision());
-            if (!remaining.containsKey(origin)) { return null; }
-            for (var pos : remaining.keySet()) {
-                if (pos.getY() < origin.getY()) { return null; } // Only a lowest remaining log may start a batch.
+            int loggingLimit = limit(player, snapshot, ProfessionData.TREE_FELLING);
+            if (loggingLimit <= 1 || !suitable(tool, false)) { return null; }
+            for (var tree : snapshot.catalogue().harvesting().trees()) {
+                if (!tree.logs().test(original)) { continue; }
+                var evidence = ProfessionHarvesting.recognizedTree(player.level(), origin, original, snapshot, tree);
+                if (evidence == null) { return null; }
+                var remaining = remaining(player.level(), evidence, snapshot.revision());
+                if (!remaining.containsKey(origin)) { return null; }
+                for (var pos : remaining.keySet()) {
+                    if (pos.getY() < origin.getY()) { return null; } // Only a lowest remaining log may start a batch.
+                }
+                return collect(player, origin, original, loggingLimit, false, tree.logs()::test, remaining);
             }
-            return collect(player, origin, original, loggingLimit, false, tree.logs()::test, remaining);
+            return null;
         }
-        return null;
     }
 
     private static Map<BlockPos, BlockState> remaining(ServerLevel level, HarvestChunkState.TreeEvidence evidence, long revision) {
@@ -128,7 +158,7 @@ public final class ProfessionGathering {
                 }
             }
         }
-        return targets.isEmpty() ? null : new Batch(player, mining, targets);
+        return targets.isEmpty() ? null : new Batch(player, origin, mining, targets);
     }
 
     private static BlockState read(ServerLevel level, BlockPos pos) {

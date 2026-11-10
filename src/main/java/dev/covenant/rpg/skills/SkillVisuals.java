@@ -5,6 +5,7 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
@@ -128,23 +129,27 @@ public final class SkillVisuals {
 
     /** Client entity callback checks only marked arrows, without scanning the world's entities. */
     public static void arrowTick(EntityTickEvent.Post event) {
-        if (event.getEntity() instanceof AbstractArrow arrow && arrow.level().isClientSide()
-                && !arrow.isRemoved() && arrow.tickCount <= 100
-                && arrow.hasData(RpgData.SKILL_SHOT) && arrow.getData(RpgData.SKILL_SHOT)) {
-            trail(arrow, YELLOW, 4);
+        try (var zone = Profiler.get().zone("covenant:arrow_visuals")) {
+            if (event.getEntity() instanceof AbstractArrow arrow && arrow.level().isClientSide()
+                    && !arrow.isRemoved() && arrow.tickCount <= 100
+                    && arrow.hasData(RpgData.SKILL_SHOT) && arrow.getData(RpgData.SKILL_SHOT)) {
+                trail(arrow, YELLOW, 4);
+            }
         }
     }
 
     /** Run after other impact handlers so canceled collisions do not play an impact effect. */
     public static void arrowImpact(ProjectileImpactEvent event) {
-        var arrow = event.getProjectile();
-        if (!(arrow instanceof AbstractArrow nativeArrow) || !(arrow.level() instanceof ServerLevel level)
-                || !arrow.hasData(RpgData.SKILL_SHOT) || !arrow.getData(RpgData.SKILL_SHOT)) { return; }
-        var hit = event.getRayTraceResult().getLocation();
-        level.sendParticles(YELLOW, hit.x, hit.y, hit.z, 5, 0.06, 0.06, 0.06, 0);
-        level.sendParticles(ParticleTypes.END_ROD, hit.x, hit.y, hit.z, 2, 0.02, 0.02, 0.02, 0.01);
-        if (event.getRayTraceResult().getType() == HitResult.Type.BLOCK || nativeArrow.getPierceLevel() == 0) {
-            arrow.removeData(RpgData.SKILL_SHOT);
+        try (var zone = Profiler.get().zone("covenant:arrow_impact_visuals")) {
+            var arrow = event.getProjectile();
+            if (!(arrow instanceof AbstractArrow nativeArrow) || !(arrow.level() instanceof ServerLevel level)
+                    || !arrow.hasData(RpgData.SKILL_SHOT) || !arrow.getData(RpgData.SKILL_SHOT)) { return; }
+            var hit = event.getRayTraceResult().getLocation();
+            level.sendParticles(YELLOW, hit.x, hit.y, hit.z, 5, 0.06, 0.06, 0.06, 0);
+            level.sendParticles(ParticleTypes.END_ROD, hit.x, hit.y, hit.z, 2, 0.02, 0.02, 0.02, 0.01);
+            if (event.getRayTraceResult().getType() == HitResult.Type.BLOCK || nativeArrow.getPierceLevel() == 0) {
+                arrow.removeData(RpgData.SKILL_SHOT);
+            }
         }
     }
 

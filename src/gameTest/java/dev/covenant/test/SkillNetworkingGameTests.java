@@ -11,6 +11,7 @@ import io.netty.buffer.Unpooled;
 import java.util.Optional;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +21,71 @@ import net.neoforged.neoforge.network.registration.NetworkRegistry;
 /** Exercises the registered payload handlers, including rejected traffic before gameplay dispatch. */
 final class SkillNetworkingGameTests {
     private SkillNetworkingGameTests() {}
+
+    /** Inspect real registered channels, without changing the registry or production visibility. */
+    private static final class RegistryView extends NetworkRegistry {
+        static java.util.Map<net.minecraft.network.ConnectionProtocol,
+                java.util.Map<net.minecraft.resources.Identifier,
+                net.neoforged.neoforge.network.registration.PayloadRegistration<?>>> registrations() {
+            return PAYLOAD_REGISTRATIONS;
+        }
+    }
+
+    static void connectionVersions(GameTestHelper helper) {
+        var registrations = RegistryView.registrations();
+        var local = registrations.get(net.minecraft.network.ConnectionProtocol.PLAY).values().stream()
+                .filter(r -> r.id().getNamespace().equals("covenant"))
+                .map(net.neoforged.neoforge.network.negotiation.NegotiableNetworkComponent::new).toList();
+        var modVersion = net.neoforged.fml.ModList.get().getModContainerById("covenant").orElseThrow().getModInfo().getVersion().toString();
+        check(!local.isEmpty() && local.stream().allMatch(r -> !r.optional() && r.version().startsWith(modVersion + " (")),
+                "Every Covenant channel requires the installed release version");
+        check(net.neoforged.neoforge.network.negotiation.NetworkComponentNegotiator.negotiate(local, local).success(),
+                "Identical releases and wire formats negotiate successfully");
+        var remote = local.stream().map(r -> new net.neoforged.neoforge.network.negotiation.NegotiableNetworkComponent(
+                r.id(), "old-release" + r.version().substring(r.version().indexOf(" (")), r.flow(), r.optional())).toList();
+        var mismatch = net.neoforged.neoforge.network.negotiation.NetworkComponentNegotiator.negotiate(local, remote);
+        check(!mismatch.success() && mismatch.failureReasons().size() == local.size(), "Different mod releases reject all required channels");
+        for (var reason : mismatch.failureReasons().values()) {
+            check(reason.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents wrapper
+                    && wrapper.getKey().equals("neoforge.network.negotiation.failure.mod"), "Native disconnect identifies Project Covenant");
+            var detail = (Component) ((net.minecraft.network.chat.contents.TranslatableContents) reason.getContents()).getArgs()[1];
+            check(detail.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t
+                    && t.getKey().equals("neoforge.network.negotiation.failure.version.mismatch")
+                    && java.util.Arrays.stream(t.getArgs()).anyMatch(a -> a.toString().startsWith(modVersion))
+                    && java.util.Arrays.stream(t.getArgs()).anyMatch(a -> a.toString().startsWith("old-release")),
+                    "Native mismatch reason carries both client and server versions for the disconnect screen");
+        }
+        check(!net.neoforged.neoforge.network.negotiation.NetworkComponentNegotiator.negotiate(local, java.util.List.of()).success(),
+                "A missing Covenant installation is rejected");
+
+        // Exercise the server's actual rejection path before any play listener/player is created.
+        var queries = new java.util.HashMap<net.minecraft.network.ConnectionProtocol,
+                java.util.Set<net.neoforged.neoforge.network.payload.ModdedNetworkQueryComponent>>();
+        registrations.forEach((protocol, entries) -> queries.put(protocol, entries.values().stream().map(r ->
+                new net.neoforged.neoforge.network.payload.ModdedNetworkQueryComponent(r.id(),
+                        r.id().getNamespace().equals("covenant") ? "old-release" : r.version(), r.flow(), r.optional()))
+                .collect(java.util.stream.Collectors.toSet())));
+        var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
+        var channel = new io.netty.channel.embedded.EmbeddedChannel(connection);
+        var sent = new java.util.ArrayList<Object>(); var disconnected = new java.util.ArrayList<Object>();
+        var listener = (net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener) java.lang.reflect.Proxy.newProxyInstance(
+                SkillNetworkingGameTests.class.getClassLoader(),
+                new Class<?>[] {net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getConnection" -> connection;
+                    case "getConnectionType" -> net.neoforged.neoforge.network.connection.ConnectionType.NEOFORGE;
+                    case "send" -> { sent.add(args[0]); yield null; }
+                    case "disconnect" -> { disconnected.add(args[0]); yield null; }
+                    default -> throw new AssertionError("Unexpected configuration call: " + method);
+                });
+        try {
+            NetworkRegistry.initializeNeoForgeConnection(listener, queries);
+            check(disconnected.size() == 1, "Server cleanly disconnects the mismatched configuration connection");
+            check(sent.size() == 1 && sent.getFirst() instanceof net.neoforged.neoforge.network.payload.ModdedNetworkSetupFailedPayload failure
+                    && !failure.failureReasons().isEmpty(), "Server sends version failure details before disconnect, without entering play");
+        } finally { channel.finishAndReleaseAll(); }
+        helper.succeed();
+    }
 
     @SuppressWarnings("removal")
     static void ingress(GameTestHelper helper) {

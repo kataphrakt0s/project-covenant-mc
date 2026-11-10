@@ -1,6 +1,6 @@
 {
   "discharge": {
-    "cost": 30, "cooldown_ticks": 240, "cast_ticks": 10, "radius": 3,
+    "cost": 30, "cooldown_ticks": 240, "cast_ticks": 10, "radius": 5,
     "max_stacks": 5, "damage_per_stack": 1,
     "slow": 0.3, "slow_ticks": 60, "freeze_ticks": 20, "burn_ticks": 80,
     "explosion_damage": 4, "chain_range": 4, "chain_targets": 2, "chain_multiplier": 0.5

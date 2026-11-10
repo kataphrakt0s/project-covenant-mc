@@ -85,11 +85,12 @@ final class WeaverGameTests {
         try (var f = new Fixture(helper, 240)) {
             var p = f.player(); f.charge(p, 7, 7, 7);
             for (var e : WeaverPower.Element.values()) { near(WeaverPower.charges(p, e), 5, "Independent cap"); }
-            var a = f.target(0, 0, 1); var b = f.target(0, 0, 2);
-            var chain1 = f.target(0, 0, 5); var chain2 = f.target(0, 0, 8.5); var extra = f.target(0, 0, 10);
+            var a = f.target(0, 0, 2); var b = f.target(0, 0, 4); var edge = f.target(0, 0, 5);
+            var chain1 = f.target(0, 0, 5.5); var chain2 = f.target(0, 0, 9); var extra = f.target(0, 0, 10.5);
             ClassResources.set(p, PlayerClass.WEAVER, 100); f.use(p, SkillDefinition.DISCHARGE);
-            near(a.getHealth(), 200 - 15 - 4 * (1 - 1.0 / 3), "All three components and falloff explosion apply");
-            near(b.getHealth(), 200 - 15 - 4 * (1 - 2.0 / 3), "Other area target hit once per component");
+            near(a.getHealth(), 200 - 15 - 4 * (1 - 2.0 / 5), "All three components and falloff explosion apply");
+            near(b.getHealth(), 200 - 15 - 4 * (1 - 4.0 / 5), "Expanded area target hit once per component");
+            near(edge.getHealth(), 185, "Five-block boundary receives each element without explosion falloff damage");
             near(chain1.getHealth(), 197.5, "First external arc deals half lightning contribution");
             near(chain2.getHealth(), 197.5, "Second arc has no further falloff"); near(extra.getHealth(), 200, "Two external targets maximum");
             check(Auras.frozen(a) && a.getData(RpgData.AURA_FROZEN), "Max ice shares native freeze controls and sync");
@@ -265,6 +266,36 @@ final class WeaverGameTests {
         }
     }
 
+    static void teleportTerrain(GameTestHelper helper) {
+        try (var f = new Fixture(helper, 265)) {
+            var p = f.player(); f.learn(p, SkillDefinition.TELEPORT);
+            ClassResources.setInfinite(p, true); Skills.setIgnoreCooldowns(p, true);
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 10; z++) { f.block(x, -1, z, Blocks.STONE); }
+            }
+            p.setXRot(45); f.use(p, SkillDefinition.TELEPORT);
+            near(p.getZ() - f.origin.z, 8 / Math.sqrt(2), "Downward aim retains forward travel along the floor");
+            near(p.getY(), f.origin.y, "Blink rests on the floor without crossing it");
+            p.setPos(f.origin); f.block(0, 0, 3, Blocks.STONE); f.block(0, 1, 3, Blocks.STONE);
+            f.use(p, SkillDefinition.TELEPORT);
+            check(p.getZ() - f.origin.z > 2 && p.getZ() - f.origin.z < 2.21, "Floor continuation stops at the next wall");
+            check(p.level().noCollision(p), "Floor/wall endpoint fits the body");
+            p.setPos(f.origin.add(4, 0, 0)); p.setXRot(-30);
+            var start = p.position(); f.use(p, SkillDefinition.TELEPORT);
+            near(p.position().distanceTo(start), 8, "Unsupported upward blink uses all eight blocks");
+            near(p.getY() - start.y, 4, "Airborne endpoint follows cursor pitch");
+            p.setPos(f.origin.add(4, 0, 0)); p.setXRot(30); start = p.position();
+            f.use(p, SkillDefinition.TELEPORT);
+            near(p.position().distanceTo(start), 8, "Unsupported downward blink needs no soft landing");
+            near(p.getY() - start.y, -4, "Downward airborne endpoint follows cursor pitch");
+            p.setPos(f.origin.add(4, 0, 0)); p.setXRot(0);
+            var target = f.target(4, 0, 3); f.use(p, SkillDefinition.TELEPORT);
+            near(p.getZ() - f.origin.z, 8, "An entity along the route does not act as a wall");
+            check(target.isAlive(), "Passing an entity does not damage it");
+            helper.succeed();
+        }
+    }
+
     static void lifecycle(GameTestHelper helper) {
         try (var f = new Fixture(helper, 250)) {
             for (var reason : SkillLifecycle.Reason.values()) {
@@ -288,7 +319,8 @@ final class WeaverGameTests {
         try (var reader = helper.getLevel().getServer().getResourceManager().getResourceOrThrow(WeaverSkillData.FILE).openAsReader()) {
             var json = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
             var data = WeaverSkillData.parse(json);
-            near(data.discharge().damage(), 1, "Shipped Discharge damage"); near(data.threefold().capacity(), 6, "Shipped reserve cap"); near(data.teleport().range(), 8, "Shipped Teleport range");
+            near(data.discharge().damage(), 1, "Shipped Discharge damage"); near(data.discharge().radius(), 5, "Shipped five-block radius");
+            near(data.threefold().capacity(), 6, "Shipped reserve cap"); near(data.teleport().range(), 8, "Shipped Teleport range");
             for (String group : List.of("discharge", "threefold_system", "teleport")) {
                 var changed = json.deepCopy(); changed.getAsJsonObject(group).addProperty("cost", -1);
                 boolean rejected = false; try { WeaverSkillData.parse(changed); } catch (IllegalArgumentException expected) { rejected = true; }
@@ -306,11 +338,11 @@ final class WeaverGameTests {
             var p = f.player(); f.charge(p, 5, 5, 5); f.equip(p, SkillDefinition.THREEFOLD_SYSTEM, 0);
             var target = f.target(0, 0, 1); f.use(p, SkillDefinition.DISCHARGE);
             near(WeaverPower.reserve(p, WeaverPower.Element.FIRE), 2.5, "Ice/lightning Discharge builds fire reserve");
-            near(WeaverPower.reserve(p, WeaverPower.Element.ICE), 2.5 + 2.0 / 3, "Fire/lightning and explosion build ice reserve");
-            near(WeaverPower.reserve(p, WeaverPower.Element.LIGHTNING), 2.5 + 2.0 / 3, "Fire/ice and explosion build lightning reserve");
+            near(WeaverPower.reserve(p, WeaverPower.Element.ICE), 2.5 + .8, "Fire/lightning and explosion build ice reserve");
+            near(WeaverPower.reserve(p, WeaverPower.Element.LIGHTNING), 2.5 + .8, "Fire/ice and explosion build lightning reserve");
             f.use(p, SkillDefinition.THREEFOLD_SYSTEM); f.charge(p, 0, 1, 0);
             double before = target.getHealth(); f.use(p, SkillDefinition.DISCHARGE);
-            near(before - target.getHealth(), 1 + .3 * (2.5 + 2.0 / 3) / 6, "Discharge captures correct elemental buff");
+            near(before - target.getHealth(), 1 + .3 * (2.5 + .8) / 6, "Discharge captures correct elemental buff");
             near(WeaverPower.reserve(p, WeaverPower.Element.FIRE), 0, "Buffed Discharge cannot refill active Threefold");
             helper.succeed();
         }

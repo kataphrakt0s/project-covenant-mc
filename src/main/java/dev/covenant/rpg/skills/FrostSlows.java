@@ -5,6 +5,7 @@ import dev.covenant.rpg.RpgData;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.neoforge.common.NeoForge;
@@ -48,13 +49,15 @@ public final class FrostSlows {
     }
 
     private static void tick(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof LivingEntity target) || target.level().isClientSide()
-                || !target.hasData(RpgData.FROST_SOURCES)) { return; }
-        // Recheck after target movement as well as patch ticking, so final exits have no lingering slow.
-        var sources = target.getData(RpgData.FROST_SOURCES).patches;
-        sources.removeIf(patch -> !patch.covers(target));
-        // Existing membership already contributes the same 50% slow, irrespective of source count.
-        if (sources.isEmpty()) { clear(target); }
+        try (var zone = Profiler.get().zone("covenant:frost_slows")) {
+            if (!(event.getEntity() instanceof LivingEntity target) || target.level().isClientSide()
+                    || !target.hasData(RpgData.FROST_SOURCES)) { return; }
+            // Recheck after target movement as well as patch ticking, so final exits have no lingering slow.
+            var sources = target.getData(RpgData.FROST_SOURCES).patches;
+            sources.removeIf(patch -> !patch.covers(target));
+            // Existing membership already contributes the same 50% slow, irrespective of source count.
+            if (sources.isEmpty()) { clear(target); }
+        }
     }
 
     private static void left(EntityLeaveLevelEvent event) {

@@ -1,0 +1,1 @@
+{"type":"minecraft:function","function":"covenant_test:connection_versions","environment":"minecraft:default","structure":"covenant_test:empty","max_ticks":60,"required":true}

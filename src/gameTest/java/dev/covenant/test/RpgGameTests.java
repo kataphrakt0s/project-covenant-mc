@@ -62,6 +62,7 @@ public final class RpgGameTests {
         FUNCTIONS.register("weaver_threefold_snapshots", () -> WeaverGameTests::threefoldSnapshots);
         FUNCTIONS.register("weaver_teleport_geometry", () -> WeaverGameTests::teleportGeometry);
         FUNCTIONS.register("weaver_teleport_blocked", () -> WeaverGameTests::teleportBlocked);
+        FUNCTIONS.register("weaver_teleport_terrain", () -> WeaverGameTests::teleportTerrain);
         FUNCTIONS.register("weaver_lifecycle", () -> WeaverGameTests::lifecycle);
         FUNCTIONS.register("weaver_config", () -> WeaverGameTests::config);
         FUNCTIONS.register("weaver_discharge_threefold", () -> WeaverGameTests::dischargeThreefold);
@@ -114,6 +115,7 @@ public final class RpgGameTests {
         FUNCTIONS.register("control_dash_handoff", () -> ControlGameTests::dashHandoff);
         FUNCTIONS.register("projectile_persistence", () -> ProjectilePersistenceGameTests::run);
         FUNCTIONS.register("skill_network_ingress", () -> SkillNetworkingGameTests::ingress);
+        FUNCTIONS.register("connection_versions", () -> SkillNetworkingGameTests::connectionVersions);
         FUNCTIONS.register("lightning_visual_codec", () -> SkillNetworkingGameTests::lightningCodec);
         FUNCTIONS.register("infinite_resource", () -> SkillGameTests::infiniteResource);
         FUNCTIONS.register("ignore_cooldowns", () -> SkillGameTests::ignoreCooldowns);
@@ -189,12 +191,19 @@ public final class RpgGameTests {
         FUNCTIONS.register("activity_logging", () -> ProfessionActivityGameTests::logging);
         FUNCTIONS.register("activity_breeding", () -> ProfessionActivityGameTests::breeding);
         FUNCTIONS.register("activity_enchanting", () -> ProfessionActivityGameTests::enchanting);
+        FUNCTIONS.register("farming_ranks", () -> FarmingGameTests::ranks);
+        FUNCTIONS.register("farming_rules", () -> FarmingGameTests::rules);
+        FUNCTIONS.register("farming_replant", () -> FarmingGameTests::replant);
+        FUNCTIONS.register("farming_protection", () -> FarmingGameTests::protection);
+        FUNCTIONS.register("farming_breakage", () -> FarmingGameTests::breakage);
         FUNCTIONS.register("gathering_vein_ranks", () -> GatheringGameTests::veinRanks);
         FUNCTIONS.register("gathering_vein_rules", () -> GatheringGameTests::veinRules);
         FUNCTIONS.register("gathering_failures", () -> GatheringGameTests::failures);
         FUNCTIONS.register("gathering_tree_ranks", () -> GatheringGameTests::treeRanks);
         FUNCTIONS.register("gathering_tree_continuation", () -> GatheringGameTests::treeContinuation);
         FUNCTIONS.register("gathering_tree_rules", () -> GatheringGameTests::treeRules);
+        FUNCTIONS.register("gathering_drop_rules", () -> GatheringGameTests::dropRules);
+        FUNCTIONS.register("profiler_activity", () -> GatheringGameTests::profiler);
     }
 
     public RpgGameTests(IEventBus modBus) { FUNCTIONS.register(modBus); }

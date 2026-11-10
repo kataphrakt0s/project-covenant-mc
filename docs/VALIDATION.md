@@ -2,6 +2,104 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Farming Scything and Automatic Replanting (2026-11-08)
+
+- `scripts/Dev.ps1 verify`: build, all three UI geometry suites, JAR packaging
+  and the dedicated NeoForge 26.1.2.126 GameTest suite passed. Explicit result:
+  **All 153 required tests passed :)**. Final evidence is in ignored
+  `.local/farming-complete-verify.log` and `runs/gametest/logs/latest.log`.
+- Five new required Farming tests cover all three mixed-crop area sizes,
+  maturity/height boundaries, classless XP, baseline/sneaking single harvests,
+  ordinary left-click/tilling, wrong tools/Creative, durability/Unbreaking,
+  all five crop replant mappings, inventory/offhand seed use, missing seed,
+  right-click/break/placement cancellation, invalid soil, cancelled loot and
+  finishing the last replant on hoe break without using a replacement hoe.
+- Profession content checks validate Scything widths, planting mappings and
+  legacy XP-only crops. Owner-view codec and native wire round trips retain
+  rank areas and crop target metadata; live views recognize configured mature
+  crops and reject immature ones. Crop targets support client consumption of
+  the interaction; no terrain or inventory mutations are predicted.
+- The breakage fixture initially counted consumed planting items as broken hoes;
+  its replacement listener now filters the original hoe item. Final tests pass.
+- `git diff --check` and new-source whitespace checks passed. New/updated Farming
+  documentation is UTF-8; this file's preexisting bytes were preserved.
+- Client input/animation, same-click offhand suppression, latency/multiplayer,
+  retained-world restart and protection/modpack interoperability remain manual.
+  No client launch, Prism/LAN deployment, publishing or remote push was performed.
+
+## F3+1 pie visibility (2026-11-08)
+
+- `scripts/Dev.ps1 build`: compilation, all three UI geometry checks and JAR
+  packaging passed; evidence: `.local/pie-visibility-build.log`.
+- `scripts/Dev.ps1 test`: explicit **All 148 required tests passed :)**;
+  evidence: `.local/pie-visibility-tests.log`.
+- Extended native scopes cover input, screen updates, Workbench presentation,
+  lightning/arrow visuals, bow pose bookkeeping, and movement/freeze checks.
+  Existing entity/player callback and HUD scopes now include their early-return
+  guards, including checks made on the client without an active effect.
+- The native recording test asserts named idle movement/freeze checks and
+  aura/bleed/frost/arrow callback guards alongside harvesting, rejection and
+  exception cleanup. Gameplay and persistence checks remain in the full suite.
+- Bow enter/exit/query scopes close independently of the wrapped vanilla render
+  body. No synthetic client slice or combined server/client timer is introduced.
+- `docs/DEVELOPMENT.md` documents live F3+1 navigation and its client-thread
+  boundary. Rendered pie navigation, client labels and input/visual effects
+  remain user playtesting checks. The new JAR has not been deployed by this task.
+
+## Class tooltips, gathering caps and profiler visibility (2026-11-08)
+
+- `scripts/Dev.ps1 build`: compilation, all three UI geometry checks and JAR
+  packaging passed. Final build evidence: `.local/profiler-build.log`.
+- `scripts/Dev.ps1 test`: explicit **All 148 required tests passed :)** on the
+  final run; evidence: `.local/profiler-validation-rerun.log`.
+- Native Survival rank tests verify Vein Mining's new 4/8/16/32 total-block caps,
+  per-block durability/exhaustion/drops/XP and parity with Tree Felling. Fortune
+  and Unbreaking coverage uses the reduced Rank I cap. Other gathering rules,
+  rank gates, catalogue validation bounds and custom datapack support are retained.
+- `profiler_activity` records actual server metrics around native harvesting,
+  classless skill rejection and a throwing extra-harvest callback. The completed
+  native profile contains Covenant's named scopes as siblings after early return
+  and exception cleanup. An ignored sample is `.local/covenant-profiler-sample.txt`.
+  This establishes visibility and balanced scopes, not representative timings.
+- The first full run reported a sliding-combo fixture contact failure. The same
+  test passed on the full rerun without combat or fixture changes; the initial
+  server log is retained in `.local/profiler-validation-first.log`.
+- Weaver's description now reflects implemented elemental skills. All class
+  tooltips omit the duplicated permanent-choice warning; the shared warning
+  remains above the buttons. Rendered tooltips, client profiler/HUD/screen scopes,
+  Tracy, third-party profiler displays and multiplayer captures remain manual.
+
+## Gathering drops, tooltips, Weaver tuning and connection versions (2026-11-08)
+
+- `scripts/Dev.ps1 verify`: build/layout checks and dedicated NeoForge server
+  validation; explicit **All 147 required tests passed :)**. Evidence is ignored
+  `.local/gathering-weaver-network-verify.log`.
+- Gathering rank tests now check that every ore/log item drop shares the first
+  block's actual native drop point. A new native-drop-event fixture verifies
+  added loot, cancelled origin/extra loot, center fallback, ordinary-harvest
+  cleanup and untouched nearby loose items. Native durability, enchantments,
+  profession XP, stop conditions and partial-tree continuation remain covered.
+- Discharge tests cover the expanded five-block spherical radius, its boundary,
+  explosion falloff and external-only chains, plus updated Threefold accounting.
+- Teleport now continues the horizontal aim component after floor/ceiling contact
+  and only terrain obstructs its route. A new Survival fixture checks down-aimed
+  floor travel, floor-then-wall blocking, unsupported upward/downward eight-block
+  endpoints and an entity in the route. Existing thin-wall, diagonal, ceiling,
+  build-height, blocked-cost and native acknowledgement checks also pass.
+- Network tests inspect the real registered required channels, accept matching
+  releases, reject missing/different releases and verify both version labels in
+  NeoForge's mod-specific failure detail. The native server negotiation path is
+  exercised with an embedded connection and configuration-listener test double:
+  it sends mismatch details and disconnects before any play listener is created.
+  Version equality uses `mod_version` plus wire revisions; changed release builds
+  must advance their version label.
+- Packaged resources retain Teleport range 8 and Discharge radius 5, changed JSON
+  has no duplicate keys, and the production JAR excludes test code/data.
+- Manual: read profession tooltips at the user's GUI scale, check teleport feel
+  against floors/walls and into open air, observe gathered drops, and connect a
+  real mismatched client to inspect the disconnect screen. Client/LAN testing,
+  deployment, retained-world restart and modpack compatibility were not performed.
+
 ## Weaver Discharge, Threefold System and Teleport (2026-11-08)
 
 - Implemented all three at Rank 1 with the accepted provisional defaults,

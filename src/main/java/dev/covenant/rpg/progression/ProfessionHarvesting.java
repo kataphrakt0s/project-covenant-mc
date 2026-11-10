@@ -7,6 +7,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,23 +36,25 @@ public final class ProfessionHarvesting {
     /** Called before native removal, after final BreakEvent acceptance and harvest/tool validation. */
     public static Award beforeRemoval(ServerPlayer player, BlockPos pos, BlockState state, boolean canHarvest) {
         if (!canHarvest || !participant(player)) { return null; }
-        var snapshot = ProfessionData.snapshot(player.level().getServer());
-        var definitions = snapshot.catalogue().harvesting();
-        for (var ore : definitions.ores()) {
-            if (ore.blocks().test(state)) {
-                return isPlaced(player.level(), pos) ? null : new Award(MINING, ore.activity());
+        try (var zone = Profiler.get().zone("covenant:harvest_reward_check")) {
+            var snapshot = ProfessionData.snapshot(player.level().getServer());
+            var definitions = snapshot.catalogue().harvesting();
+            for (var ore : definitions.ores()) {
+                if (ore.blocks().test(state)) {
+                    return isPlaced(player.level(), pos) ? null : new Award(MINING, ore.activity());
+                }
             }
-        }
-        for (var crop : definitions.crops()) {
-            if (crop.test(state)) { return new Award(FARMING, ProfessionData.id("farming/mature_crop")); }
-        }
-        for (var tree : definitions.trees()) {
-            if (tree.logs().test(state)) {
-                return recognizedTree(player.level(), pos, state, snapshot, tree) != null
-                        ? new Award(LOGGING, ProfessionData.id("logging/log")) : null;
+            for (var crop : definitions.crops()) {
+                if (crop.test(state)) { return new Award(FARMING, ProfessionData.id("farming/mature_crop")); }
             }
+            for (var tree : definitions.trees()) {
+                if (tree.logs().test(state)) {
+                    return recognizedTree(player.level(), pos, state, snapshot, tree) != null
+                            ? new Award(LOGGING, ProfessionData.id("logging/log")) : null;
+                }
+            }
+            return null;
         }
-        return null;
     }
 
     /** Called only when the native removal returned true and the original block actually changed. */
@@ -134,66 +137,68 @@ public final class ProfessionHarvesting {
 
     static HarvestChunkState.TreeEvidence recognizedTree(ServerLevel level, BlockPos pos, BlockState state,
             ProfessionData.Snapshot snapshot, HarvestDefinitions.Tree tree) {
-        var chunk = loaded(level, pos);
-        if (chunk == null) { return null; }
-        if (chunk.hasData(RpgData.HARVEST_TREES)) {
-            var cache = chunk.getData(RpgData.HARVEST_TREES);
-            var evidence = cache.logs.get(pos.asLong());
-            if (cache.revision == snapshot.revision() && evidence != null && evidence.logs().get(pos) == state) { return evidence; }
-        }
-        var search = new TreeSearch(level);
-        var base = pos;
-        for (int i = 0; i < MAX_TREE_HEIGHT; i++) {
-            var below = search.read(base.below());
-            if (below == null) { return null; }
-            if (!tree.logs().test(below)) { break; }
-            base = base.below();
-        }
-        var ground = search.read(base.below());
-        if (ground == null || !snapshot.catalogue().harvesting().ground().test(ground)) { return null; }
-        var queue = new ArrayDeque<BlockPos>(); var seen = new HashSet<BlockPos>();
-        var logs = new LinkedHashMap<BlockPos, BlockState>();
-        queue.add(base); seen.add(base); boolean canopy = false;
-        while (!queue.isEmpty()) {
-            var current = queue.removeFirst();
-            var log = search.read(current);
-            if (log == null) { return null; }
-            logs.put(current, log);
-            if (logs.size() > MAX_TREE_LOGS) { return null; }
-            for (var direction : Direction.values()) {
-                var leafPos = current.relative(direction);
-                var leaf = search.read(leafPos);
-                if (leaf == null) { return null; }
-                if (current.getY() >= base.getY() + 2 && tree.leaves().test(leaf)
-                        && leaf.hasProperty(BlockStateProperties.PERSISTENT) && !leaf.getValue(BlockStateProperties.PERSISTENT)) { canopy = true; }
+        try (var zone = Profiler.get().zone("covenant:tree_recognition")) {
+            var chunk = loaded(level, pos);
+            if (chunk == null) { return null; }
+            if (chunk.hasData(RpgData.HARVEST_TREES)) {
+                var cache = chunk.getData(RpgData.HARVEST_TREES);
+                var evidence = cache.logs.get(pos.asLong());
+                if (cache.revision == snapshot.revision() && evidence != null && evidence.logs().get(pos) == state) { return evidence; }
             }
-            // Upward and same-height adjacency supports trunks/branches without descending into nearby builds.
-            for (int dy = 0; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dy == 0 && dz == 0) { continue; }
-                        var next = current.offset(dx, dy, dz);
-                        if (!seen.add(next)) { continue; }
-                        var nextState = search.read(next);
-                        if (nextState == null) { return null; }
-                        if (!tree.logs().test(nextState)) { continue; }
-                        if (Math.abs(next.getX() - base.getX()) > MAX_TREE_RADIUS || Math.abs(next.getZ() - base.getZ()) > MAX_TREE_RADIUS
-                                || next.getY() - base.getY() >= MAX_TREE_HEIGHT) { return null; }
-                        queue.addLast(next);
+            var search = new TreeSearch(level);
+            var base = pos;
+            for (int i = 0; i < MAX_TREE_HEIGHT; i++) {
+                var below = search.read(base.below());
+                if (below == null) { return null; }
+                if (!tree.logs().test(below)) { break; }
+                base = base.below();
+            }
+            var ground = search.read(base.below());
+            if (ground == null || !snapshot.catalogue().harvesting().ground().test(ground)) { return null; }
+            var queue = new ArrayDeque<BlockPos>(); var seen = new HashSet<BlockPos>();
+            var logs = new LinkedHashMap<BlockPos, BlockState>();
+            queue.add(base); seen.add(base); boolean canopy = false;
+            while (!queue.isEmpty()) {
+                var current = queue.removeFirst();
+                var log = search.read(current);
+                if (log == null) { return null; }
+                logs.put(current, log);
+                if (logs.size() > MAX_TREE_LOGS) { return null; }
+                for (var direction : Direction.values()) {
+                    var leafPos = current.relative(direction);
+                    var leaf = search.read(leafPos);
+                    if (leaf == null) { return null; }
+                    if (current.getY() >= base.getY() + 2 && tree.leaves().test(leaf)
+                            && leaf.hasProperty(BlockStateProperties.PERSISTENT) && !leaf.getValue(BlockStateProperties.PERSISTENT)) { canopy = true; }
+                }
+                // Upward and same-height adjacency supports trunks/branches without descending into nearby builds.
+                for (int dy = 0; dy <= 1; dy++) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            if (dx == 0 && dy == 0 && dz == 0) { continue; }
+                            var next = current.offset(dx, dy, dz);
+                            if (!seen.add(next)) { continue; }
+                            var nextState = search.read(next);
+                            if (nextState == null) { return null; }
+                            if (!tree.logs().test(nextState)) { continue; }
+                            if (Math.abs(next.getX() - base.getX()) > MAX_TREE_RADIUS || Math.abs(next.getZ() - base.getZ()) > MAX_TREE_RADIUS
+                                    || next.getY() - base.getY() >= MAX_TREE_HEIGHT) { return null; }
+                            queue.addLast(next);
+                        }
                     }
                 }
             }
+            if (!canopy || logs.size() < 3 || !logs.containsKey(pos)) { return null; }
+            var evidence = new HarvestChunkState.TreeEvidence(logs);
+            for (var entry : logs.entrySet()) {
+                var targetChunk = loaded(level, entry.getKey());
+                if (targetChunk == null) { return null; }
+                var cache = targetChunk.getData(RpgData.HARVEST_TREES);
+                if (cache.revision != snapshot.revision()) { cache.logs.clear(); cache.revision = snapshot.revision(); }
+                cache.logs.put(entry.getKey().asLong(), evidence);
+            }
+            return evidence;
         }
-        if (!canopy || logs.size() < 3 || !logs.containsKey(pos)) { return null; }
-        var evidence = new HarvestChunkState.TreeEvidence(logs);
-        for (var entry : logs.entrySet()) {
-            var targetChunk = loaded(level, entry.getKey());
-            if (targetChunk == null) { return null; }
-            var cache = targetChunk.getData(RpgData.HARVEST_TREES);
-            if (cache.revision != snapshot.revision()) { cache.logs.clear(); cache.revision = snapshot.revision(); }
-            cache.logs.put(entry.getKey().asLong(), evidence);
-        }
-        return evidence;
     }
 
     /** Every read, including absent chunks, consumes the fixed budget; no getChunk call may load terrain. */

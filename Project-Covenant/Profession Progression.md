@@ -17,10 +17,11 @@ All characters can develop all four professions simultaneously. Professions are 
 
 The shared foundation now includes the four-tab menu, saved paid-cost
 allocations, atomic per-tab Apply, server-datapack catalogue and the held-use
-all-profession respec. Logging's Offensive Mastery, Vein Mining, Tree Felling and
-all four Crafting nodes are usable; ten authored nodes remain planned and unavailable. Automatic
+all-profession respec. Logging's Offensive Mastery, Vein Mining, Tree Felling,
+Farming Scything/Automatic Replanting and all four Crafting nodes are usable;
+eight authored nodes remain planned and unavailable. Automatic
 activity XP is now implemented for ore/log/crop harvests, breeding and enchanting;
-the Workbench/itemization loop and these two gathering abilities are implemented.
+the Workbench/itemization loop and these four gathering abilities are implemented.
 Other gathering abilities remain deferred. Runtime format
 and manual checks: [Profession foundation](../docs/PROFESSIONS.md).
 All balance values remain provisional during implementation and playtesting.

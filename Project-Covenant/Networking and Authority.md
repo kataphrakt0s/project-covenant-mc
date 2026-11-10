@@ -2,6 +2,12 @@
 
 Gameplay-critical state and mutations are server-authoritative. This includes character XP/levels, skill points and ranks, profession XP/levels/points/unlocks, contributor XP attribution, dimensional progression gates, recipe eligibility, respec operations, class resources, stats, equipment, and ability execution.
 
+Required network channels negotiate the exact installed Covenant release version
+and wire format revisions before play. NeoForge rejects mismatches with a
+disconnect screen identifying Project Covenant and the client/server versions.
+Changed releases must advance `mod_version`; matching version labels are not a
+checksum of the JAR contents. See [Development](../docs/DEVELOPMENT.md).
+
 Clients may request actions, but the server validates the relevant action/source
 dimension, progression caps, activity eligibility, prerequisites, point budget,
 eight-skill allocation limit, costs, and item requirements. Combat XP uses the

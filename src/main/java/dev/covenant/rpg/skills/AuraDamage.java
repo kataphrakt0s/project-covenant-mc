@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -88,26 +89,28 @@ public final class AuraDamage {
                 * (1 + Auras.battleCryBonus(source) + (Auras.passive(source, Auras.Kind.RIPPING) ? .2 : 0) + (Auras.active(source, Auras.Kind.RAGING) ? .2 : 0)));
     }
     private static void incoming(LivingIncomingDamageEvent event) {
-        var source = event.getSource();
-        double amount = event.getAmount();
-        // Projectiles with committed power were already scaled at their firing boundary.
-        var direct = source.getDirectEntity();
-        if (direct instanceof Projectile && direct.hasData(RpgData.AURA_PROJECTILE_POWER)
-                && !(direct instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow)
-                && !(direct instanceof ElementalBolt) && !(direct instanceof ArcaneBolt)) {
-            // Native crossbow rockets have no arrow base-damage field; retain their firing snapshot here.
-            amount *= direct.getData(RpgData.AURA_PROJECTILE_POWER);
+        try (var zone = Profiler.get().zone("covenant:damage_incoming")) {
+            var source = event.getSource();
+            double amount = event.getAmount();
+            // Projectiles with committed power were already scaled at their firing boundary.
+            var direct = source.getDirectEntity();
+            if (direct instanceof Projectile && direct.hasData(RpgData.AURA_PROJECTILE_POWER)
+                    && !(direct instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow)
+                    && !(direct instanceof ElementalBolt) && !(direct instanceof ArcaneBolt)) {
+                // Native crossbow rockets have no arrow base-damage field; retain their firing snapshot here.
+                amount *= direct.getData(RpgData.AURA_PROJECTILE_POWER);
+            }
+            if (source.getEntity() instanceof LivingEntity player && !calculated(player, source)
+                    && (direct == null || !direct.hasData(RpgData.AURA_PROJECTILE_POWER))) {
+                var element = WeaverPower.element(source);
+                amount *= element == null ? multiplier(player, false) : elementalMultiplier(player, element);
+            }
+            double vulnerability = (Auras.passive(event.getEntity(), Auras.Kind.SHOCK) ? .1 : 0)
+                    + (event.getEntity().hasEffect(Vulnerability.EFFECT) ? Vulnerability.STRENGTH : 0);
+            amount *= 1 + vulnerability;
+            if (source.is(DamageTypeTags.IS_FIRE) && Auras.passive(event.getEntity(), Auras.Kind.FLAME_CLOAK)) { amount *= .8; }
+            event.setAmount((float) amount);
         }
-        if (source.getEntity() instanceof LivingEntity player && !calculated(player, source)
-                && (direct == null || !direct.hasData(RpgData.AURA_PROJECTILE_POWER))) {
-            var element = WeaverPower.element(source);
-            amount *= element == null ? multiplier(player, false) : elementalMultiplier(player, element);
-        }
-        double vulnerability = (Auras.passive(event.getEntity(), Auras.Kind.SHOCK) ? .1 : 0)
-                + (event.getEntity().hasEffect(Vulnerability.EFFECT) ? Vulnerability.STRENGTH : 0);
-        amount *= 1 + vulnerability;
-        if (source.is(DamageTypeTags.IS_FIRE) && Auras.passive(event.getEntity(), Auras.Kind.FLAME_CLOAK)) { amount *= .8; }
-        event.setAmount((float) amount);
     }
 
     private static boolean calculated(LivingEntity player, DamageSource source) {
@@ -117,16 +120,18 @@ public final class AuraDamage {
         return false;
     }
     private static void shield(LivingDamageEvent.Pre event) {
-        if (event.getNewDamage() > 0 && Auras.shield(event.getEntity()) > 0) {
-            var owner = event.getEntity().getData(RpgData.AURAS).shieldOwner;
-            if (owner != null) { dev.covenant.rpg.progression.CombatProgression.defended(event.getEntity(), event.getSource(), Set.of(owner)); }
+        try (var zone = Profiler.get().zone("covenant:damage_shield")) {
+            if (event.getNewDamage() > 0 && Auras.shield(event.getEntity()) > 0) {
+                var owner = event.getEntity().getData(RpgData.AURAS).shieldOwner;
+                if (owner != null) { dev.covenant.rpg.progression.CombatProgression.defended(event.getEntity(), event.getSource(), Set.of(owner)); }
+            }
+            float absorbed = Auras.absorb(event.getEntity(), event.getNewDamage());
+            if (absorbed <= 0) { return; }
+            var hit = HIT.get();
+            if (hit != null && hit.target == event.getEntity() && hit.source == event.getSource()) { hit.absorbed += absorbed; }
+            event.getEntity().getData(RpgData.AURA_COMBAT).shieldSpent += absorbed;
+            event.setNewDamage(event.getNewDamage() - absorbed);
         }
-        float absorbed = Auras.absorb(event.getEntity(), event.getNewDamage());
-        if (absorbed <= 0) { return; }
-        var hit = HIT.get();
-        if (hit != null && hit.target == event.getEntity() && hit.source == event.getSource()) { hit.absorbed += absorbed; }
-        event.getEntity().getData(RpgData.AURA_COMBAT).shieldSpent += absorbed;
-        event.setNewDamage(event.getNewDamage() - absorbed);
     }
 
     private static boolean melee(DamageSource source) {
@@ -139,48 +144,50 @@ public final class AuraDamage {
     }
 
     private static void landed(LivingDamageEvent.Post event) {
-        var frame = HIT.get();
-        if (frame != null && frame.target == event.getEntity() && frame.source == event.getSource() && frame.eligibleEnemy
-                && event.getSource().getEntity() instanceof ServerPlayer caster) {
-            double actual = Math.min(frame.healthBefore, Math.max(0, event.getHealthDamage()))
-                    + Math.min(frame.absorptionBefore, event.getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION))
-                    + frame.absorbed;
-            WeaverPower.bank(caster, WeaverPower.element(event.getSource()), actual);
-        }
-        if (landedDamage(event) <= 0) { return; }
-        var source = event.getSource();
-        var target = event.getEntity();
-        if (!(target.level() instanceof ServerLevel level)) { return; }
-        var hit = HIT.get();
-        if (melee(source) && source.getEntity() instanceof LivingEntity attacker && Skills.canHit(target, attacker)
-                && hit != null && hit.retaliationTicks > 0 && !attacker.fireImmune()) {
-            attacker.igniteForTicks(hit.retaliationTicks);
-        }
-        if (!(source.getEntity() instanceof LivingEntity attacker) || !Skills.canHit(attacker, target)) { return; }
-        boolean isSkill = attacker instanceof ServerPlayer player && skill(player, source);
-        if (melee(source) && Auras.active(attacker, Auras.Kind.RIPPING)
-                && !(attacker instanceof ServerPlayer player && player.getData(RpgData.SKILL_RUNTIME).applyingRend)) {
-            var deadlines = target.getData(RpgData.AURA_COMBAT).ripping;
-            long now = Auras.now(target);
-            deadlines.values().removeIf(until -> until <= now);
-            if (!deadlines.containsKey(attacker.getUUID())) {
-                deadlines.put(attacker.getUUID(), now + 20);
-                applyBleed(target, attacker);
+        try (var zone = Profiler.get().zone("covenant:damage_landed")) {
+            var frame = HIT.get();
+            if (frame != null && frame.target == event.getEntity() && frame.source == event.getSource() && frame.eligibleEnemy
+                    && event.getSource().getEntity() instanceof ServerPlayer caster) {
+                double actual = Math.min(frame.healthBefore, Math.max(0, event.getHealthDamage()))
+                        + Math.min(frame.absorptionBefore, event.getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION))
+                        + frame.absorbed;
+                WeaverPower.bank(caster, WeaverPower.element(event.getSource()), actual);
             }
-        }
-        if (isSkill || source.is(ENCHANTING)) { return; }
-        float bonus = 0;
-        if (melee(source) && Auras.active(attacker, Auras.Kind.ENCHANTING)) {
-            bonus = (float) ((attacker instanceof Player player ? 2 * player.getAttackStrengthScale(.5f) : 2) * multiplier(attacker, false));
-        } else if (source.getDirectEntity() instanceof Projectile projectile
-                && projectile.hasData(RpgData.ENCHANTED_SHOT)
-                && projectile.getData(RpgData.ENCHANTED_SHOT) > 0
-                && ProjectileCombat.claimEnchantment(projectile, target)) {
-            bonus = projectile.getData(RpgData.ENCHANTED_SHOT);
-        }
-        if (bonus > 0 && target.isAlive()) {
-            var type = level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ENCHANTING);
-            target.hurtServer(level, new DamageSource(type, null, attacker), bonus);
+            if (landedDamage(event) <= 0) { return; }
+            var source = event.getSource();
+            var target = event.getEntity();
+            if (!(target.level() instanceof ServerLevel level)) { return; }
+            var hit = HIT.get();
+            if (melee(source) && source.getEntity() instanceof LivingEntity attacker && Skills.canHit(target, attacker)
+                    && hit != null && hit.retaliationTicks > 0 && !attacker.fireImmune()) {
+                attacker.igniteForTicks(hit.retaliationTicks);
+            }
+            if (!(source.getEntity() instanceof LivingEntity attacker) || !Skills.canHit(attacker, target)) { return; }
+            boolean isSkill = attacker instanceof ServerPlayer player && skill(player, source);
+            if (melee(source) && Auras.active(attacker, Auras.Kind.RIPPING)
+                    && !(attacker instanceof ServerPlayer player && player.getData(RpgData.SKILL_RUNTIME).applyingRend)) {
+                var deadlines = target.getData(RpgData.AURA_COMBAT).ripping;
+                long now = Auras.now(target);
+                deadlines.values().removeIf(until -> until <= now);
+                if (!deadlines.containsKey(attacker.getUUID())) {
+                    deadlines.put(attacker.getUUID(), now + 20);
+                    applyBleed(target, attacker);
+                }
+            }
+            if (isSkill || source.is(ENCHANTING)) { return; }
+            float bonus = 0;
+            if (melee(source) && Auras.active(attacker, Auras.Kind.ENCHANTING)) {
+                bonus = (float) ((attacker instanceof Player player ? 2 * player.getAttackStrengthScale(.5f) : 2) * multiplier(attacker, false));
+            } else if (source.getDirectEntity() instanceof Projectile projectile
+                    && projectile.hasData(RpgData.ENCHANTED_SHOT)
+                    && projectile.getData(RpgData.ENCHANTED_SHOT) > 0
+                    && ProjectileCombat.claimEnchantment(projectile, target)) {
+                bonus = projectile.getData(RpgData.ENCHANTED_SHOT);
+            }
+            if (bonus > 0 && target.isAlive()) {
+                var type = level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ENCHANTING);
+                target.hurtServer(level, new DamageSource(type, null, attacker), bonus);
+            }
         }
     }
 

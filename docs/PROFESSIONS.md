@@ -11,10 +11,11 @@ Hold G and choose radial slot 3, **Professions**. Mining, Logging, Farming and
 Crafting each show their own level, XP, available points and authored nodes.
 Left-click adds a pending rank; right-click undoes pending ranks. Each tab keeps
 its draft. Apply submits only the displayed track, out of combat. Closing the
-screen discards drafts. The world keeps running. Ten planned abilities stay
+screen discards drafts. The world keeps running. Eight planned abilities stay
 visible and unavailable; their descriptions describe future behavior.
 
-Vein Mining and Tree Felling are purchasable alongside all four Crafting nodes
+Vein Mining, Tree Felling, Farming Scything and Farming Automatic Replanting
+are purchasable alongside all four Crafting nodes
 and `covenant:logging/offensive_mastery`. Its five provisional
 ranks cost one point each at levels 5/8/11/14/17, granting a total outgoing
 player-damage bonus of 2/4/6/8/10%. Native attacks, arrows and attributed skill
@@ -44,12 +45,12 @@ Both are class-independent contextual abilities: purchase ranks in Professions,
 then break a qualifying block with a tool in the main hand. Sneaking preserves
 ordinary single-block harvesting. Creative, spectators and FakePlayers cannot
 activate batches. There is no cooldown, class-resource cost or flat activation
-charge. Automatic Replanting and the other planned gathering effects remain
-unavailable.
+charge. Logging Automatic Replanting and the other planned gathering effects
+remain unavailable.
 
 | Ability | Rank level gates | Point cost per rank | Total blocks per activation |
 |---|---|---|---|
-| Vein Mining | 2 / 5 / 10 / 15 | 1 | 8 / 16 / 32 / 64 |
+| Vein Mining | 2 / 5 / 10 / 15 | 1 | 4 / 8 / 16 / 32 |
 | Tree Felling | 1 / 5 / 10 / 15 | 1 | 4 / 8 / 16 / 32 |
 
 Limits include the initially harvested block and snapshot at that harvest.
@@ -77,13 +78,50 @@ player harvesting, including per-block durability, exhaustion, enchantments,
 loot, vanilla XP, profession XP, Adventure restrictions and BreakBlockEvent.
 The batch stops at the first protected, cancelled, changed, unsuitable or
 otherwise failed target, or when the original held tool breaks/is replaced.
-Completed harvests retain their drops and XP. Checks also enforce spawn
-protection and world borders for extra blocks. Extra breaks never expand into
-recursive batches. Searches use loaded chunks only, with a hard cap of 64
+Completed harvests retain their drops and XP. Item drops from the complete
+action gather at the first block's native drop
+point, including loot added through the drop event. Cancelled/removed loot is
+not recreated, and preexisting loose items are untouched. If the initiating
+block has no surviving item drop, its center is the fallback. Vanilla XP keeps
+its native per-block spawn path; leaves retain ordinary decay and drop positions.
+Checks also enforce spawn protection and world borders for extra blocks.
+Extra breaks never expand into recursive batches. Searches use loaded chunks only, with a hard cap of 64
 members and at most 26 neighbour checks per member; tree recognition retains
 its separate fixed bounds. No job, tick scan or chunk ticket is created.
 These bounds are not a performance benchmark or a claim of protection-mod
 compatibility testing.
+
+## Scything and Farming Automatic Replanting
+
+Right-click a supported mature crop with a main-hand item in `minecraft:hoes`.
+Without Scything, harvest one crop. Purchased Scything ranks I/II/III cost one
+point each at Farming levels 1/5/10 and harvest a 3×3/5×5/9×9 square centered on
+the targeted crop, on that Y level only. Sneaking limits the action to one crop.
+Mixed supported crops qualify; immature crops, other heights and unloaded chunks
+are skipped. Ordinary tilling and left-click breaking retain their native paths;
+left-click does not trigger these abilities. Creative, spectators and FakePlayers
+cannot activate Covenant farming. The client uses owner-synced crop maturity
+targets to consume the hoe interaction and prevent a second offhand use; it
+predicts no terrain, durability or inventory changes.
+
+The target is first, followed by the square in X/Z order. Each crop uses native
+player removal, BreakBlockEvent, loot/enchantments, exhaustion and existing
+Farming XP. Drops retain their native per-crop positions. Each confirmed harvest
+makes exactly one native durability attempt, with Unbreaking; replanting costs no
+extra durability. The first protected, cancelled, changed or failed harvest, or
+broken/replaced hoe, stops the action. Completed work is retained. Right-click
+cancellation/denial is checked after the final event subscriber. No chunk loading,
+recurring scan or saved job is introduced; the maximum area is 81 positions.
+
+Farming Automatic Replanting costs two points at level 5 and has no prerequisite.
+After each hoe-use harvest, including a sneaking single crop or the last crop
+before hoe breakage, it attempts native planting from the player's inventory
+(including offhand). It consumes one matching planting item only on successful
+placement. Harvest drops are never used as seed supply. Missing items, invalid
+soil or cancelled placement leave the crop harvested without spending a seed.
+Wheat, carrots, potatoes, beetroot and Nether wart ship with planting mappings.
+Other crop shapes/behaviors and pack/protection-mod interoperability remain
+outside this initial support.
 
 ## Natural activity XP
 
@@ -129,8 +167,8 @@ enchantments, tool costs and vanilla XP stay native.
   claimed by the fixed bounds.
 - Farming pays five per mature wheat, carrot, potato, beetroot or Nether wart
   block successfully harvested by the player. Immature crops, planting, Bone
-  Meal, passive collection and unattributed destruction pay nothing. Scything
-  and right-click harvesting are still unavailable.
+  Meal, passive collection and unattributed destruction pay nothing. Both native
+  left-click breaking and successful hoe right-click harvests use this reward.
 - Successful breeding pays 100 Farming XP once to vanilla's credited breeder,
   through the native successful-breeding criterion. It includes special native
   breeding paths that use that criterion. Feeding/love preparation alone and
@@ -167,8 +205,8 @@ profession, implementation availability, prerequisites, gates and affordability.
 Committed ranks cannot be refunded through Apply. Malformed/oversized packets
 are bounded before handling and share the skill system's ingress budget.
 The separate `covenant:profession_view` owner attachment is transient presentation;
-it contains the server catalogue and current XP/cap values, never authoritative
-purchases. Successful resource reloads invalidate stale purchase previews; failed
+it contains the server catalogue, current XP/cap values and supported mature-crop
+targets for client interaction prediction, never authoritative purchases. Successful resource reloads invalidate stale purchase previews; failed
 reloads retain the previous resource snapshot and player state.
 
 ## Server datapack content
@@ -208,6 +246,15 @@ rank's tuning. Removing a node disables its effect while retaining its paid
 reservation until respec. If ranks are shortened, the last remaining rank's
 limit applies, as for Offensive Mastery. Limits appear in owner-synced tooltips.
 
+Scything ranks require an `area` field: an odd whole-number square width in
+1-9, defaulting to 3/5/9 in the shipped ranks. Missing, zero, even, fractional or
+oversized widths reject reload. Replacement catalogues must add these widths
+when adopting this version. Owner-synced tooltips show each rank's actual area.
+Required profession networking advances to `professions/4` for the area/crop
+presentation contract. Connecting clients must use the same build.
+Saved allocations and ability IDs are unchanged; current catalogue tuning and
+node removal apply to future actions.
+
 `activity_rewards` holds up to 4,096 nonnegative whole-long values, keyed by
 namespaced activity ID. Native hooks consume the shipped Mining family IDs,
 `covenant:logging/log`, `covenant:farming/mature_crop`,
@@ -221,7 +268,7 @@ The optional `harvesting` object in the same catalogue defines:
 ```json
 "harvesting": {
   "ores": [{"blocks": "#c:ores/iron", "activity": "covenant:mining/iron"}],
-  "crops": [{"block": "minecraft:wheat", "age_property": "age", "mature_age": 7}],
+  "crops": [{"block": "minecraft:wheat", "age_property": "age", "mature_age": 7, "planting_item": "minecraft:wheat_seeds"}],
   "trees": [{"logs": "#minecraft:oak_logs", "leaves": "minecraft:oak_leaves"}],
   "tree_ground": "#covenant:harvest_tree_ground"
 }
@@ -232,7 +279,12 @@ ore/tree definition wins. Limits are 256 ore definitions, 256 unique crop
 blocks and 128 tree definitions. Crops use an existing integer property and a
 valid whole-number maturity value; unknown blocks, duplicate crops, invalid
 properties/ages, oversized arrays and unknown ore reward references fail the
-complete catalogue reload. Omitted `harvesting` means no block activity
+complete catalogue reload. Optional `planting_item` must identify a registered
+BlockItem that places the configured crop. Invalid/mismatched items fail reload.
+Definitions without it retain activity XP but do not join hoe-use harvesting.
+Native placement supplies survival/placement checks for compatible modded crops;
+no special handling for multi-block or nonstandard crops is implied.
+Omitted `harvesting` means no block activity
 matches; enchanting and breeding use their reward keys independently. Tag
 matching uses current native tags. Reload replaces the catalogue atomically
 and changes future awards without rewriting earned progression.
@@ -277,7 +329,8 @@ feel still need user playtesting:
    ore with a piston before mining it. Both should yield normal drops and zero
    Mining XP. Check nonstandard/large trees for the documented conservative fallback.
 7. Purchase Vein Mining/Tree Felling, compare normal and sneaking harvests, and
-   check native drops, tool damage and partial-tree continuation at each rank.
+   check drops gathering at the first block, tool damage and partial-tree
+   continuation at each rank.
    Break a nearly exhausted tool; verify remaining blocks stay intact. Reconnect
    or reload with a partial tree and check the conservative evidence fallback.
    Check rendered rank limits and tooltips. Protection/modpack interoperability,

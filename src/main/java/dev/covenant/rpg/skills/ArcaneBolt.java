@@ -1,6 +1,7 @@
 package dev.covenant.rpg.skills;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
@@ -20,10 +21,12 @@ public final class ArcaneBolt extends ThrowableItemProjectile {
     @Override protected Item getDefaultItem() { return Items.AMETHYST_SHARD; }
 
     @Override public void tick() {
-        super.tick();
-        if (isRemoved()) { return; }
-        if (level().isClientSide()) { SkillVisuals.boltTrail(this); }
-        if (!level().isClientSide() && tickCount >= 100) { discard(); }
+        try (var zone = Profiler.get().zone("covenant:arcane_bolt")) {
+            super.tick();
+            if (isRemoved()) { return; }
+            if (level().isClientSide()) { SkillVisuals.boltTrail(this); }
+            if (!level().isClientSide() && tickCount >= 100) { discard(); }
+        }
     }
 
     @Override protected void onHitEntity(EntityHitResult hit) {

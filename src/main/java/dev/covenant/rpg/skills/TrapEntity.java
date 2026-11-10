@@ -15,6 +15,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -83,27 +84,29 @@ public final class TrapEntity extends Entity implements ItemSupplier {
     @Override public boolean isPushable() { return false; }
 
     @Override public void tick() {
-        super.tick();
-        if (level().isClientSide()) { SkillVisuals.trap(this); return; }
-        if (!validOwner() || getY() < level().getMinY() - 4) { discard(); return; }
-        if (wet()) { discard(); return; }
-        if (phase() == Phase.FLIGHT) { fly(); return; }
-        if (!supported()) { discard(); return; }
-        if (phase() == Phase.ARMING) {
-            if (++phaseTicks < ARM_TICKS) { return; }
-            phase(Phase.ARMED);
-        } else if (phase() == Phase.ARMED && ++phaseTicks >= EXPIRE_TICKS) {
-            discard(); return;
-        } else if (phase() == Phase.TRIGGERED) {
-            if (++phaseTicks >= duration) { discard(); return; }
-            patch(); return;
-        }
-        if (phase() == Phase.ARMED) {
-            var contacts = level().getEntitiesOfClass(LivingEntity.class, contactBox(), target ->
-                    Skills.canHit(owner, target) && uncovered(target));
-            // Deterministic single trigger when several creatures contact on the arming tick.
-            var target = contacts.stream().min(java.util.Comparator.comparingInt(Entity::getId)).orElse(null);
-            if (target != null) { trigger(target); }
+        try (var zone = Profiler.get().zone("covenant:trap")) {
+            super.tick();
+            if (level().isClientSide()) { SkillVisuals.trap(this); return; }
+            if (!validOwner() || getY() < level().getMinY() - 4) { discard(); return; }
+            if (wet()) { discard(); return; }
+            if (phase() == Phase.FLIGHT) { fly(); return; }
+            if (!supported()) { discard(); return; }
+            if (phase() == Phase.ARMING) {
+                if (++phaseTicks < ARM_TICKS) { return; }
+                phase(Phase.ARMED);
+            } else if (phase() == Phase.ARMED && ++phaseTicks >= EXPIRE_TICKS) {
+                discard(); return;
+            } else if (phase() == Phase.TRIGGERED) {
+                if (++phaseTicks >= duration) { discard(); return; }
+                patch(); return;
+            }
+            if (phase() == Phase.ARMED) {
+                var contacts = level().getEntitiesOfClass(LivingEntity.class, contactBox(), target ->
+                        Skills.canHit(owner, target) && uncovered(target));
+                // Deterministic single trigger when several creatures contact on the arming tick.
+                var target = contacts.stream().min(java.util.Comparator.comparingInt(Entity::getId)).orElse(null);
+                if (target != null) { trigger(target); }
+            }
         }
     }
 

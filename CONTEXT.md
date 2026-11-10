@@ -23,15 +23,25 @@ zero. The first expanded foundation adds paid-cost allocations, a server-datapac
 catalogue, owner-synced four-tab Professions menu, atomic per-tab Apply, and a
 Profession Respec item. Held use for two seconds out of combat refunds all four
 professions together while preserving XP/levels. Logging's Offensive Mastery is
-usable alongside Vein Mining, Tree Felling and all four Crafting nodes; the other
-ten authored nodes remain visibly planned and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
+usable alongside Vein Mining, Tree Felling, Farming Scything/Automatic Replanting
+and all four Crafting nodes; eight authored nodes remain visibly planned and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
 XP now use confirmed server outcomes, the provisional shared curve and reward
 table, persistent chunk-owned placed-ore exclusions, and bounded tree recognition.
 Vein Mining and Tree Felling use bounded native per-block harvests, sneaking to
 bypass, normal tool costs/drops/XP, and stop at tool break or the first blocked
-harvest. Lowest remaining recognized logs can continue partial trees using
-disposable tree evidence; no unfinished harvesting job is saved. Other gathering
-abilities remain deferred. The shared, persistent Covenant Workbench
+harvest. Both default to 4/8/16/32 total blocks at ranks I-IV, including the
+initiating block. Lowest remaining recognized logs can continue partial trees using
+disposable tree evidence; no unfinished harvesting job is saved.
+Item drops from each batch gather at the initiating block's native drop point;
+cancelled loot remains cancelled and vanilla XP stays on its native per-block path.
+Farming hoe right-click harvests one mature crop, or a learned 3×3/5×5/9×9
+same-height square. Sneaking keeps one crop; each successful harvest costs one
+Unbreaking-aware durability use. Learned Farming replanting spends inventory
+planting items through native placement, including the last crop when the hoe
+breaks. Crop maturity/planting items and Scything widths are datapack-defined.
+Owner-synced crop targets let the client consume the hoe action without a second
+offhand use; gameplay remains server-owned (profession protocol revision 4).
+Other gathering abilities remain deferred. The shared, persistent Covenant Workbench
 now supports Add/Upgrade/Reroll/Remove and ten-input/twelve-output salvage,
 Crafting access/XP, and Recovery/Focused Recovery. It uses a netherite-block
 placeholder model and the agreed ungated recipe. See [ITEMIZATION.md](docs/ITEMIZATION.md).
@@ -115,12 +125,15 @@ three-second chill scale with skill duration. Lightning stops at the first eligi
 enemy or solid block within 24 blocks. Weaver also has Rank 1 Discharge, Threefold
 System and Teleport. Completed
 fire/ice/lightning bolt casts bank up to five charges each for Discharge: a
-three-block elemental burst with full-charge freeze, explosion and external-chain
+five-block elemental burst with full-charge freeze, explosion and external-chain
 riders. Assigned Threefold banks a fraction of actual damage for the other two
 elements in a ten-second rolling window, then consumes its reserves for fixed
 percentage bonuses while pausing banking. Teleport blinks up to eight blocks along
 full aim, checking the entire body path before spending and resetting momentum
-and fall distance on success. Owner-only HUD rows show charges and reserves/buffs.
+and fall distance on success. Floor/ceiling contact clips vertical travel while
+allowing remaining forward movement; walls stop the blink, and airborne endpoints
+need no landing support. Entities do not obstruct the blink. Owner-only HUD rows
+show charges and reserves/buffs.
 The three skills use `data/covenant/skills/weaver.json` server tuning; charges,
 reserves and buffs are unsaved and clear on lifecycle changes. Threefold also
 clears on removal of its last assignment. See `docs/RPG_SKILLS.md` for numerical
@@ -349,11 +362,22 @@ behavior remains subject to user playtesting.
 
 ## Ownership and boundaries
 
+- Native profiler scopes identify major runtime work with stable `covenant:`
+  labels: skills, auras/statuses, damage/rewards, gathering, equipment, Workbench,
+  client movement, HUD, input, visuals and screens. The live F3+1 pie exposes
+  client scopes beneath their native callers, including callback guards and
+  control checks; bow bookkeeping excludes the wrapped vanilla render body.
+  Server work remains in server captures. Scopes close on returns and exceptions and
+  use Minecraft's inactive no-op when profiling is off. See the profiling guide
+  in `docs/DEVELOPMENT.md` for capture commands and attribution boundaries.
 - Skills retain one server activation coordinator, with bow/melee/spell helpers,
   one pending-cast snapshot, and shared control/lifecycle boundaries. Learn/bind/use
   payloads have a transient per-player ingress budget; gameplay validation and
   cooldowns remain independent. Death cleanup follows the final native death-hook
   decision so another mod's revival does not erase active skill state.
+- Required network channels negotiate the exact Covenant release version plus
+  their wire format revisions before play. NeoForge's mismatch screen reports
+  client/server versions; release builds must advance `mod_version` when changed.
 - Native arrows now save skill provenance, captured aura bonuses and Enchanting
   hit history independently of cosmetic trails. Existing saved IDs are retained;
   metadata absent from older arrows cannot be recovered. See `docs/RPG_SKILLS.md`.

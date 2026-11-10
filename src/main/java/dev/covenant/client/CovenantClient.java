@@ -5,6 +5,7 @@ import dev.covenant.Covenant;
 import dev.covenant.rpg.skills.Skills;
 import dev.covenant.rpg.skills.SkillVisuals;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.util.profiling.Profiler;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -42,6 +43,7 @@ public final class CovenantClient {
         NeoForge.EVENT_BUS.addListener(this::onMouseButton);
         NeoForge.EVENT_BUS.addListener(SkillKeyMappings::started);
         NeoForge.EVENT_BUS.addListener(SkillVisuals::arrowTick);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST, ClientFarming::use);
     }
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -66,21 +68,25 @@ public final class CovenantClient {
     }
 
     private void onKey(InputEvent.Key event) {
-        // Only the initial press opens the wheel. OS repeats must not reopen it after Escape.
-        if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
-                && radialMenu.isConflictContextAndModifierActive() && radialMenu.matches(event.getKeyEvent())) {
-            Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, false, event.getKey()));
-        } else if (event.getAction() == GLFW.GLFW_PRESS && canOpen()) {
-            SkillKeyMappings.press(InputConstants.getKey(event.getKeyEvent()));
+        try (var zone = Profiler.get().zone("covenant:keyboard_input")) {
+            // Only the initial press opens the wheel. OS repeats must not reopen it after Escape.
+            if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
+                    && radialMenu.isConflictContextAndModifierActive() && radialMenu.matches(event.getKeyEvent())) {
+                Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, false, event.getKey()));
+            } else if (event.getAction() == GLFW.GLFW_PRESS && canOpen()) {
+                SkillKeyMappings.press(InputConstants.getKey(event.getKeyEvent()));
+            }
         }
     }
 
     private void onMouseButton(InputEvent.MouseButton.Post event) {
-        if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
-                && radialMenu.isActiveAndMatches(InputConstants.Type.MOUSE.getOrCreate(event.getButton()))) {
-            Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, true, event.getButton()));
-        } else if (event.getAction() == GLFW.GLFW_PRESS && canOpen()) {
-            SkillKeyMappings.press(InputConstants.Type.MOUSE.getOrCreate(event.getButton()));
+        try (var zone = Profiler.get().zone("covenant:mouse_input")) {
+            if (event.getAction() == GLFW.GLFW_PRESS && canOpen()
+                    && radialMenu.isActiveAndMatches(InputConstants.Type.MOUSE.getOrCreate(event.getButton()))) {
+                Minecraft.getInstance().setScreen(new RadialMenuScreen(radialMenu, true, event.getButton()));
+            } else if (event.getAction() == GLFW.GLFW_PRESS && canOpen()) {
+                SkillKeyMappings.press(InputConstants.Type.MOUSE.getOrCreate(event.getButton()));
+            }
         }
     }
 }

@@ -220,7 +220,7 @@ face, edge, and corner connections, up to the rank's block limit. Veins touching
 only diagonally can be mined together. Membership uses configurable ore-family
 tags: stone and deepslate variants of one ore join, while different ore families
 remain separate. Modded variants can opt into those families. The configurable
-prototype limits for ranks I-IV are **8/16/32/64 blocks**, including the initial
+prototype limits for ranks I-IV are **4/8/16/32 blocks**, including the initial
 block. Larger deposits require another mining action. Each block uses normal
 tool durability and native loot/enchantment behavior, including Unbreaking,
 Fortune, and Silk Touch. Tool breakage stops the activation immediately,
@@ -918,7 +918,8 @@ Stages 1–5 are implemented in the combat/shared foundation. See
 [PROGRESSION.md](../docs/PROGRESSION.md) for the shipped scope and data format,
 and [VALIDATION.md](../docs/VALIDATION.md) for evidence and manual boundaries.
 The profession menu/allocation foundation, natural activity XP and
-Workbench/itemization are also implemented. Remaining gathering abilities follow
+Workbench/itemization, Scything and Farming Automatic Replanting are also
+implemented. Remaining gathering abilities follow
 the settled linked profession notes;
 non-arrow ranks above 1 remain unavailable until their upgrades are designed.
 

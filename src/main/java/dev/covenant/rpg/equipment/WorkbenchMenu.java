@@ -7,6 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.*;
@@ -71,76 +72,80 @@ public final class WorkbenchMenu extends AbstractContainerMenu {
         if (inventory.player instanceof ServerPlayer player && contents instanceof WorkbenchBlockEntity station && changed(player, station)) { refresh(player, station); }
     }
     private void refresh(ServerPlayer player, WorkbenchBlockEntity station) {
-        var snapshot = ItemizationData.snapshot(player.level().getServer()); var data = snapshot.definitions();
-        family = Math.floorMod(family, data.families().size()); rarity = Math.floorMod(rarity, data.rarities().size());
-        var page = AffixPages.get(station.getItem(0)).orElse(null); int affixes = page == null ? 0 : page.affixes().size();
-        target = affixes == 0 ? 0 : Math.floorMod(target, affixes);
-        String targetName = affixes == 0 ? "No affix" : Workbench.name(page.affixes().get(target).id()) + " T" + page.affixes().get(target).tier();
-        String preview; boolean enabled;
-        if (tab == 0) {
-            var plan = WorkbenchOperations.preview(player, station, WorkbenchOperations.Operation.values()[operation], family, rarity, target);
-            var quality = station.getItem(0).get(Workbench.QUALITY.get());
-            var lines = new ArrayList<String>();
-            lines.add(quality == null ? "Uninitialized equipment" : Workbench.name(quality.rarity()) + " · " + quality.potential() + " Potential remaining");
-            if (plan.family() != null) {
-                lines.add("Cost: " + plan.potential() + " Potential" + (plan.cost() == 0 ? "" : " + " + plan.cost() + " " + plan.ingredient().getHoverName().getString()));
-                lines.add(Workbench.name(plan.family().id()) + " · " + Workbench.name(plan.affixRarity().id()) + " · Tier " + plan.tier());
-                var equipmentRarity = data.rarity(plan.quality().rarity());
-                lines.add("Capacity: " + equipmentRarity.prefixes() + " prefixes / " + equipmentRarity.suffixes() + " suffixes");
-                lines.add("Successful operation: " + plan.affixRarity().operationXp() + " Crafting XP");
+        try (var zone = Profiler.get().zone("covenant:workbench_preview")) {
+            var snapshot = ItemizationData.snapshot(player.level().getServer()); var data = snapshot.definitions();
+            family = Math.floorMod(family, data.families().size()); rarity = Math.floorMod(rarity, data.rarities().size());
+            var page = AffixPages.get(station.getItem(0)).orElse(null); int affixes = page == null ? 0 : page.affixes().size();
+            target = affixes == 0 ? 0 : Math.floorMod(target, affixes);
+            String targetName = affixes == 0 ? "No affix" : Workbench.name(page.affixes().get(target).id()) + " T" + page.affixes().get(target).tier();
+            String preview; boolean enabled;
+            if (tab == 0) {
+                var plan = WorkbenchOperations.preview(player, station, WorkbenchOperations.Operation.values()[operation], family, rarity, target);
+                var quality = station.getItem(0).get(Workbench.QUALITY.get());
+                var lines = new ArrayList<String>();
+                lines.add(quality == null ? "Uninitialized equipment" : Workbench.name(quality.rarity()) + " · " + quality.potential() + " Potential remaining");
+                if (plan.family() != null) {
+                    lines.add("Cost: " + plan.potential() + " Potential" + (plan.cost() == 0 ? "" : " + " + plan.cost() + " " + plan.ingredient().getHoverName().getString()));
+                    lines.add(Workbench.name(plan.family().id()) + " · " + Workbench.name(plan.affixRarity().id()) + " · Tier " + plan.tier());
+                    var equipmentRarity = data.rarity(plan.quality().rarity());
+                    lines.add("Capacity: " + equipmentRarity.prefixes() + " prefixes / " + equipmentRarity.suffixes() + " suffixes");
+                    lines.add("Successful operation: " + plan.affixRarity().operationXp() + " Crafting XP");
+                }
+                lines.add(plan.valid() ? "Ready. Ingredients come from your inventory." : plan.error());
+                preview = String.join("\n", lines); enabled = plan.valid();
+            } else {
+                var lines = new ArrayList<String>(); String access = WorkbenchOperations.salvageAccess(player, station);
+                double generic = WorkbenchOperations.genericChance(player, data), rate = WorkbenchOperations.componentRate(player, data);
+                lines.add(String.format(Locale.ROOT, "Generic refund: %.0f%% chance. Components: %d guaranteed + %.0f%% for one extra per eligible affix.",
+                        generic * 100, (int) rate, (rate - (int) rate) * 100));
+                enabled = false; boolean first = true;
+                for (int slot = 1; slot < 11; slot++) {
+                    var input = station.getItem(slot); if (input.isEmpty()) { continue; }
+                    var maximum = WorkbenchOperations.maximumOutputs(player, input, data);
+                    boolean valid = input.getCount() == 1 && data.category(input).isPresent();
+                    boolean fits = valid && WorkbenchOperations.insert(WorkbenchOperations.outputCopy(station), maximum);
+                    if (first) { enabled = fits; first = false; }
+                    var outputs = maximum.stream().map(s -> "up to " + s.getCount() + " " + s.getHoverName().getString()).toList();
+                    lines.add(slot + ". " + input.getHoverName().getString() + ": " + (outputs.isEmpty() ? "no material outputs" : String.join(", ", outputs)));
+                    if (!fits) { lines.add("Batch stops before input " + slot + ": " + (valid ? "results need more space." : "equipment is no longer eligible.")); }
+                }
+                if (first) { lines.add("Queue equipment above. Salvaging consumes each item and its enchantments."); }
+                if (!access.isEmpty()) { lines.add(access); enabled = false; }
+                preview = String.join("\n", lines);
             }
-            lines.add(plan.valid() ? "Ready. Ingredients come from your inventory." : plan.error());
-            preview = String.join("\n", lines); enabled = plan.valid();
-        } else {
-            var lines = new ArrayList<String>(); String access = WorkbenchOperations.salvageAccess(player, station);
-            double generic = WorkbenchOperations.genericChance(player, data), rate = WorkbenchOperations.componentRate(player, data);
-            lines.add(String.format(Locale.ROOT, "Generic refund: %.0f%% chance. Components: %d guaranteed + %.0f%% for one extra per eligible affix.",
-                    generic * 100, (int) rate, (rate - (int) rate) * 100));
-            enabled = false; boolean first = true;
-            for (int slot = 1; slot < 11; slot++) {
-                var input = station.getItem(slot); if (input.isEmpty()) { continue; }
-                var maximum = WorkbenchOperations.maximumOutputs(player, input, data);
-                boolean valid = input.getCount() == 1 && data.category(input).isPresent();
-                boolean fits = valid && WorkbenchOperations.insert(WorkbenchOperations.outputCopy(station), maximum);
-                if (first) { enabled = fits; first = false; }
-                var outputs = maximum.stream().map(s -> "up to " + s.getCount() + " " + s.getHoverName().getString()).toList();
-                lines.add(slot + ". " + input.getHoverName().getString() + ": " + (outputs.isEmpty() ? "no material outputs" : String.join(", ", outputs)));
-                if (!fits) { lines.add("Batch stops before input " + slot + ": " + (valid ? "results need more space." : "equipment is no longer eligible.")); }
-            }
-            if (first) { lines.add("Queue equipment above. Salvaging consumes each item and its enchantments."); }
-            if (!access.isEmpty()) { lines.add(access); enabled = false; }
-            preview = String.join("\n", lines);
+            token = token >= 1_000_000_000 ? 1 : token + 1;
+            view = new View(containerId, token, tab, Workbench.name(ItemizationData.id(WorkbenchOperations.Operation.values()[operation].name().toLowerCase(Locale.ROOT))),
+                    Workbench.name(data.families().get(family).id()), Workbench.name(data.rarities().get(rarity).id()), targetName, preview, enabled);
+            observedStation = station.revision(); observedInventory = inventory.getTimesChanged(); observedData = snapshot.revision();
+            observedProfession = player.getData(RpgData.PROFESSIONS); dirty = false;
+            PacketDistributor.sendToPlayer(player, view);
         }
-        token = token >= 1_000_000_000 ? 1 : token + 1;
-        view = new View(containerId, token, tab, Workbench.name(ItemizationData.id(WorkbenchOperations.Operation.values()[operation].name().toLowerCase(Locale.ROOT))),
-                Workbench.name(data.families().get(family).id()), Workbench.name(data.rarities().get(rarity).id()), targetName, preview, enabled);
-        observedStation = station.revision(); observedInventory = inventory.getTimesChanged(); observedData = snapshot.revision();
-        observedProfession = player.getData(RpgData.PROFESSIONS); dirty = false;
-        PacketDistributor.sendToPlayer(player, view);
     }
     /** Selection buttons only stage intent. Token-bearing action buttons reject stale views and replays. */
     @Override public boolean clickMenuButton(Player actor, int button) {
-        if (!(actor instanceof ServerPlayer player) || player.containerMenu != this || !(contents instanceof WorkbenchBlockEntity station)
-                || !player.isAlive() || player.isSpectator() || !stillValid(player) || station.isRemoved()) { return false; }
-        if (button >= 1000) {
-            if (button != 1000 + token || changed(player, station) || !view.enabled) { refresh(player, station); return false; }
-            if (tab == 0) { WorkbenchOperations.craft(player, station, WorkbenchOperations.Operation.values()[operation], family, rarity, target); }
-            else { WorkbenchOperations.salvage(player, station); }
-        } else {
-            switch (button) {
-                case 0 -> operation = (operation + 1) % 4;
-                case 1 -> family++;
-                case 2 -> rarity++;
-                case 3 -> target++;
-                case 4 -> tab = 0;
-                case 5 -> tab = 1;
-                default -> { return false; }
+        try (var zone = Profiler.get().zone("covenant:workbench_action")) {
+            if (!(actor instanceof ServerPlayer player) || player.containerMenu != this || !(contents instanceof WorkbenchBlockEntity station)
+                    || !player.isAlive() || player.isSpectator() || !stillValid(player) || station.isRemoved()) { return false; }
+            if (button >= 1000) {
+                if (button != 1000 + token || changed(player, station) || !view.enabled) { refresh(player, station); return false; }
+                if (tab == 0) { WorkbenchOperations.craft(player, station, WorkbenchOperations.Operation.values()[operation], family, rarity, target); }
+                else { WorkbenchOperations.salvage(player, station); }
+            } else {
+                switch (button) {
+                    case 0 -> operation = (operation + 1) % 4;
+                    case 1 -> family++;
+                    case 2 -> rarity++;
+                    case 3 -> target++;
+                    case 4 -> tab = 0;
+                    case 5 -> tab = 1;
+                    default -> { return false; }
+                }
             }
+            dirty = true; refresh(player, station); broadcastChanges(); return true;
         }
-        dirty = true; refresh(player, station); broadcastChanges(); return true;
     }
     public static void registerNetwork(RegisterPayloadHandlersEvent event) {
-        event.registrar("3").playToClient(View.TYPE, View.STREAM_CODEC, (view, context) -> {
+        event.registrar(dev.covenant.CovenantNetwork.version("workbench/3")).playToClient(View.TYPE, View.STREAM_CODEC, (view, context) -> {
             if (context.player().containerMenu instanceof WorkbenchMenu menu && menu.containerId == view.containerId) { menu.view = view; }
         });
     }

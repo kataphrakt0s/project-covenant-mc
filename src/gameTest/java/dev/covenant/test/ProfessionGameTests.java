@@ -185,7 +185,23 @@ final class ProfessionGameTests {
         try (var reader = helper.getLevel().getServer().getResourceManager().getResourceOrThrow(ProfessionData.FILE).openAsReader()) {
             var original = JsonParser.parseReader(reader).getAsJsonObject();
             var data = ProfessionData.parse(original);
-            check(data.abilities().size() == 17 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 7, "Seventeen authored nodes; two gathering abilities, Logging mastery and four Crafting nodes can be purchased");
+            check(data.abilities().size() == 17 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 9, "Seventeen authored nodes; four gathering abilities, Logging mastery and four Crafting nodes can be purchased");
+            for (double value : new double[] {0, -1, 2, 11, 3.5}) {
+                var badArea = original.deepCopy();
+                badArea.getAsJsonArray("abilities").get(8).getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("area", value);
+                rejects(() -> ProfessionData.parse(badArea), "Scything width must be a bounded odd whole number: " + value);
+            }
+            var missingArea = original.deepCopy();
+            missingArea.getAsJsonArray("abilities").get(8).getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().remove("area");
+            rejects(() -> ProfessionData.parse(missingArea), "Scything width must be explicitly authored");
+            for (String item : new String[] {"minecraft:missing_seed", "minecraft:stone", "minecraft:stick"}) {
+                var badSeed = original.deepCopy();
+                badSeed.getAsJsonObject("harvesting").getAsJsonArray("crops").get(0).getAsJsonObject().addProperty("planting_item", item);
+                rejects(() -> ProfessionData.parse(badSeed), "Planting mapping must place the configured crop: " + item);
+            }
+            var legacyCrop = original.deepCopy();
+            legacyCrop.getAsJsonObject("harvesting").getAsJsonArray("crops").get(0).getAsJsonObject().remove("planting_item");
+            check(ProfessionData.parse(legacyCrop).harvesting().crops().getFirst().plantingItem() == null, "Existing XP-only crop definitions remain valid without planting mappings");
             for (double value : new double[] {0, -1, 65, 1.5}) {
                 var badBlocks = original.deepCopy();
                 badBlocks.getAsJsonArray("abilities").get(1).getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("blocks", value);
@@ -194,9 +210,15 @@ final class ProfessionGameTests {
             var missingBlocks = original.deepCopy();
             missingBlocks.getAsJsonArray("abilities").get(1).getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().remove("blocks");
             rejects(() -> ProfessionData.parse(missingBlocks), "Gathering limits must be explicitly authored");
-            check(ProfessionView.CODEC.parse(JsonOps.INSTANCE, ProfessionView.CODEC.encodeStart(JsonOps.INSTANCE,
-                    new ProfessionView(1, data.abilities(), Map.of())).getOrThrow()).getOrThrow().abilities().equals(data.abilities()),
-                    "Owner presentation round trip retains gathering block limits");
+            var targets = data.harvesting().crops().stream().map(ProfessionView.CropTarget::new).toList();
+            var view = new ProfessionView(1, data.abilities(), Map.of(), targets);
+            check(ProfessionView.CODEC.parse(JsonOps.INSTANCE, ProfessionView.CODEC.encodeStart(JsonOps.INSTANCE, view).getOrThrow()).getOrThrow().equals(view),
+                    "Owner presentation round trip retains gathering limits and crop targets");
+            var wire = Unpooled.buffer();
+            try {
+                ProfessionView.STREAM_CODEC.encode(wire, view);
+                check(ProfessionView.STREAM_CODEC.decode(wire).equals(view), "Native owner-view wire codec retains crop prediction metadata");
+            } finally { wire.release(); }
             check(data.activityRewards().get(ProfessionData.id("farming/breeding")) == 100
                     && data.activityRewards().get(ProfessionData.id("crafting/enchant_option_3")) == 100,
                     "Agreed gathering and enchanting rewards are authored");

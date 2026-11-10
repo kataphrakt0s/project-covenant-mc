@@ -5,6 +5,7 @@ import dev.covenant.rpg.skills.DashMovement;
 import dev.covenant.rpg.skills.DashPrediction;
 import dev.covenant.rpg.skills.SkillNetworking;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -18,9 +19,11 @@ public final class ClientDash {
 
     public static void register(RegisterClientPayloadHandlersEvent event) {
         event.register(DashMotion.TYPE, (motion, context) -> {
-            if (context.player() instanceof LocalPlayer player
-                    && player.level().dimension().identifier().equals(motion.dimension())) {
-                ((Access) player).covenant$dash().accept(player, motion);
+            try (var zone = Profiler.get().zone("covenant:client_dash_packet")) {
+                if (context.player() instanceof LocalPlayer player
+                        && player.level().dimension().identifier().equals(motion.dimension())) {
+                    ((Access) player).covenant$dash().accept(player, motion);
+                }
             }
         });
     }
@@ -37,18 +40,20 @@ public final class ClientDash {
 
     /** Native move updates current position without resetting old position, retaining frame interpolation. */
     public boolean travel(LocalPlayer player) {
-        if (dimension != null && !dimension.equals(player.level().dimension().identifier())) {
-            if (prediction.ownsTravel()) { player.setNoGravity(originalNoGravity); }
-            prediction = new DashPrediction(); dimension = null;
-            return false;
+        try (var zone = Profiler.get().zone("covenant:client_dash")) {
+            if (dimension != null && !dimension.equals(player.level().dimension().identifier())) {
+                if (prediction.ownsTravel()) { player.setNoGravity(originalNoGravity); }
+                prediction = new DashPrediction(); dimension = null;
+                return false;
+            }
+            if (!prediction.ownsTravel()) { return false; }
+            Vec3 requested = prediction.delta(player.position());
+            if (prediction.active()) { player.setDeltaMovement(requested); }
+            var result = DashMovement.move(player, requested, null, !prediction.arcing());
+            prediction.advanced(result.nextStep());
+            acknowledge(player);
+            return true;
         }
-        if (!prediction.ownsTravel()) { return false; }
-        Vec3 requested = prediction.delta(player.position());
-        if (prediction.active()) { player.setDeltaMovement(requested); }
-        var result = DashMovement.move(player, requested, null, !prediction.arcing());
-        prediction.advanced(result.nextStep());
-        acknowledge(player);
-        return true;
     }
 
     private void acknowledge(LocalPlayer player) {

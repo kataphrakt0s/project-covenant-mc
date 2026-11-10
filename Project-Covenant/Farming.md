@@ -1,7 +1,7 @@
 # Farming
 
-Natural mature-crop and credited-breeding XP are implemented. Purchased Farming
-effects below remain planned. Runtime contracts:
+Natural mature-crop/credited-breeding XP, Scything and Farming Automatic
+Replanting are implemented. Free Meal and Vitality remain planned. Runtime contracts:
 [Profession activities](../docs/PROFESSIONS.md#natural-activity-xp).
 
 ## Identity
@@ -41,9 +41,15 @@ Farming combines cultivation and animal husbandry. It enhances existing crop and
   replant each harvested crop using planting items from inventory.
 - Modded crops should be supported through data-driven crop definitions.
 
-Exact activation feedback and edge-case handling remain implementation details.
+Without purchased Scything, hoe right-click harvests just the targeted crop.
+Only main-hand hoes activate it; left-click breaking stays ordinary and does not
+replant. The target is processed first, then the remaining square in X/Z order.
+The first protected, cancelled, changed or failed harvest stops the action.
+Native placement cancellation preserves planting items; invalid soil or missing
+items skips that replant while preserving the harvest. Drops stay at their native
+per-crop positions. No job or unfinished action is saved.
 
-### Initial supported crops (planned)
+### Initial supported crops
 
 The first harvest-and-replant set is **wheat, carrots, potatoes, beetroot, and
 Nether wart**. Define maturity and planting items through data-driven crop
@@ -58,8 +64,7 @@ definitions so modded crops can participate where their behavior fits.
 | Nether wart | Nether wart |
 
 Cocoa, berries, and multi-block crops require additional handling and are
-deferred from this initial set. This is planned support, not implemented
-harvesting gameplay.
+deferred from this initial set. All five initial crops support harvesting and replanting.
 
 ### Automatic Replanting
 

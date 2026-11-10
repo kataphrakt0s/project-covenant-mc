@@ -44,7 +44,7 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     /** Hits the first enemy or solid block within 24 blocks; no lightning status or native lightning entity. */
     public static final SkillDefinition LIGHTNING_BOLT = define("lightning_bolt", PlayerClass.WEAVER, 20, 40, 10, Effect.LIGHTNING_BOLT, 6, 24);
     /** Rank 1 defaults; server datapacks tune these three skills through WeaverSkillData. */
-    public static final SkillDefinition DISCHARGE = define("discharge", PlayerClass.WEAVER, 30, 240, 10, Effect.DISCHARGE, 0, 3);
+    public static final SkillDefinition DISCHARGE = define("discharge", PlayerClass.WEAVER, 30, 240, 10, Effect.DISCHARGE, 0, 5);
     public static final SkillDefinition THREEFOLD_SYSTEM = define("threefold_system", PlayerClass.WEAVER, 10, 500, 0, Effect.THREEFOLD, 0, 0);
     public static final SkillDefinition TELEPORT = define("teleport", PlayerClass.WEAVER, 25, 200, 0, Effect.TELEPORT, 0, 8);
     /** Instant throw; root duration and contact behavior live in TrapKind/TrapEntity. */

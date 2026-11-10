@@ -14,6 +14,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
@@ -44,7 +45,7 @@ final class StatsScreen extends Screen {
                     // Native command networking retains the shared server validation and owner sync.
                     minecraft.player.connection.sendCommand("covenant class select " + type.id());
                 }).bounds(left + 12 + i * buttonWidth, top + 61, buttonWidth - 4, 20)
-                        .tooltip(Tooltip.create(type.description().copy().append("\n").append(text("choose_once"))))
+                        .tooltip(Tooltip.create(type.description()))
                         .build());
             }
             listTop = top + 89;
@@ -58,59 +59,63 @@ final class StatsScreen extends Screen {
     }
 
     private void refreshStats() {
-        MutableComponent lines = Component.empty();
-        var profile = PlayerProfiles.get(minecraft.player);
-        var progression = minecraft.player.getData(dev.covenant.rpg.RpgData.PROGRESSION_VIEW);
-        if (profile.created()) {
-            long required = progression.requiredXp();
-            String progress = required > 0 ? profile.experience() + " / " + required + " XP ("
-                    + String.format(Locale.ROOT, "%.1f", 100.0 * profile.experience() / required) + "%)" : "Maximum level";
-            lines.append("Level " + profile.level() + " · " + progress + "\n"
-                    + dev.covenant.rpg.skills.SkillLoadouts.availablePoints(minecraft.player) + " unspent skill points"
-                    + "\nDimension cap: " + progression.dimensionCap() + " · Global cap: " + progression.globalCap() + "\n\n");
-        }
-        minecraft.player.getData(dev.covenant.rpg.RpgData.PROFESSIONS).tracks().entrySet().stream()
-                .sorted(java.util.Map.Entry.comparingByKey()).forEach(entry -> lines.append(entry.getKey().getPath()
-                        + ": level " + entry.getValue().level() + " · " + entry.getValue().experience() + " XP\n"));
-        lines.append("\n");
-        for (var stat : RpgStats.SUPPORTED) {
-            var instance = minecraft.player.getAttribute(stat);
-            if (instance == null) { continue; }
-            lines.append(Component.translatable("screen.covenant.stats.value",
-                    Component.translatable(stat.value().getDescriptionId()), value(stat, instance.getValue()))
-                    .withStyle(ChatFormatting.GOLD));
-            lines.append("\n").append(text("base", value(stat, instance.getBaseValue()))
-                    .withStyle(ChatFormatting.GRAY));
-            var modifiers = instance.getModifiers().stream().sorted(Comparator
-                    .comparing(AttributeModifier::operation).thenComparing(modifier -> modifier.id().toString())).toList();
-            if (modifiers.isEmpty()) {
-                lines.append("\n").append(text("no_modifiers").withStyle(ChatFormatting.DARK_GRAY));
-            } else {
-                for (var modifier : modifiers) {
-                    String amount = number(modifier.amount()
-                            * (modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? 1 : 100));
-                    if (modifier.amount() >= 0) { amount = "+" + amount; }
-                    lines.append("\n").append(text("modifier", modifier.id().toString(),
-                            text("operation." + modifier.operation().getSerializedName(), amount))
-                            .withStyle(ChatFormatting.GRAY));
-                }
+        try (var zone = Profiler.get().zone("covenant:stats_refresh")) {
+            MutableComponent lines = Component.empty();
+            var profile = PlayerProfiles.get(minecraft.player);
+            var progression = minecraft.player.getData(dev.covenant.rpg.RpgData.PROGRESSION_VIEW);
+            if (profile.created()) {
+                long required = progression.requiredXp();
+                String progress = required > 0 ? profile.experience() + " / " + required + " XP ("
+                        + String.format(Locale.ROOT, "%.1f", 100.0 * profile.experience() / required) + "%)" : "Maximum level";
+                lines.append("Level " + profile.level() + " · " + progress + "\n"
+                        + dev.covenant.rpg.skills.SkillLoadouts.availablePoints(minecraft.player) + " unspent skill points"
+                        + "\nDimension cap: " + progression.dimensionCap() + " · Global cap: " + progression.globalCap() + "\n\n");
             }
-            lines.append("\n\n");
-        }
-        if (!lines.equals(previousStats)) {
-            previousStats = lines;
-            statList.setMessage(lines);
-            statList.refreshScrollAmount();
+            minecraft.player.getData(dev.covenant.rpg.RpgData.PROFESSIONS).tracks().entrySet().stream()
+                    .sorted(java.util.Map.Entry.comparingByKey()).forEach(entry -> lines.append(entry.getKey().getPath()
+                            + ": level " + entry.getValue().level() + " · " + entry.getValue().experience() + " XP\n"));
+            lines.append("\n");
+            for (var stat : RpgStats.SUPPORTED) {
+                var instance = minecraft.player.getAttribute(stat);
+                if (instance == null) { continue; }
+                lines.append(Component.translatable("screen.covenant.stats.value",
+                        Component.translatable(stat.value().getDescriptionId()), value(stat, instance.getValue()))
+                        .withStyle(ChatFormatting.GOLD));
+                lines.append("\n").append(text("base", value(stat, instance.getBaseValue()))
+                        .withStyle(ChatFormatting.GRAY));
+                var modifiers = instance.getModifiers().stream().sorted(Comparator
+                        .comparing(AttributeModifier::operation).thenComparing(modifier -> modifier.id().toString())).toList();
+                if (modifiers.isEmpty()) {
+                    lines.append("\n").append(text("no_modifiers").withStyle(ChatFormatting.DARK_GRAY));
+                } else {
+                    for (var modifier : modifiers) {
+                        String amount = number(modifier.amount()
+                                * (modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? 1 : 100));
+                        if (modifier.amount() >= 0) { amount = "+" + amount; }
+                        lines.append("\n").append(text("modifier", modifier.id().toString(),
+                                text("operation." + modifier.operation().getSerializedName(), amount))
+                                .withStyle(ChatFormatting.GRAY));
+                    }
+                }
+                lines.append("\n\n");
+            }
+            if (!lines.equals(previousStats)) {
+                previousStats = lines;
+                statList.setMessage(lines);
+                statList.refreshScrollAmount();
+            }
         }
     }
 
     @Override public void tick() {
-        if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.level == null
-                || !minecraft.isWindowActive()) { onClose(); return; }
-        if (choosingClass == PlayerProfiles.get(minecraft.player).created()) {
-            rebuildWidgets();
-        } else {
-            refreshStats();
+        try (var zone = Profiler.get().zone("covenant:stats_screen_tick")) {
+            if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.level == null
+                    || !minecraft.isWindowActive()) { onClose(); return; }
+            if (choosingClass == PlayerProfiles.get(minecraft.player).created()) {
+                rebuildWidgets();
+            } else {
+                refreshStats();
+            }
         }
     }
 
@@ -119,18 +124,20 @@ final class StatsScreen extends Screen {
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
-        graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
-        graphics.centeredText(font, title, width / 2, top + 8, 0xFFF5DBA6);
-        var profile = PlayerProfiles.get(minecraft.player);
-        Component className = profile.selectedClass().map(id -> PlayerClass.find(id)
-                .map(PlayerClass::displayName).orElseGet(() -> Component.literal(id.toString())))
-                .orElse(text("no_class"));
-        graphics.centeredText(font, text("class", className), width / 2, top + 25, 0xFFE2E8ED);
-        if (choosingClass) {
-            graphics.centeredText(font, text("choose_once"), width / 2, top + 45, 0xFFB6C3D1);
+        try (var zone = Profiler.get().zone("covenant:stats_screen")) {
+            graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
+            graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
+            graphics.centeredText(font, title, width / 2, top + 8, 0xFFF5DBA6);
+            var profile = PlayerProfiles.get(minecraft.player);
+            Component className = profile.selectedClass().map(id -> PlayerClass.find(id)
+                    .map(PlayerClass::displayName).orElseGet(() -> Component.literal(id.toString())))
+                    .orElse(text("no_class"));
+            graphics.centeredText(font, text("class", className), width / 2, top + 25, 0xFFE2E8ED);
+            if (choosingClass) {
+                graphics.centeredText(font, text("choose_once"), width / 2, top + 45, 0xFFB6C3D1);
+            }
+            super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     private static String value(Holder<Attribute> stat, double value) {

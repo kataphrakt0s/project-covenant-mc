@@ -1,6 +1,7 @@
 package dev.covenant.rpg.skills;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
@@ -27,10 +28,12 @@ public final class ElementalBolt extends ThrowableItemProjectile {
     @Override protected Item getDefaultItem() { return getType() == Skills.FIRE_BOLT.get() ? Items.FIRE_CHARGE : Items.SNOWBALL; }
 
     @Override public void tick() {
-        super.tick();
-        if (isRemoved()) { return; }
-        if (level().isClientSide()) { SkillVisuals.elementalTrail(this); }
-        else if (tickCount >= 100) { discard(); }
+        try (var zone = Profiler.get().zone("covenant:elemental_bolt")) {
+            super.tick();
+            if (isRemoved()) { return; }
+            if (level().isClientSide()) { SkillVisuals.elementalTrail(this); }
+            else if (tickCount >= 100) { discard(); }
+        }
     }
 
     @Override protected void onHitEntity(EntityHitResult hit) {

@@ -12,6 +12,7 @@ import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -236,43 +237,45 @@ public final class Combos {
     }
 
     private static void tick(PlayerTickEvent.Pre event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
-        expire(player);
-        var runtime = player.getData(RpgData.SKILL_RUNTIME);
-        if (runtime.awaitingDashSequence != 0 && ClassResources.now(player) >= runtime.dashAcknowledgementUntil) {
-            // Lost/unsupported acknowledgement: one bounded recovery, never a stream of teleports.
-            acknowledgeMovement(player, runtime.awaitingDashSequence, new Vec3(Double.NaN, 0, 0));
+        try (var zone = Profiler.get().zone("covenant:combos_movement")) {
+            if (!(event.getEntity() instanceof ServerPlayer player)) { return; }
+            expire(player);
+            var runtime = player.getData(RpgData.SKILL_RUNTIME);
+            if (runtime.awaitingDashSequence != 0 && ClassResources.now(player) >= runtime.dashAcknowledgementUntil) {
+                // Lost/unsupported acknowledgement: one bounded recovery, never a stream of teleports.
+                acknowledgeMovement(player, runtime.awaitingDashSequence, new Vec3(Double.NaN, 0, 0));
+            }
+            if ((!player.isAlive() || player.isSpectator() || PlayerProfiles.getSelectedClass(player).orElse(null) != PlayerClass.REAVER)
+                    && (!runtime.combos.isEmpty() || runtime.rushSpeedUntil != 0)) { clear(player); }
+            var movement = runtime.movement;
+            if (movement == null || movement.lastTick == ClassResources.now(player)) { return; }
+            if (movement.progress == null && (!player.isAlive() || player.isSpectator()
+                    || PlayerProfiles.getSelectedClass(player).orElse(null) != PlayerClass.STALKER
+                    || !player.getData(RpgData.SKILL_LOADOUT).learned().contains(SkillDefinition.DISENGAGE.id())
+                    || player.isPassenger() || player.isSleeping())) {
+                interruptMovement(player, false); return;
+            }
+            movement.lastTick = ClassResources.now(player);
+            if (Rooted.contains(player) || Auras.frozen(player)) { interruptMovement(player, false); return; }
+            player.resetFallDistance();
+            player.setDeltaMovement(Vec3.ZERO);
+            movement.stepping = true;
+            DashMovement.Result result;
+            try {
+                result = DashMovement.move(player, movement.step, movement.progress != null && movement.progress.kind == Kind.RUSH ? (body, travelled) -> {
+                    dashHits(player, movement, body, travelled);
+                    return runtime.movement == movement;
+                } : null, movement.progress != null);
+            }
+            finally { movement.stepping = false; }
+            // Connection.tickPlayer restores firstGood after doTick. Commit this server-owned
+            // position to that anchor so vanilla does not undo the step. No packet is sent.
+            player.connection.resetPosition();
+            if (runtime.movement != movement) { return; }
+            if (Math.abs(result.nextStep().y - movement.step.y) > 1e-8) { movement.acceleration = Vec3.ZERO; }
+            movement.step = result.nextStep().add(movement.acceleration);
+            if (--movement.ticks == 0 || movement.step.lengthSqr() < 1e-8) { interruptMovement(player, false); }
         }
-        if ((!player.isAlive() || player.isSpectator() || PlayerProfiles.getSelectedClass(player).orElse(null) != PlayerClass.REAVER)
-                && (!runtime.combos.isEmpty() || runtime.rushSpeedUntil != 0)) { clear(player); }
-        var movement = runtime.movement;
-        if (movement == null || movement.lastTick == ClassResources.now(player)) { return; }
-        if (movement.progress == null && (!player.isAlive() || player.isSpectator()
-                || PlayerProfiles.getSelectedClass(player).orElse(null) != PlayerClass.STALKER
-                || !player.getData(RpgData.SKILL_LOADOUT).learned().contains(SkillDefinition.DISENGAGE.id())
-                || player.isPassenger() || player.isSleeping())) {
-            interruptMovement(player, false); return;
-        }
-        movement.lastTick = ClassResources.now(player);
-        if (Rooted.contains(player) || Auras.frozen(player)) { interruptMovement(player, false); return; }
-        player.resetFallDistance();
-        player.setDeltaMovement(Vec3.ZERO);
-        movement.stepping = true;
-        DashMovement.Result result;
-        try {
-            result = DashMovement.move(player, movement.step, movement.progress != null && movement.progress.kind == Kind.RUSH ? (body, travelled) -> {
-                dashHits(player, movement, body, travelled);
-                return runtime.movement == movement;
-            } : null, movement.progress != null);
-        }
-        finally { movement.stepping = false; }
-        // Connection.tickPlayer restores firstGood after doTick. Commit this server-owned
-        // position to that anchor so vanilla does not undo the step. No packet is sent.
-        player.connection.resetPosition();
-        if (runtime.movement != movement) { return; }
-        if (Math.abs(result.nextStep().y - movement.step.y) > 1e-8) { movement.acceleration = Vec3.ZERO; }
-        movement.step = result.nextStep().add(movement.acceleration);
-        if (--movement.ticks == 0 || movement.step.lengthSqr() < 1e-8) { interruptMovement(player, false); }
     }
 
     private static void dashHits(ServerPlayer player, Movement movement, AABB body, Vec3 travelled) {

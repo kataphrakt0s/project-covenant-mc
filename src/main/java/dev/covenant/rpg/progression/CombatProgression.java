@@ -9,6 +9,7 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -97,29 +98,33 @@ public final class CombatProgression {
         creditOwners(target, attacker, Auras.supportOwners(target, false));
     }
     private static void damaged(LivingDamageEvent.Post event) {
-        if (AuraDamage.landedDamage(event) > 0) { hit(event.getEntity(), event.getSource()); }
+        try (var zone = Profiler.get().zone("covenant:combat_credit")) {
+            if (AuraDamage.landedDamage(event) > 0) { hit(event.getEntity(), event.getSource()); }
+        }
     }
     /** Called after the final cancelable death decision, before aura cleanup and native death side effects. */
     public static void died(LivingEntity target, DamageSource source) {
-        if (!enemy(target)) { return; }
-        var state = target.getData(RpgData.COMBAT_PROGRESSION);
-        if (state.paid) { return; }
-        hit(target, source); // Native Post damage occurs after die; include the killing blow here.
-        state.paid = true;
-        var level = (ServerLevel) target.level();
-        var recipients = new ArrayList<ServerPlayer>();
-        long time = now(target);
-        for (var entry : state.contributors.entrySet()) {
-            var player = level.getServer().getPlayerList().getPlayer(entry.getKey());
-            if (time - entry.getValue() < CONTRIBUTION_TICKS && player != null && eligible(player)) { recipients.add(player); }
+        try (var zone = Profiler.get().zone("covenant:combat_rewards")) {
+            if (!enemy(target)) { return; }
+            var state = target.getData(RpgData.COMBAT_PROGRESSION);
+            if (state.paid) { return; }
+            hit(target, source); // Native Post damage occurs after die; include the killing blow here.
+            state.paid = true;
+            var level = (ServerLevel) target.level();
+            var recipients = new ArrayList<ServerPlayer>();
+            long time = now(target);
+            for (var entry : state.contributors.entrySet()) {
+                var player = level.getServer().getPlayerList().getPlayer(entry.getKey());
+                if (time - entry.getValue() < CONTRIBUTION_TICKS && player != null && eligible(player)) { recipients.add(player); }
+            }
+            if (recipients.isEmpty()) { return; }
+            long total = ProgressionData.get(level.getServer()).reward(target);
+            long share = total / recipients.size() + (total % recipients.size() == 0 ? 0 : 1);
+            for (var player : recipients) {
+                if (!(target instanceof WitherBoss && Progression.firstWither(player))) { Progression.awardCharacter(player, level, share); }
+            }
+            state.contributors.clear();
         }
-        if (recipients.isEmpty()) { return; }
-        long total = ProgressionData.get(level.getServer()).reward(target);
-        long share = total / recipients.size() + (total % recipients.size() == 0 ? 0 : 1);
-        for (var player : recipients) {
-            if (!(target instanceof WitherBoss && Progression.firstWither(player))) { Progression.awardCharacter(player, level, share); }
-        }
-        state.contributors.clear();
     }
     private static void left(EntityLeaveLevelEvent event) {
         if (event.getLevel().isClientSide()) { return; }

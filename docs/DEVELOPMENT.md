@@ -20,6 +20,14 @@ Close the development game before deploying another build. Prism's instance is
 deployment script replaces only `covenant-*.jar` in that marker-owned instance.
 Other mods and worlds are retained. New dependencies require explicit setup.
 
+Connecting clients must use the same Covenant `mod_version` and network wire
+revisions as the server. Required payload negotiation rejects mismatches before
+entering play; NeoForge's disconnect screen identifies Project Covenant and lists
+the client/server versions. Advance `mod_version` for changed release builds;
+two different JARs deliberately built under the same version and wire revisions
+are not distinguished by this check. Pre-check builds using bare numeric payload
+versions are also rejected cleanly. Rendered disconnect UI still needs a real-client check.
+
 The project now targets NeoForge **26.1.2.126**, matching
 [ATM11 0.14.0-beta](https://www.curseforge.com/minecraft/modpacks/all-the-mods-11/files/9426887).
 The generated mod metadata requires that version or newer. Before deploying a
@@ -28,6 +36,66 @@ Prism's Edit Instance > Version screen. `doctor`, `deploy`, and `prism` reject a
 instance whose loader differs from the project pin; `Setup-Prism.ps1` retains
 existing instances and does not upgrade them. Changing the repository pin does
 not update Prism or a remote server. Minecraft remains `26.1.2` and Java remains 25.
+
+## Profiling Covenant
+
+Covenant uses Minecraft's native `Profiler.get().zone(...)` scopes with stable
+`covenant:` labels. They appear beneath the native caller in the profiler tree;
+the same subsystem may appear under several parents. They are not combined into
+one global mod total. The scopes also feed Minecraft's Tracy integration when
+available. With profiling inactive, Minecraft returns its shared no-op scope.
+There is no Covenant polling job, file writer, or profiling dependency.
+
+For the live visual pie, press **F3+1**. Use the numbered entries to descend into
+a branch and **0** to go back; follow labels because entry numbers change with
+their relative time. Covenant's entries begin with `covenant:`. Useful branches:
+
+- `root > frame > extract > gui > inGameGui`: `covenant:resource_hud` and
+  `covenant:progression_hud`, including their eligibility checks.
+- `root > frame > extract > gui`: Covenant screen rendering while a menu is open.
+- `root > tick > screen`: `covenant:skills_screen_tick`,
+  `covenant:professions_screen_tick`, `covenant:stats_screen_tick`, and other open
+  Covenant screen updates.
+- `root > tick > entities`: named aura/bleed/frost/arrow callback checks, movement
+  and freeze checks, plus Covenant projectile ticks when those entities are present.
+- Bow rendering callers contain `covenant:bow_pose_enter`, `bow_pose_exit`,
+  `bow_pose_check` and `bow_pose_time`; each label uses the `covenant:` prefix.
+
+The F3+1 pie collects the **client thread**, including in singleplayer. Server-owned
+skill execution, gathering and combat do not become client slices. Use a server
+metrics recording to see those labels. The native pie retains each entry under
+its actual caller; it does not provide a single combined Covenant slice at root.
+Callback scopes include idle/side/attachment guards so these checks are visible
+even when no ability is active. Bow scopes measure Covenant's pose bookkeeping
+separately from the vanilla hand/character rendering they surround.
+
+For a client/integrated-server capture, use the native **F3+L** metrics recording
+and reproduce the activity. For a dedicated server, an owner/operator can use
+`/perf start`, reproduce the activity, then `/perf stop` (or let recording finish
+automatically). Read the report location printed by Minecraft and search the
+profiling text for `covenant:`. In this Minecraft version `/debug start` and
+`/debug stop` measure elapsed ticks/time; use metrics recording for detailed scopes.
+
+| Work | Example labels |
+| --- | --- |
+| Skill requests, casts and allocations | `covenant:skill_activate`, `covenant:skill_execute`, `covenant:skills_tick`, `covenant:skill_allocation` |
+| Auras, statuses and movement | `covenant:auras`, `covenant:bleeding`, `covenant:frost_slows`, `covenant:blood_fever`, `covenant:combos_movement` |
+| Damage, combat attribution and rewards | `covenant:damage_incoming`, `covenant:damage_shield`, `covenant:damage_landed`, `covenant:combat_credit`, `covenant:combat_rewards` |
+| Gathering and profession allocations | `covenant:gathering_prepare`, `covenant:gathering_harvest`, `covenant:harvest_reward_check`, `covenant:tree_recognition`, `covenant:farming_harvest`, `covenant:profession_allocation` |
+| Native Covenant entities | `covenant:trap`, `covenant:rage_storm`, `covenant:arcane_bolt`, `covenant:elemental_bolt` |
+| Equipment and Workbench | `covenant:equipment_modifiers`, `covenant:workbench_preview`, `covenant:workbench_action` |
+| Client movement, HUD and screens | `covenant:client_dash`, `covenant:resource_hud`, `covenant:progression_hud`, `covenant:stats_refresh`, `covenant:stats_screen`, `covenant:skills_screen`, `covenant:professions_screen`, `covenant:radial_menu` |
+| Input, effects and control checks | `covenant:keyboard_input`, `covenant:mouse_input`, `covenant:skill_key_input`, `covenant:arrow_visuals`, `covenant:lightning_visuals`, `covenant:freeze_check`, `covenant:movement_control_check`, `covenant:movement_packet` |
+| Screen updates and bow bookkeeping | `covenant:skills_screen_tick`, `covenant:professions_screen_tick`, `covenant:stats_screen_tick`, `covenant:radial_menu_tick`, `covenant:workbench_screen_update`, `covenant:bow_pose_enter`, `covenant:bow_pose_exit`, `covenant:bow_pose_check`, `covenant:bow_pose_time` |
+
+Scopes use try-with-resources so rejection, cancellation and exceptions close
+them. Gathering harvest and entity scopes include the native/mod hooks invoked
+inside that work: their inclusive time is not solely Covenant Java instructions.
+`unspecified` remains the residual time in any parent without a more specific
+child scope; these labels cover major runtime boundaries, not every method or
+all vanilla/NeoForge work. JVM sampling profilers attribute Java stacks separately;
+look for `dev.covenant` there rather than assuming they consume native zone labels.
+Client scopes describe CPU state extraction/ticking, not GPU execution time.
 
 ## LAN test server
 
@@ -216,7 +284,8 @@ Radial slot 3 opens the classless Professions window. Use operator
 Mastery ranks; `/covenant profession xp covenant:logging 1500` exercises ordinary
 XP awards. Native ore/log/mature-crop harvesting, credited breeding and
 enchanting-table use now award profession XP. All four Crafting nodes are also
-purchasable and drive the Workbench; other gathering nodes remain planned and
+purchasable and drive the Workbench. Vein Mining, Tree Felling, Farming Scything
+and Farming Automatic Replanting are purchasable; other gathering nodes remain planned and
 unavailable. All tuning is provisional. See [ITEMIZATION.md](ITEMIZATION.md).
 
 Manually check per-tab drafts, right-click undo, Apply's combat gate, close
@@ -224,6 +293,16 @@ discard, resized layouts/tooltips, and the two-second Profession Respec hold.
 The shapeless respec recipe uses four paper, four lapis and one emerald. Confirm
 that all four tracks refund together with XP/levels retained. See
 [PROFESSIONS.md](PROFESSIONS.md) for data formats and scope.
+
+For Farming, use `/covenant profession level covenant:farming 10`, then buy
+Scything ranks and Automatic Replanting in Professions. Hoe right-click a mixed
+mature field to check 3×3/5×5/9×9 areas, sneak for one crop, and verify other
+heights/immature crops stay intact. Supply inventory seeds for replanting, then
+try an empty seed inventory and a nearly broken hoe. Check one durability use per
+harvest (with Unbreaking), native drops/XP, Nether wart on soul sand, and ordinary
+left-click/tilling behavior. Check that offhand bone meal is not also used by
+the same hoe click. Client animation/input feel and multiplayer latency
+still require manual playtesting.
 
 ## Validation protocol
 

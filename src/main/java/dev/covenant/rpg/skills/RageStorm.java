@@ -14,6 +14,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
@@ -81,24 +82,26 @@ public final class RageStorm extends Entity {
                 && owner.getData(RpgData.SKILL_LOADOUT).learned().contains(SkillDefinition.RAGE_STORM.id());
     }
     @Override public void tick() {
-        super.tick();
-        if (!(level() instanceof ServerLevel level)) { return; }
-        if (!released || !validOwner()) { discard(); return; }
-        double step = Math.min(config.speed(), config.distance() - travelled);
-        var next = position().add(direction.scale(step));
-        if (!loaded(new AABB(position(), next).inflate(config.radius()))) { discard(); return; }
-        var hit = level.clip(new ClipContext(position(), next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-        if (hit.getType() != HitResult.Type.MISS) { discard(); return; }
-        setPos(next);
-        travelled += step;
-        if (++age % config.interval() == 0) { pulse(); }
-        if (age % 2 == 0) {
-            // Bounded visible volume with no custom client simulation or gameplay packets.
-            level.sendParticles(ParticleTypes.CRIMSON_SPORE, getX(), getY(), getZ(), 10,
-                    config.radius() * .55, config.radius() * .55, config.radius() * .55, .01);
-            level.sendParticles(ParticleTypes.SWEEP_ATTACK, getX(), getY(), getZ(), 1, .5, .5, .5, 0);
+        try (var zone = Profiler.get().zone("covenant:rage_storm")) {
+            super.tick();
+            if (!(level() instanceof ServerLevel level)) { return; }
+            if (!released || !validOwner()) { discard(); return; }
+            double step = Math.min(config.speed(), config.distance() - travelled);
+            var next = position().add(direction.scale(step));
+            if (!loaded(new AABB(position(), next).inflate(config.radius()))) { discard(); return; }
+            var hit = level.clip(new ClipContext(position(), next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            if (hit.getType() != HitResult.Type.MISS) { discard(); return; }
+            setPos(next);
+            travelled += step;
+            if (++age % config.interval() == 0) { pulse(); }
+            if (age % 2 == 0) {
+                // Bounded visible volume with no custom client simulation or gameplay packets.
+                level.sendParticles(ParticleTypes.CRIMSON_SPORE, getX(), getY(), getZ(), 10,
+                        config.radius() * .55, config.radius() * .55, config.radius() * .55, .01);
+                level.sendParticles(ParticleTypes.SWEEP_ATTACK, getX(), getY(), getZ(), 1, .5, .5, .5, 0);
+            }
+            if (travelled >= config.distance() - 1e-6) { discard(); }
         }
-        if (travelled >= config.distance() - 1e-6) { discard(); }
     }
     private boolean loaded(AABB box) {
         return level().hasChunksAt(BlockPos.containing(box.minX, box.minY, box.minZ), BlockPos.containing(box.maxX, box.maxY, box.maxZ));
