@@ -2,6 +2,299 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Particle-driven bolt correction (2026-11-10)
+
+- Replaced Arcane/Fire/Ice generated-item rendering with thin travel-aligned
+  geometric energy filaments, crossed ribbons and a small end cap. Moving native
+  particles supply the main body. Fire rises/fades crimson, Ice disperses pale
+  blue with sparse fractures, and Arcane flows violet. Lightning retains its
+  exact server endpoints while flickering and emitting small electric-blue sparks.
+  Elemental collision providers now emit bounded breakup bursts from the same
+  authoritative packets; accepted-damage marks remain independent.
+- `scripts/Dev.ps1 verify` passed: **All 181 required tests passed :)**,
+  including existing elemental contact, lightning-link and projectile lifecycle
+  checks. Build checks include lightning endpoint/vertical/degenerate geometry,
+  UI geometry/Apply feedback and wolf animation assets. No new cosmetic-constant
+  tests were added. Server evidence: `runs/gametest/logs/latest.log`.
+- Packaged audit passed for **23 particle definitions / 90 sprite references**:
+  definitions byte-match sources, Covenant sprites exist in the mod JAR, native
+  sprites exist in the pinned Minecraft 26.1.2 client JAR, and the energy provider
+  is packaged. The packaged bolt renderer has no ItemStack/ItemModelResolver
+  dependency. Native particle/geometry APIs were checked against resolved
+  `minecraft-patched-26.1.2.126-sources.jar`. `git diff --check` passed.
+- Output: `build/libs/covenant-0.1.0-dev.jar`. No deployment or client launch.
+  Manual appearance, first/third-person and steep/end-on aim, overlapping casts,
+  pale/dark backgrounds, All/Decreased/Minimal, resource reload and impact
+  readability remain pending. No rendered or comparative performance claim.
+
+## Runtime polish JAR handoff (2026-11-10)
+
+- Packaged all currently implemented polish: Phases 1–5, gothic runtime art,
+  six approved skill-icon revisions and the latest remaining-catalogue corrections.
+  The catalogue already references runtime textures; no asset copy or further
+  design decision was required. Inclusion does not imply final art acceptance.
+- `scripts/Dev.ps1 verify` passed: **All 181 required tests passed :)**,
+  **BUILD SUCCESSFUL**, exit code 0. Geometry, authoritative Apply feedback and
+  pinned GeckoLib wolf-animation checks also passed. Evidence:
+  `.local/catalogue-review/integration-verify.log`.
+- Packaged catalogue, gothic, Workbench/relic and compatible Phase 4/combat
+  resource audits passed. All **204 Covenant resource files** byte-match the
+  JAR; 60 catalogue textures differ from the catalogue baseline and the other
+  144 files are unchanged. Checks cover all 35 skill icons, 19 particle families,
+  50 family/rarity combinations, GUI atlas/language references, runtime presentation
+  classes and exclusion of test classes. Approved icons, movement boot and
+  20 protected wolf/trap resources remain intact.
+- Updated the ignored legacy Phase 4 audit to accept the approved Battle Cry
+  close-up's fully opaque square. Every other icon retains that audit's existing
+  transparent/opaque requirement; runtime artwork was unchanged by this handoff.
+- Output: `build/libs/covenant-0.1.0-dev.jar` (833,488 bytes).
+  SHA256: `548C48D2C21360B19E8222F84E642BC7934A7671D68CE7C719360772E5F3832E`.
+- No client launch or Prism/LAN deployment. Pending user checks: native-size
+  icons across GUI scales/backgrounds, combat effects at particle settings,
+  Workbench/item readability and audio balance. Phase 6 and later roadmap work,
+  Enduring Cry's badge and golem design remain separate follow-ups.
+
+## Gothic runtime art rework (2026-11-10)
+
+### Remaining icon catalogue follow-up
+
+- Rooted circular follow-up: a classic circular steel jaw, six inward teeth
+  and a separate pressure plate replace the rejected side-view draft. The
+  catalogue preview was regenerated and inspected at native/enlarged sizes.
+  Build evidence: `.local/catalogue-review/rooted-circular-build.log`; the packaged
+  catalogue audit passed. No client rendering check was performed.
+- `scripts/Dev.ps1 build` passed after review corrections. Evidence:
+  `.local/catalogue-review/corrections-build.log`.
+  This pass changes resource textures only; GameTests were not rerun.
+- `models/gothic_rework/catalogue_audit.py --packaged` passed: 60 changed
+  textures, all other 144 Covenant resources byte-identical to the starting
+  tree, six approved skill icons and the accepted Movement Speed boot preserved,
+  all 35 skill mappings, 16px/binary-alpha contracts, reserved rarity rows and
+  matching skill/projectile-core images. Every Covenant resource matches the JAR.
+  The previous Ice/Arcane Bolt icons and item cores are byte-identical to their
+  baseline; cooldown/duration images are swapped
+  exactly against the snapshot before these corrections.
+- Existing gothic and Workbench/relic audits also passed, including 20 protected
+  wolf/trap resources and all 50 family/rarity combinations. Full icon/material
+  source rebuilds preserve the same result. The earlier audit log is at
+  `.local/catalogue-review/audit.log`; all three audits were rerun successfully
+  after these corrections.
+- Before/after and native-size pale/dark samples were inspected, then revised
+  for tool/feather readability, elemental shape differentiation and distinct time
+  affix symbols. User-selected Icy Veins hourglass and preserved movement boot
+  are included. Latest revisions clarify the Dodge feather, Attack Speed sword,
+  Combat Respec ink sword, Cast Time charge arc and Flame Cloak garment/flame hem.
+  Review: `.local/catalogue-review/index.html`.
+- Pending: user art approval, in-game GUI/background readability and projectile
+  appearance. No client launch or deployment was performed.
+
+### Original runtime art pass
+
+- `scripts/Dev.ps1 build` passed. Final `scripts/Dev.ps1 verify`, including
+  the crimson Flame Trap feedback changes, passed: **All 181 required tests
+  passed :)** and **BUILD SUCCESSFUL**. Evidence is in ignored
+  `.local/gothic-rework/verify-final.log` and `assets-final.log`.
+- Resource audits verify all Covenant resources byte-match the packaged JAR,
+  valid JSON/PNG, native dimensions and binary alpha. The 129 revised textures
+  cover icons, relics, projectile cores, 19 effect families and the altar atlas.
+  All 20 protected wolf/trap resources are byte-identical to the starting tree.
+  Relic layers remain separate from rarity pips across all 50 combinations.
+- The revised workbench supersedes the single-cube Phase 5 visual below:
+  eight cuboids, 48 faces, 96 triangles, full-block bounds, one texel/unit,
+  boundary-only culling and numeric symmetry about X=8. Headless geometry
+  validation reports zero errors/warnings. Mapped front/back previews and
+  native/enlarged icon/effect studies were visually inspected.
+- Review gallery: `.local/gothic-rework/review.html`. Editable sources and
+  rebuild order: `models/gothic_rework/BRIEF.md`. No gameplay dimensions,
+  particle counts, lifetimes or attack/endpoint geometry changed.
+- Pending manual client review: crimson fire, pale blue ice and electric blue
+  lightning in motion against bright/dark terrain; icons at GUI scales; relic
+  recognition and rarity pips; altar lighting and adjacent-block culling.
+  Headless previews are not Minecraft rendering. No client launch or deployment
+  was performed.
+
+## Workbench, inventory and progression - visual polish Phase 5 (2026-11-10)
+
+- `scripts/Dev.ps1 verify` passed: **All 181 required tests passed :)** and
+  **BUILD SUCCESSFUL**. Final friendly choice-label/resource packaging changes
+  then passed `scripts/Dev.ps1 build` and the complete Phase 5 asset audit.
+  Evidence: ignored `.local/phase5/verify-final.log`, `build-final.log` and
+  `manifest.json`; authoring/audit scripts are in ignored `models/ritual_workbench/`.
+- New native packet tests cover structured Workbench preview codec round trips,
+  possible costs/ranges without initialization or RNG consumption, stale/replayed
+  choices, invalid indices/menu IDs, accepted commits, rejection with no success
+  sound, owner-only receipts and one sound for multi-item salvage. Existing
+  Workbench tests still cover shared storage, native inventory handling, native
+  block removal/drop behavior, saved components, profession access and reloads.
+- Progression packet tests cover ordinary XP and class initialization silence,
+  one cue for a real level, aggregate points for a multi-level award, classless
+  professions, owner-only delivery, the first-Wither milestone, capped/zero awards,
+  admin snapshots and repeated `refreshView` calls. These establish that the
+  synchronization path cannot replay cues; no new real-client reconnect/restart
+  or dimension-travel acceptance run was performed.
+- Replant feedback tests exercise actual native hoe harvesting: nine missing
+  supplies produce one count-accurate notice, sneaking reports one crop, denied
+  placement is not called missing supplies, denied harvesting produces no false
+  notice, and the final successful crop can report a shortage after tool break.
+  Existing gathering/protection/drop/durability tests remain passing.
+- The headless Java block model has zero geometry errors/warnings, one cuboid,
+  six faces and full-block bounds. Floating/mirror gates are inapplicable to a
+  single cube. The mapped isometric preview was inspected. The runtime adapter
+  adds native parent, namespaced texture IDs and boundary culling without altering
+  exported geometry/UVs. All six faces retain one texel/unit.
+- The asset audit verifies 43 byte-current packaged resources, 19 original PNGs,
+  0/255 alpha, native dimensions, all texture/model/item/blockstate references,
+  ten family selections by five rarity bands, neutral unknown-entry fallbacks
+  and disjoint generated-model layers. Native/enlarged pale/dark/grayscale item
+  studies are `.local/phase5/items.png`; mapped block preview is
+  `.local/blockbench/phase5-workbench.png`. This is not Minecraft rendering.
+- Manual: approve station/item art at gameplay and inventory size; inspect all
+  GUI scales/small windows, focus, choices/full details and carried/shift-click
+  items; shared-station latency/stale clicks and partial salvage; resource reload,
+  unknown datapack entries, quiet cue/audio balance, reconnect/dimension silence
+  and actionable shortage messages. No client launch, Prism/LAN deployment or
+  comparative performance claim is included.
+
+## HUD, menus and navigation - visual polish Phase 4 (2026-11-10)
+
+- Shared stone/iron framing retains native Button input/focus/narration. Original
+  icons cover all 35 playable skills across tree, bindings and status, plus 22
+  navigation/class/profession emblems and three native control-effect sprites.
+  The user rejected the first thin abstract study; the redraw uses recognizable
+  equipment, tools, wolf, horn, book and elemental forms. Four original trap
+  miniatures remain. Ten Phase 3 tree icons are redrawn; projectile-core/particle
+  art is unchanged. Native/enlarged samples on pale/dark patches were inspected;
+  the revised artwork still awaits user acceptance.
+- Tree shapes/badges, rank/assignment focus tooltips and pending totals distinguish
+  real build states. Locked/planned nodes remain inspectable with guarded
+  purchases. Eight binding cards prioritize actual rebound keys. Professions
+  keep independent drafts and show current/draft/next rank, costs and requirements.
+  Stats has visible class previews before explicit permanent choice, grouped
+  summaries, optional precise native breakdown and known equipment/aura labels
+  with raw ID fallback. The radial keeps its controls/order with three emblems,
+  dormant wedges and discovery guidance. Resource/XP positions and F1 remain.
+- ApplyFeedback checks passed for initial sync, unchanged/rejected state, matching
+  authoritative changes, conflicts, five-second timeouts, late snapshots, editing
+  guards and independent tabs. No speculative success, message parsing, new custom
+  payload, saved data, skill bar or gameplay tuning. Hidden native Rooted/Chilled
+  effects supply real owner timers; synced freeze gets no invented countdown.
+  Visible native potion tiles are not duplicated. Solid/hollow marks supplement
+  active/passive/reserve colors.
+- `scripts/Dev.ps1 build` and `scripts/Dev.ps1 verify` passed: **All 178 required
+  tests passed :)** and **BUILD SUCCESSFUL**. Existing casting fixtures additionally
+  check native overlay packets for real cast completion and equipment cancellation,
+  with no success/spending/ammo consumption after interruption. Three older fixture
+  helpers now check the same stable translatable outcome keys instead of the
+  English word `Used`; shorter success copy no longer invalidates gameplay
+  assertions. An initial pet-AI failure did not recur in the full passing run;
+  no pet gameplay or assertion was changed. Final client-only refinements also
+  passed a separate build and packaged audit. One pre-existing CP1252 dash was normalized to UTF-8 to edit
+  this otherwise UTF-8 document safely.
+- Packaged audit passed: 60 native-grid binary-alpha icon exports, all 35 playable
+  IDs, controlled palettes, 62 exact JAR resource matches, native effect atlas,
+  language keys/encoding and test-class exclusion. The compatible combat audit
+  passed for 120 resources / 19 particle families, core/model chains, complete beam
+  strips and frontal Cleave cell bounds. This supersedes Phase 3's historical
+  14-entry icon-map count. Sources/briefs are ignored `models/ui_phase4`; previews,
+  audits and logs are ignored `.local/phase4`.
+- Pending user Minecraft review: revised icon recognition/acceptance, small
+  windows/GUI scales, hover/keyboard tooltips and narration, build states, rebound
+  keys, assignment/clearing, class preview/permanent choice, independent drafts,
+  combat/rejected/stale Apply and action-bar visibility. Also review crowded
+  status timers/counts, controls/expiry, resource reload, F1 and hunger/air/mount
+  stacking. No client launch/automation, Prism/LAN deployment, latency/multiplayer
+  acceptance, retained-world restart, ATM11 compatibility or comparative
+  performance measurement. Phases 5-9 remain pending.
+
+## Everyday combat - remaining visual polish Phase 3 batches (2026-11-10)
+
+- Phase 3 is implemented with Minecraft review pending. Fire/Ice now have
+  original 16x16 generated-item cores and cast/trail/collision sprites: rising
+  embers versus motion-aligned angular shards. Their existing native burning,
+  Chilled status, hitboxes, costs and lifetimes remain unchanged. All three
+  spell cores use lazy client-only item stacks and native full-bright rendering.
+- Lightning reuses its existing dimension-scoped real-link endpoints. Its
+  jagged centerline preserves endpoints with <.079-block interior deviations
+  and <=64 four-tick 3D strip segments per link. Viewer-facing strip geometry
+  follows the actual 3D segments; the texture spans both exact endpoints.
+  Only server-selected Shock links branch to enemies. Actual collisions/chain
+  endpoints have brief collision glyphs; range misses do not invent impacts.
+- Aimed Shot gathers only during its real cast, then uses a paired narrow
+  streak. Arcane Arrow shares the approved pale/violet family and accepted-hit
+  cross. Multishot retains five real arrows, one small two-tick streak per
+  arrow/tick, a quiet collision mote and one native volley release sound.
+  Entity-impact events precede native arrow damage: cosmetic style now remains
+  through that call, with block impact/native removal/age guard ending visuals.
+  Saved provenance, fan claims, vulnerability and damage rules are unchanged.
+- Rend has a distinct compact single-target slash, including shared circular
+  Rend applications. Bleeding emits one sparse cue per target/pulse when any
+  stack deals accepted damage; fully prevented pulses stay quiet. There is no
+  new bleed audio or damage/status framework. Native weapon poses remain.
+- Original 16x16 icons complete all ten Phase 3 skills. Across Phases 1-3 the
+  current icon map has 14 original icons; Phase 3 uses 19 native decorative
+  particle families. Native/enlarged sources on pale/dark backgrounds were
+  inspected. The packaged audit passed for 99 resource files, including sprite
+  references, cutout dimensions/palettes, three generated-item chains, complete
+  beam strips, Cleave cell bounds, exact JAR bytes and exclusion of test classes.
+  Sources/briefs: ignored models/elemental_spells and models/bow_melee_effects;
+  previews/logs/audit: ignored .local/phase3. No new custom payload or saved IDs.
+- scripts/Dev.ps1 build passed for both incremental runtime batches. Final
+  scripts/Dev.ps1 verify passed: **All 178 required tests passed :)** and
+  **BUILD SUCCESSFUL**. Production lightning geometry checks cover exact
+  endpoints, finite segment budgets, zero-length/vertical aim, random 3D paths
+  and bounded ornament. Native GameTests cover elemental immune/absorption-only
+  hits, real Shock endpoints and cover-clipped links, range misses, native bow
+  collisions retaining contact style, one Multishot attempt per target, Aimed
+  completion/cancellation, Rend and aggregated/prevented bleed-pulse cues.
+  One initial compile error in the new generic fixture target type was corrected
+  to Mob before the final run; no gameplay assertions were weakened.
+- Pending user Minecraft review: first/third-person silhouettes and aim space,
+  reduced particles/Minimal, pale/dark terrain, vertical/near-view Lightning,
+  cover and real chain links, Aimed wind-up/cancellation, Arcane collision versus
+  accepted damage, whole-volley brightness/sound, quiet Rend/bleed, resource reload
+  and lifecycle removal. No client launch/automation, Prism or LAN deployment,
+  retained-world restart, multiplayer/latency acceptance, ATM11 compatibility or
+  comparative performance measurement. Phases 4-9 remain pending.
+
+## Everyday combat reference batch - visual polish Phase 3 (2026-11-10)
+
+- Arcane Bolt: original pale/violet 16x16 generated-item core with full-bright
+  native rendering, ordered five-tick motes, six-tick broken-seal collision and
+  separate accepted-damage contact. Palette approved by the user. Cleave: one
+  four-tick, three-frame 32x32 steel/crimson crescent at the real release position,
+  yaw and range. Both faces render because native particle pipelines cull
+  backfaces. Piercing Shot: narrow motion-aligned two-tick ivory/gold streaks,
+  preserving the native arrow and six-tick cosmetic bow pose. Three original
+  16x16 tree icons reuse these identities. Existing native sounds remain.
+- Five native decorative particle types use normal distance/settings/limiter
+  behavior. No new custom network payload, saved state, targeting, costs or
+  timings. Arcane's entity core remains visible on Minimal; decorative cues may
+  disappear. The shared melee contact helper also updates existing Rend/combo
+  hit marks without authoring their later skill/stage effects.
+- Native/enlarged sprite sheets on pale/dark backgrounds were inspected.
+  Packaged audit passed for 26 resource files: five sprite-list chains, PNG
+  dimensions/cutout alpha, occupied Cleave cell corners within 120 degrees and
+  range, generated-item definition/model/texture references, exact JAR bytes and
+  exclusion of test classes. Sources/brief: ignored models/combat_examples/;
+  previews/logs/audit: ignored .local/phase3/.
+- Initial scripts/Dev.ps1 build and final scripts/Dev.ps1 verify passed:
+  **All 174 required tests passed :)** and **BUILD SUCCESSFUL**. Native packet
+  checks cover accepted yaw/range, normal limiter flags, melee whiffs versus
+  damaging contacts, prevented hits, cancelled charge, wall collision,
+  absorption-only projectile damage, marked Piercing Shot and ordinary arrows.
+  First run passed 173/174: the new absorption fixture lacked a positive native
+  MAX_ABSORPTION attribute, so Minecraft clamped absorption to zero. Correcting
+  that setup retained all gameplay assertions. Client code compiled after the
+  final backface/animation fixes. Dedicated tests establish server loading and
+  emission, not rendered art. git diff --check passed.
+- Pending user Minecraft review: first/third-person readability, crosshair/target
+  visibility, cardinal/diagonal crescent direction, frontal versus circular cues,
+  steep/vertical arrow streaks, collision versus accepted damage, pale/dark terrain,
+  overlapping skills, particle settings, resource reload and lifecycle removal.
+  No client launch/automation, Prism or remote deployment, retained-world restart,
+  multiplayer observer/latency acceptance, ATM11 compatibility or comparative
+  performance measurement. Remaining Phase 3 batches stay pending.
+
 ## Trap family and area clarity - visual polish Phase 2 (2026-11-10)
 
 - Bear: 14 cuboids / 168 triangles, opposing toothed jaws, pressure plate,
@@ -901,7 +1194,7 @@ Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
   GameTest classes/fixtures. `git diff --check` passed. No registry versions or
   saved IDs changed. No client launch, Prism deployment, or performance benchmark
   was performed.
-- Manual client checklist: cross fields quickly and check 0.5�1s exit grace and
+- Manual client checklist: cross fields quickly and check 0.5–1s exit grace and
   10% slow feel; verify teammate/pet benefits through cover; watch Fortitude's
   separate HUD row deplete, refresh and disappear; check freeze controls with
   knockback and consecutive casters; inspect Lightning chain/activation feedback;

@@ -54,6 +54,7 @@ public final class ElementalBolts {
                             .thenComparing(LivingEntity::getUUID)).orElse(null);
             if (next == null) { break; }
             SkillVisuals.lightning(player.level(), from.getEyePosition(), next.getEyePosition());
+            SkillVisuals.lightningImpact(player.level(), next.getEyePosition());
             next.hurtServer(player.level(), new DamageSource(type, player, player), (float) (SkillDefinition.LIGHTNING_BOLT.power() * .5 * AuraDamage.elementalMultiplier(player, WeaverPower.Element.LIGHTNING)));
             hit.add(next); previous = next;
         }
@@ -71,6 +72,7 @@ public final class ElementalBolts {
                 entity -> entity instanceof LivingEntity target && entity.isPickable() && Skills.canHit(player, target), 0);
         SkillVisuals.lightning(player.level(), start, entityHit == null ? block.getLocation() : entityHit.getLocation());
         if (entityHit != null || block.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+            SkillVisuals.lightningImpact(player.level(), entityHit == null ? block.getLocation() : entityHit.getLocation());
             SkillSounds.impact(player.level(), entityHit == null ? block.getLocation() : entityHit.getLocation(), skill);
         }
         if (entityHit != null && entityHit.getEntity() instanceof LivingEntity target) {

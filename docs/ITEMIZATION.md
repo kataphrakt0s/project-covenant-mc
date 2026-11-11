@@ -9,8 +9,9 @@ remain deferred. It adds no class requirement or equipment level restriction.
 
 Craft one Workbench in an ordinary crafting table from one crafting table,
 four planks (any/mixed types), two iron ingots and two lapis. This ungated recipe
-grants no profession XP. Its model references Minecraft's netherite block as
-placeholder art. Start Crafting XP through successful vanilla enchanting.
+grants no profession XP. Its original stone ritual-station model retains the
+existing solid full-block collision and has no facing property. Start Crafting
+XP through successful vanilla enchanting.
 
 Purchase Basic Affix Crafting for one point at level 1. Numerical tiers 2/3/4/5
 unlock automatically at levels 5/10/15/20. Rarity and numerical tier are distinct:
@@ -19,10 +20,12 @@ level. Salvaging costs two points at level 5. Recovery and Focused Recovery each
 have three one-point ranks at levels 5/10/15, requiring Salvaging. All four
 Crafting nodes now accept real purchases; other unfinished nodes stay unavailable.
 
-Right-click the station. Affix Crafting has one equipment slot and cycling
-operation/family/rarity/target selectors. Add uses family and rarity; other
-operations use an existing target. Hover Craft for full server-authored costs
-and status. Only the explicit action spends ingredients from the acting
+Right-click the station. Affix Crafting has one equipment slot, four direct
+operation buttons and paged native family/rarity/target choice lists. Add uses
+family and rarity; other operations use an existing target. Cost, Potential
+before/after, possible result and rejection reason have separate server-authored
+fields. Details opens the complete paged preview, also available on action hover.
+Random results are ranges, never predicted rolls. Only the explicit action spends ingredients from the acting
 player's inventory, including offhand, and the item's Potential.
 
 Salvaging has ten single-item inputs and twelve withdrawal-only result slots.
@@ -32,6 +35,26 @@ before an item's maximum possible rewards cannot fit. Never roll a blocked
 input or spill rewards; collecting results does not resume the batch. Consumed
 equipment and enchantments are destroyed without books or vanilla XP refunds.
 Durability does not affect returns.
+
+An accepted action shows a receipt and plays one quiet owner-only sound, including
+multi-item salvage. Other shared viewers, failed actions and stale requests get
+no success cue. Earned levels produce separate short owner overlays/sounds at
+the actual progression award boundary; normal XP/view synchronization stays quiet.
+
+The required Workbench network revision is `workbench/4`: the expanded server
+view has bounded cost/Potential/result/reason fields and choice lists; a new
+client selection payload carries menu ID, preview token, choice kind and index.
+Both selection and commit revalidate the menu, current token, storage/inventory,
+itemization revision and profession state. No client price, random roll or result
+is trusted. This is a wire change only; saved IDs/data require no migration.
+
+Combat/Profession Respec have original parchment/ledger icons and held-use hints.
+Equipment tooltips preserve the original item identity and native stat lines,
+then group rarity, remaining Potential and compact affix tier/value lines.
+The existing `affix_material` component selects ten original family marks and
+five separate rarity pip bands through a physical-client item-model property.
+Unknown families use generic charm art; unknown rarities get no invented pips.
+Component names retain identity, with explicit foreign IDs in tooltips.
 
 All 23 slots are shared block-entity storage, retained on GUI close and native
 save/load. Vanilla block-entity removal drops contents once. No station ticker

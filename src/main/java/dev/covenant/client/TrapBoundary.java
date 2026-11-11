@@ -25,7 +25,7 @@ final class TrapBoundary {
             edgeColor = switch (trap.kind()) {
                 case BEAR -> 0xE6CFD3CC;
                 case FROST -> 0xE6C9F0F0;
-                case FLAME -> 0xE6FFB65C;
+                case FLAME -> 0xE6ED4C68;
                 case BLAST -> 0xE6D9BC8D;
             };
             backingColor = trap.kind() == dev.covenant.rpg.skills.TrapKind.FROST ? 0xD0263D50 : 0xD02C2928;

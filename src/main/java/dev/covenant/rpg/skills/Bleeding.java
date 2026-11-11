@@ -71,6 +71,7 @@ public final class Bleeding {
                 // At most three snapshots once per second; damage/death hooks may consume or reapply bleeds.
                 var pulse = state.stacks().toArray(BleedState.Stack[]::new);
                 var type = level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DAMAGE_TYPE);
+                boolean landed = false;
                 for (var stack : pulse) {
                     if (!target.isAlive() || !target.hasData(RpgData.BLEED)
                             || target.getData(RpgData.BLEED) != state || !state.stacks().contains(stack)) { break; }
@@ -82,10 +83,10 @@ public final class Bleeding {
                     // Preserve UUID kill credit even when the applying player is offline.
                     if (attacker == null || attacker instanceof ServerPlayer) { target.setLastHurtByPlayer(stack.attacker(), 100); }
                     target.hurtServer(level, source, stack.damage());
-                    if (before.landed(target)) {
-                        SkillVisuals.bleedTick(level, target);
-                    }
+                    landed |= before.landed(target);
                 }
+                // One sparse cue per accepted pulse, independent of the number of saved stacks.
+                if (landed) { SkillVisuals.bleedTick(level, target); }
             }
             if (target.hasData(RpgData.BLEED) && target.getData(RpgData.BLEED) == state) {
                 state.age();

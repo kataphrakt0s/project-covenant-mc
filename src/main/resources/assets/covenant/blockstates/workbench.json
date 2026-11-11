@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "minecraft:block/netherite_block"
+      "model": "covenant:block/workbench"
     }
   }
 }

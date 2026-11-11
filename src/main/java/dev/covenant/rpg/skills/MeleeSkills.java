@@ -61,7 +61,7 @@ final class MeleeSkills {
         finally { runtime.applyingRend = previous; }
         if (before.landed(target)) {
             if (bleed > 0) { Bleeding.apply(target, player, bleed, duration); }
-            SkillVisuals.cleaveHit(player.level(), target);
+            SkillVisuals.rendHit(player.level(), target);
             return true;
         }
         return false;

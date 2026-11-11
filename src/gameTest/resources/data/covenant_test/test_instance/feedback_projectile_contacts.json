@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:feedback_projectile_contacts",
+  "structure": "covenant_test:empty",
+  "max_ticks": 100,
+  "setup_ticks": 0,
+  "required": true,
+  "environment": "minecraft:default"
+}

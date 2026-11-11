@@ -1,11 +1,110 @@
 ---
 project: Project Covenant
 type: implementation-plan
-status: phases-1-2-implemented-client-review-pending
+status: gothic-rework-implemented-client-review-pending
 updated: 2026-11-10
 ---
 
 # Visual polish roadmap
+
+## Bolt correction — particles as the body
+
+The user rejected the floating-item appearance on 2026-11-10. Fire, Ice and
+Lightning should read as flaming, icy or electrified bolts of pure energy.
+Basic geometry may support the effect, but particles supply its main body.
+This supersedes the generated-item core treatment recorded in Phase 3 below.
+
+Runtime now uses distance-spaced crimson flame wisps, pale-blue frost energy
+with sparse fractures, and electric-blue flickering lightning with drifting sparks.
+Arcane also replaces its item core with violet energy for family consistency.
+Fire/Ice/Arcane retain only narrow, travel-aligned geometric filaments and a tiny
+end cap for Minimal visibility. These have no item texture or inventory silhouette.
+Elemental collisions break into particles; accepted-damage marks remain separate.
+Existing icons and item texture assets are retained independently of projectile rendering.
+
+Emission is local and bounded: at most fifteen energy particles per projectile
+tick plus two elemental accents every other tick, sixteen sparks per lightning
+link, and eleven particles per elemental collision. Lifetimes are two to seven
+ticks. Native particle settings, depth tests and server-owned hit semantics remain.
+Manual review: first/third-person motion, steep/end-on aim, particle settings,
+pale/dark backgrounds, overlapping casts, impacts and resource reload. No Minecraft
+rendering or comparative performance acceptance is claimed.
+
+## Current handoff — runtime JAR
+
+On 2026-11-10 the user requested packaging all implemented polish, including
+the latest catalogue corrections, before continuing the rest of this roadmap.
+Phases 1–5, the gothic rework and the icon follow-ups already use runtime code
+and assets; the local catalogue displays those same texture files. No design
+decision blocks this build. The catalogue drafts are selected for inclusion,
+with final appearance still subject to Minecraft review. See
+[validation evidence](../docs/VALIDATION.md).
+
+Continue with Phase 6's advanced class effects after this handoff. Enduring Cry's
+future badge and the golem's gameplay/form decisions belong to later work and
+do not block packaging the currently implemented polish.
+
+## Current priority — reference review and art reset
+
+On 2026-11-10 the user rejected the overall desaturated, overly realistic art
+direction and requested a more cohesive, bold dark fantasy flavour. The wolf and
+traps remain accepted anchors; everything else is eligible for eventual redesign.
+Technical implementation below is not visual acceptance. Before expanding the
+existing style, use [[Art Reference Studies]] to collect and compare references
+for each asset family, then establish a representative sample together.
+FurfSky's strong silhouettes and darker black/purple/red/grey examples now supply
+selected reference qualities; its broader flashy, neo-fantasy styling is unsuitable.
+Exact palettes and family treatments remain open. The earlier phase sequence below
+records the implementation baseline and does not override this new priority.
+
+The first runtime rework is implemented: 129 textures, distinct relic component
+silhouettes, gothic UI framing, and an eight-cuboid stone/iron ritual workbench.
+The user's elemental correction is crimson fire, pale blue ice and electric blue
+lightning. Wolf and trap device art is preserved; Flame Trap feedback follows the
+crimson palette. See [[Art Direction]] and the local
+[before/after review](../.local/gothic-rework/review.html). Further art acceptance
+depends on review of this implementation in Minecraft; earlier delivery notes
+below describe the superseded art where they conflict with this rework.
+
+### Current next step: individual icon review
+
+The user finds the first rework's silhouettes too unique. Work through icons
+one at a time, matching each player's intended reading to a close vanilla
+Minecraft item/icon silhouette before adding restrained gothic colour/details.
+Evaluate meaning and native-size recognition before extending a treatment to
+other icons. Workbench is acceptable for now. See [[Art Direction]] for the
+superseding icon rule; distinctiveness alone is not an acceptance criterion.
+
+- Cleave: finished 16px sword-and-sweep icon **approved**, including the arc
+  widening toward the blade. [Approved comparison](../.local/icon-review/cleave.html).
+- Rend: finished sword-and-classic-teardrop icon **approved**, including the wider
+  stain at unchanged length. [Approved comparison](../.local/icon-review/rend.html).
+- Lunging Combo: finished crimson character lunge icon **approved**, with the
+  steel sword. [Approved comparison](../.local/icon-review/lunging-combo.html).
+- Rip and Rush: simplified crimson character with one straight sword arm and
+  circular sweep **approved**. [Approved comparison](../.local/icon-review/rip-and-rush.html).
+- Battle Cry: prior face rejected; fresh study from the user's manga/warcry
+  references liked; requested mouth/jaw close-up now cropped from the source
+  and implemented at 16×16 with eight colours for
+  [approved comparison](../.local/icon-review/battle-cry.html). **Finished icon
+  approved**, including the corner sword. Clean base and source study preserved
+  for Enduring Cry.
+- Future Enduring Cry: same face layout with a heart or shield corner badge;
+  badge choice and implementation remain deferred.
+- Rage Storm: finished cyclone icon **approved**, with exact prior colours
+  retained. [Approved comparison](../.local/icon-review/rage-storm.html).
+- Blood Fever and the remaining existing catalogue: **60 revised textures**
+  implemented for [batch review](../.local/catalogue-review/index.html), covering
+  skills, menus/professions, status, affix/respec items and matching bolt cores.
+  These are review drafts. Approved icons, accepted boot, wolf, traps and
+  workbench are preserved.
+- Icy Veins: user-selected pale-blue hourglass implemented.
+- Movement speed: previous single-boot silhouette retained exactly for the
+  component and reused by Swiftness Aura, per user correction.
+- Latest corrections restore Ice Bolt/Arcane Bolt and their cores; Rooted uses
+  an independent circular bear trap, cooldown/duration affix images are swapped, and Dodge,
+  Attack Speed, Combat Respec, Cast Time and Flame Cloak have clearer subject
+  silhouettes. These revisions remain pending visual approval.
 
 ## Goal and first delivery
 
@@ -22,8 +121,9 @@ AoE readability and cleanup inside an implemented skill. It can establish useful
 conventions without waiting for a new gameplay system. Include one small skill
 icon so the same identity can carry into menus and the HUD.
 
-This roadmap sets the production order. Phases 1 and 2 are implemented with client review
-pending; current delivery and validation boundaries are tracked below.
+This roadmap sets the production order. Phases 1-5 are implemented with
+client review pending; current delivery
+and validation boundaries are tracked below.
 Phase numbers give the recommended delivery order, not a requirement to finish
 every earlier asset before starting an independent UI or item-art task.
 
@@ -36,12 +136,12 @@ rendered usability test.
 | Surface | Current foundation | Main opportunity |
 | --- | --- | --- |
 | Traps and AoE | Four original trap devices; supported depth-tested contact/patch outlines; one owner-only aura footprint. | Review silhouette, terrain/overlap readability and renderer cost in Minecraft. |
-| Combat effects | Native particles, poses and event sounds; thrown-item bolts; sampled lightning; particle-only Rage Storm. | Authored projectile, impact, movement and major-skill identities. |
+| Combat effects | Original everyday spell cores/sprites, exact-endpoint jagged lightning, bow-family streaks, Cleave/Rend contacts and quiet bleed pulses; native poses/sounds. | Review normal combat readability; movement and major-skill spectacle remain Phase 6. |
 | Skills and bindings | Whole-class tree with initials, rank/tooltips, pending Apply and eight slots. | Shared original icons and clearer allocation/readiness states. |
 | Professions | Four tabs, named nodes, rank text and pending markers. | Consistent icons, rank/cost hierarchy and planned/locked distinction. |
 | Stats and radial | Text-heavy stats with raw modifier IDs; three active radial destinations. | Clear summaries, class discovery and recognizable navigation. |
 | HUD | Current-class resource bar, thin Covenant XP bar, top-left statuses with vanilla icons. | Recognizable status art and legible counts/timers with the existing footprint. |
-| Workbench and inventory | Netherite-block station placeholder; cycle selectors and mostly textual previews; vanilla respec/component imagery. | Recognizable station, understandable transactions and distinct item identities. |
+| Workbench and inventory | Original stone ritual station, direct/paged native choices, structured server previews, respec art and component-driven family/rarity marks. | Review in-game cost/consequence clarity, item recognition and shared-station latency. |
 | Summons | Original static wolf source; pet and four-form golem gameplay remains planned. | A later entity/animation pipeline coordinated with companion implementation. |
 
 Evidence lives in `src/main/java/dev/covenant/client/`,
@@ -128,8 +228,9 @@ Produce one reference skill per class, then extend it in small batches:
 Use original compact projectile cores and sprite sequences where they improve
 readability. Preserve native bow/weapon poses and ordinary arrows. Clearly
 distinguish collision from a confirmed damaging hit; cosmetic lightning branches
-must not suggest extra targets. Choose whether Arcane gains violet accents during
-its example; blue-white remains the current behavior until that choice is made.
+must not suggest extra targets. The user approved a pale core with restrained
+lavender/violet accents on 2026-11-10; Arcane Bolt establishes the family, now
+extended to Arcane Arrow.
 
 **Completion evidence:** each skill reads in first and third person, tracks the
 actual hit/trajectory, leaves the crosshair and nearby targets visible, and gives
@@ -168,7 +269,8 @@ Treat the station's world object and its transaction screen as one experience,
 delivered through smaller changes:
 
 1. Replace the netherite-block placeholder with a recognizable crafting surface:
-   proposed worn timber/iron, stone work plate and restrained old binding marks.
+   user-selected stone ritual station, iron bindings and restrained carved marks
+   (supersedes the initial timber proposal).
    Keep the first model compatible with current one-block occupancy. New facing
    or collision behavior is explicit follow-up work, not an accidental art change.
 2. Show selected operation, input, cost, Potential change, possible result and
@@ -287,7 +389,8 @@ polish work.
 - Review sound timing with each effect family; original audio production is an
   optional later task if native sounds no longer fit the art.
 
-Current tracking: **Phases 1 and 2 implemented; manual Minecraft review pending**.
+Current tracking: **Phases 1-4 implemented;
+manual Minecraft review pending**.
 The original Frost Trap uses twelve cuboids, a 32x32 opaque atlas at vanilla
 texel density, and one 16x16 skill-tree icon with initials retained for other
 skills. Sources and the asset brief live in ignored `models/frost_trap/`; mapped
@@ -335,11 +438,174 @@ ignition/pressure/expiry timing; supported square versus circular patch footprin
 grass, snow/pale and dark stone, walls, stairs, slabs and ledges; Minimal;
 overlapping traps/auras and visible targets; one owner-only aura field with self-only
 exclusions; root/freeze/chill recognition; resource reload and lifecycle cleanup.
-Other phases remain pending.
+
 Final Phase 2 automated validation: `scripts/Dev.ps1 build` and
 `scripts/Dev.ps1 verify` passed, including **All 173 required tests passed :)**
 and **BUILD SUCCESSFUL**. The packaged source/export/UV/PNG audit also passed;
 see `docs/VALIDATION.md` for evidence and manual boundaries.
+
+Phase 3's first reference batch delivers an original 16x16 pale/violet Arcane
+core through native generated-item rendering, compact ordered motes and a
+three-frame broken collision seal. Cleave has a three-frame 32x32 steel/crimson
+120-degree crescent at the actual release position/yaw/range. Piercing Shot keeps
+its native arrow and cosmetic bow pose, adding a two-tick narrow ivory/gold
+motion-aligned streak. All three receive original 16x16 tree icons. A separate
+compact contact cross requires accepted damage, including absorption/shields;
+mere collisions, whiffs, prevented hits and rejected uses never claim success.
+The shared melee contact helper also improves current Rend/combo hit marks;
+their distinct skill/stage effects remain later work.
+
+Sources and brief: ignored `models/combat_examples/`; sprite previews and
+validation: ignored `.local/phase3/`. Five native decorative particle types use
+short local lifetimes and normal particle settings; no new custom network
+payload, saved data, targeting or timing changes. Arcane's entity core survives
+Minimal through native full-bright item rendering, without bloom/world light.
+No client rendering or crowded-scene performance claim is made.
+
+Phase 3 client review: first/third-person core, charge cancellation, crescent
+orientation at cardinal/diagonal yaw, frontal versus circular cues, visible
+targets/crosshair, arrow motion including steep/vertical shots, wall/immune
+collision versus accepted damage, pale/dark terrain, overlap, particle settings,
+resource reload and projectile removal.
+
+Phase 3 reference-batch automated validation: initial `scripts/Dev.ps1 build`
+and final `scripts/Dev.ps1 verify` passed, including **All 174 required tests
+passed :)** and **BUILD SUCCESSFUL**. Packaged sprite/reference/alpha/crescent-cell
+geometry audit passed for 26 resource files. See `docs/VALIDATION.md` for native
+emission checks and manual boundaries; these results do not establish Minecraft
+appearance.
+
+Phase 3's remaining batches now deliver original 16x16 Fire/Ice cores and three
+elemental icons, rising embers, angular shard trails and element-specific short
+collision sequences. Lightning uses <=64 jagged segments per real server link,
+exact endpoints, <.079-block interior deviation and a four-tick 3D strip. No
+decorative offshoot targets another enemy. Actual main-ray collisions and real
+Shock endpoints have a small collision glyph; accepted damage has a separate
+contact mark, including absorption/shields. A main-ray range miss has no false
+collision or damage cue. Existing native sounds and gameplay stay unchanged.
+
+Aimed Shot adds small gathering brackets only during its actual cast and a
+stronger narrow streak. Arcane Arrow shares pale/violet geometry and a distinct
+damaging-hit cross. Multishot shows its actual five-arrow fan with one small
+two-tick streak per arrow/tick and one release sound for the complete volley.
+Cosmetic style survives pre-damage entity collision so native accepted hits can
+select the correct contact art; block impact clears it immediately, while native
+entity removal/the existing age guard ends remaining trails. Saved provenance/fan claims
+remain separate. Rend uses compact single-target crimson/steel slashes; accepted
+bleed stacks share one small mark per target per pulse, with no extra sound.
+Four matching icons complete the ten Phase 3 skills.
+
+Nineteen native decorative particle types and three full-bright generated-item
+spell cores now serve Phase 3. Sources/briefs also live in ignored
+`models/elemental_spells/` and `models/bow_melee_effects/`; previews/evidence remain
+in `.local/phase3/`. All 14 current original skill icons include the four traps.
+The complete packaged resource audit covers 99 files and the production lightning
+geometry test covers exact endpoints, vertical/zero-length aim, finite budgets
+and bounded ornament. Minecraft rendering and overlap performance are unverified.
+
+Additional Phase 3 client review: all elemental silhouettes in grayscale, ember
+rise versus ice fracture, near/steep/vertical Lightning and cover-clipped chains,
+real Aimed wind-up/cancellation, Arcane collision versus damage, whole-volley
+brightness/sound, immune/blocked arrow contact, and quiet Rend/bleed pulses.
+Phases 6-9 remain pending; Phase 5 delivery is recorded below.
+
+Final complete Phase 3 automated validation: `scripts/Dev.ps1 build` and
+`scripts/Dev.ps1 verify` passed, including **All 178 required tests passed :)**
+and **BUILD SUCCESSFUL**. The production lightning geometry check and complete
+99-file packaged resource audit passed. Native packet/physical-collision tests
+cover actual links and cover, accepted elemental/bow hits, Aimed cancellation
+and aggregate/prevented bleed pulses. See `docs/VALIDATION.md` for evidence and
+the pending Minecraft/client boundaries.
+
+Phase 4 shares original icons for all 35 playable skills across the tree, bindings
+and top-left status region, with stone/iron menu framing. The user rejected the
+first abstract icon study. The redraw favors recognizable boots, shields, blades,
+a horn, wolf head, books, tools and elemental silhouettes. Its native/enlarged
+pale/dark preview is ignored `.local/phase4/icons-v2.png`. Ten Phase 3 tree icons
+are redrawn; spell-core/particle art is separate, and the four trap miniatures
+retain their original machinery. Revised artwork still awaits user acceptance.
+
+Tree badges/shapes and focus tooltips distinguish available, learned, locked,
+planned, pending and assigned states. Locked/planned nodes remain inspectable
+without becoming purchasable. Eight binding cards show actual rebound keys above
+skill identity. Four profession emblems and node icons support current/draft/next
+rank costs and per-tab drafts. Stats has visible class previews before explicit
+permanent choice, grouped summaries and an optional precise native breakdown.
+Known equipment/aura sources receive readable labels; unfamiliar IDs stay visible.
+Three radial destinations have emblems, dim dormant wedges and a discovery hint.
+
+Apply confirms only matching authoritative rank changes; conflicting updates and
+five-second timeouts do not show success. Profession submissions are independent
+per tab and clear on catalogue reload. Skill key requests, binding/Apply responses
+and cast completion/equipment cancellation use native server action-bar messages
+instead of repeated chat. No message parsing, new custom payload, saved data or
+extra skill bar. Root/chill tiles read hidden native effects and real remaining
+durations; freeze uses synced state without an invented expiry. Visible native
+potion tiles are not duplicated. Solid/hollow marks distinguish active/passive
+and reserve state. Resource colors/position, thin XP bar and F1 remain.
+
+Phase 4 client review: revised icon recognition; small windows/GUI scales;
+mouse/keyboard focus and tooltips; rebound keys and right-click clearing;
+planned/locked/pending/assigned distinction; per-tab Apply, rejections and combat
+gating; class preview/commit and command-free learning; crowded statuses and
+controls; hunger/air/mount stacking; F1 and resource reload. Sources/briefs are
+ignored `models/ui_phase4/`; evidence is in `docs/VALIDATION.md`. No Minecraft
+appearance, latency/multiplayer or comparative performance acceptance is claimed.
+
+Final Phase 4 automated validation: `scripts/Dev.ps1 verify` passed, including
+**All 178 required tests passed :)** and **BUILD SUCCESSFUL**. The final UI build,
+authoritative Apply checks and packaged 60-icon/62-resource audit passed. The
+compatible combat audit passed for 120 resources / 19 native particle families.
+Cast completion and equipment-cancellation tests verify real native overlay
+packets and unchanged spending/ammo boundaries. These are technical checks;
+Minecraft appearance and revised art acceptance remain pending.
+
+Phase 5 now supplies the user-selected stone ritual station with a worn working
+slab, iron bands and carved niches. One native cube and a 32x32 atlas retain
+one texel per model unit, full-block collision and the absence of facing.
+Original 16x16 Combat Respec parchment and Profession Respec ledger replace
+placeholders. Ten component family marks and five rarity pip bands read the
+existing synced component; unknown entries retain a generic charm and their
+named identity, with no invented item IDs or rarity mapping.
+
+Workbench operation buttons and paged native choice lists replace cycling in
+the screen. Protocol 4 supplies distinct cost/Potential/result/rejection fields
+plus full paged details and bounded choices. Server tokens guard both direct
+choices and commits; the client neither parses preview prose nor calculates
+rolls. Results explicitly describe random ranges, consumed enchantments, no
+removal refunds and partial salvage batches. Only accepted transactions receive
+one owner sound and a menu receipt. Native storage, slots and removal persist.
+
+Equipment tooltips separate rarity, remaining Potential, affix tier and readable
+values. Respec instructions and Crafting guidance describe existing behavior;
+class discovery continues through the Phase 4 radial/Stats/Skills path. Earned
+character/profession levels and first-Wither level awards emit a short owner
+overlay and sound at the actual award boundary. Multi-level awards aggregate;
+ordinary XP, view sync, admin snapshots and capped awards remain quiet.
+
+Gathering review retained native destruction, placement, loot and tool-break
+cues. Replanting now reports one aggregate missing-inventory-supplies message
+for the actual harvested crops; sneaking reports one, placement denial is not
+mislabeled, and failed harvests cannot imply a completed replant. No extra
+per-block spectacle, new recipes or progression rules were added.
+
+Phase 5 client review: station appearance on pale/dark terrain; inventory-size
+respec/family/rarity recognition; resource reload and unknown datapack art;
+small windows/GUI scales, paged choices/details and keyboard focus; carried-item,
+shift-click and shared-station use; stale/rejected actions and partial salvage;
+quiet level-up/audio balance, reconnect/dimension/reload silence and replant
+shortage messages. Headless previews are ignored `.local/phase5/` and
+`.local/blockbench/phase5-workbench.png`; editable sources/brief are ignored
+`models/ritual_workbench/`. See `docs/VALIDATION.md` for automated evidence.
+Technical delivery does not establish Minecraft appearance or art acceptance.
+
+Phase 5 automated validation: `scripts/Dev.ps1 verify` passed **All 181 required
+tests passed :)** and **BUILD SUCCESSFUL**. The final choice-label/resource build
+and 43-resource packaged asset audit also passed. Three new native server tests
+cover Workbench choice/commit feedback, earned-level cues and aggregate replant
+shortages; existing storage/removal, harvesting and progression coverage remains
+passing. See `docs/VALIDATION.md` for precise evidence and manual limits.
+
 Keep this roadmap as the production-order source; [[Art Direction]] owns the
 agreed style and open aesthetic decisions.
 

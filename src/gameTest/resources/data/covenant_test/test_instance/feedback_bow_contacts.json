@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:feedback_bow_contacts",
+  "structure": "covenant_test:empty",
+  "max_ticks": 100,
+  "environment": "minecraft:default"
+}

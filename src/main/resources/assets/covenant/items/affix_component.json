@@ -1,6 +1,132 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "covenant:item/affix_component"
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:select",
+        "property": "covenant:affix_material",
+        "cases": [
+          {
+            "when": "covenant:health",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_health"
+            }
+          },
+          {
+            "when": "covenant:attack_damage",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_attack_damage"
+            }
+          },
+          {
+            "when": "covenant:armor",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_armor"
+            }
+          },
+          {
+            "when": "covenant:attack_speed",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_attack_speed"
+            }
+          },
+          {
+            "when": "covenant:dodge",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_dodge"
+            }
+          },
+          {
+            "when": "covenant:movement_speed",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_movement_speed"
+            }
+          },
+          {
+            "when": "covenant:resource_cost",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_resource_cost"
+            }
+          },
+          {
+            "when": "covenant:cooldown",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_cooldown"
+            }
+          },
+          {
+            "when": "covenant:cast_time",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_cast_time"
+            }
+          },
+          {
+            "when": "covenant:skill_duration",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_skill_duration"
+            }
+          }
+        ],
+        "fallback": {
+          "type": "minecraft:model",
+          "model": "covenant:item/affix_component"
+        }
+      },
+      {
+        "type": "minecraft:select",
+        "property": "covenant:affix_material",
+        "rarity": true,
+        "cases": [
+          {
+            "when": "covenant:common",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_band_common"
+            }
+          },
+          {
+            "when": "covenant:uncommon",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_band_uncommon"
+            }
+          },
+          {
+            "when": "covenant:rare",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_band_rare"
+            }
+          },
+          {
+            "when": "covenant:epic",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_band_epic"
+            }
+          },
+          {
+            "when": "covenant:legendary",
+            "model": {
+              "type": "minecraft:model",
+              "model": "covenant:item/affix_band_legendary"
+            }
+          }
+        ],
+        "fallback": {
+          "type": "minecraft:empty"
+        }
+      }
+    ]
   }
 }

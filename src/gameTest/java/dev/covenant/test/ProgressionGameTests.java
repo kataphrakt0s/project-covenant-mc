@@ -249,9 +249,19 @@ final class ProgressionGameTests {
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
         Fixture(GameTestHelper helper) { this.helper = helper; }
         ServerPlayer player(PlayerClass type) {
+            return player(type, null);
+        }
+        ServerPlayer player(PlayerClass type, List<net.minecraft.network.protocol.Packet<?>> packets) {
             var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "xp" + UUID.randomUUID().toString().substring(0, 8)), false);
             var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new Connection(PacketFlow.SERVERBOUND); new io.netty.channel.embedded.EmbeddedChannel(connection);
+            var connection = packets == null ? new Connection(PacketFlow.SERVERBOUND) : new Connection(PacketFlow.SERVERBOUND) {
+                @Override public void send(net.minecraft.network.protocol.Packet<?> packet, io.netty.channel.ChannelFutureListener listener, boolean flush) {
+                    packets.add(packet); super.send(packet, listener, flush);
+                }
+                @Override public boolean isMemoryConnection() { return true; }
+            };
+            new io.netty.channel.embedded.EmbeddedChannel(connection);
+            if (packets != null) { net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection); }
             helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
             player.setGameMode(GameType.SURVIVAL); player.connection.markClientLoaded();
             player.setPos(helper.absoluteVec(new net.minecraft.world.phys.Vec3(2, 100, 2))); player.setNoGravity(true);

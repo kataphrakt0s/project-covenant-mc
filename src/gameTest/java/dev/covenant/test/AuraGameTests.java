@@ -487,7 +487,8 @@ public final class AuraGameTests {
         }
         void cast(ServerPlayer player, SkillDefinition skill) {
             reset(player, skill); var result = Skills.activate(player, skill);
-            check(result.getString().contains("Used"), "Aura activation: " + result.getString());
+            check(result.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents feedback
+                    && feedback.getKey().equals("commands.covenant.skill.used"), "Aura activation: " + result.getString());
         }
         void coverage(ServerPlayer player) {
             Auras.reconcile(player); Auras.refresh(player);

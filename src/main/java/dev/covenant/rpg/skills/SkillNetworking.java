@@ -18,7 +18,7 @@ public final class SkillNetworking {
         var registrar = event.registrar(dev.covenant.CovenantNetwork.version("skills/6"));
         registrar.playToServer(Apply.TYPE, Apply.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && accept(player, request)) {
-                player.sendSystemMessage(SkillLoadouts.apply(player, request.expected(), request.desired()));
+                player.sendOverlayMessage(SkillLoadouts.apply(player, request.expected(), request.desired()));
             }
         });
         registrar.playToClient(DashMotion.TYPE, DashMotion.STREAM_CODEC);
@@ -28,17 +28,17 @@ public final class SkillNetworking {
         });
         registrar.playToServer(Learn.TYPE, Learn.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && accept(player, request)) {
-                player.sendSystemMessage(SkillLoadouts.learn(player, request.skill(), request.learn()));
+                player.sendOverlayMessage(SkillLoadouts.learn(player, request.skill(), request.learn()));
             }
         });
         registrar.playToServer(Bind.TYPE, Bind.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && accept(player, request)) {
-                player.sendSystemMessage(SkillLoadouts.bind(player, request.slot(), request.skill().orElse(null)));
+                player.sendOverlayMessage(SkillLoadouts.bind(player, request.slot(), request.skill().orElse(null)));
             }
         });
         registrar.playToServer(Use.TYPE, Use.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && accept(player, request)) {
-                player.sendSystemMessage(SkillLoadouts.activateSlot(player, request.slot()));
+                player.sendOverlayMessage(SkillLoadouts.activateSlot(player, request.slot()));
             }
         });
     }

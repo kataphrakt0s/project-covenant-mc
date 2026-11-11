@@ -35,6 +35,7 @@ final class ProfessionsScreen extends Screen {
     private int selected;
     private int left, top, panelWidth, panelHeight, bodyTop, bodyHeight;
     private Button apply;
+    private final Map<Identifier, ApplyFeedback<Map<Identifier, Integer>>> feedback = new HashMap<>();
 
     ProfessionsScreen() { super(text("title")); }
     private Identifier profession() { return ProgressionData.PROFESSIONS.get(selected); }
@@ -53,8 +54,11 @@ final class ProfessionsScreen extends Screen {
         int tabWidth = (panelWidth - 16) / 4;
         for (int index = 0; index < 4; index++) {
             int tab = index;
-            var button = Button.builder(professionName(ProgressionData.PROFESSIONS.get(index)), b -> { selected = tab; rebuildWidgets(); })
-                    .bounds(left + 8 + index * tabWidth, top + 29, tabWidth - 2, 20).build();
+            var id = ProgressionData.PROFESSIONS.get(index);
+            var button = new MenuArt.IconButton(left + 8 + index * tabWidth, top + 29, tabWidth - 2, 20,
+                    professionName(id), SkillIcons.ui(id.getPath()), b -> { selected = tab; rebuildWidgets(); });
+            button.setTooltip(Tooltip.create(id.equals(ProfessionData.id("crafting"))
+                    ? professionName(id).copy().append("\nEnchant at a table to earn Crafting XP.\nLearn Basic Affix Crafting, then use a Covenant Workbench.\nOrdinary crafting grants no Crafting XP.") : professionName(id)));
             button.active = selected != index;
             addRenderableWidget(button);
         }
@@ -62,23 +66,26 @@ final class ProfessionsScreen extends Screen {
         var layout = new ProfessionTreeLayout(panelWidth - 24, bodyHeight, choices.size());
         for (int index = 0; index < choices.size(); index++) {
             var node = choices.get(index);
-            var button = Button.builder(node.name(), b -> {
-                if (canAdd(node)) { draft().desired.merge(node.id(), 1, Integer::sum); refreshButtons(); }
-            }).bounds(left + 12 + layout.x(index), bodyTop + layout.y(index), layout.width(), layout.height()).build();
+            var button = new ProfessionButton(node, left + 12 + layout.x(index), bodyTop + layout.y(index), layout.width(), layout.height());
             nodes.add(new NodeButton(node, button));
             addRenderableWidget(button);
         }
         apply = addRenderableWidget(Button.builder(text("apply"), b -> {
+            feedback().submit(Map.copyOf(track().ranks()), Map.copyOf(draft().desired), minecraft.level.getGameTime());
             ClientPacketDistributor.sendToServer(new ProfessionNetworking.Apply(profession(), catalogue.revision(),
                     draft().baseline, draft().desired));
+            refreshButtons();
         }).bounds(left + panelWidth - 83, top + panelHeight - 26, 75, 20).build());
         refreshButtons();
     }
+
+    private ApplyFeedback<Map<Identifier, Integer>> feedback() { return feedback.computeIfAbsent(profession(), id -> new ApplyFeedback<>()); }
 
     private void reconcileDrafts() {
         var state = minecraft.player.getData(RpgData.PROFESSIONS);
         for (var id : ProgressionData.PROFESSIONS) {
             var previous = drafts.get(id); var track = state.tracks().get(id);
+            feedback.computeIfAbsent(id, key -> new ApplyFeedback<>()).observe(track.ranks(), minecraft.level.getGameTime());
             if (previous == null || !previous.baseline.equals(track.allocations())) { drafts.put(id, new Draft(track)); }
         }
     }
@@ -104,9 +111,14 @@ final class ProfessionsScreen extends Screen {
             int old = track().rank(node.id());
             entry.button().setMessage(node.name().copy().append("  " + rank + "/" + node.ranks().size() + (rank > old ? " *" : "")));
             // Keep pending ranks hit-testable for undo even when another purchase is blocked.
-            entry.button().active = canAdd(node) || rank > old;
+            entry.button().active = !feedback().waiting();
             var tip = node.name().copy().withStyle(ChatFormatting.GOLD).append("\n").append(node.description().copy().withStyle(ChatFormatting.GRAY));
             tip.append("\n").append(text(node.implemented() ? "implemented" : "planned"));
+            tip.append("\n").append(Component.translatable("ui.covenant.profession_current", old, rank));
+            if (rank < node.ranks().size()) {
+                var next = node.ranks().get(rank);
+                tip.append("\n").append(Component.translatable("ui.covenant.profession_next", rank + 1, next.level(), next.cost()));
+            }
             for (int index = 0; index < node.ranks().size(); index++) {
                 var value = node.ranks().get(index);
                 tip.append("\n").append(text("rank", index + 1, value.level(), value.cost()));
@@ -122,10 +134,11 @@ final class ProfessionsScreen extends Screen {
             nodeTooltips.put(node.id(), tip);
         }
         boolean combat = minecraft.player.getData(RpgData.PROGRESSION_VIEW).inCombat();
-        apply.active = pendingCost() > 0 && !combat && catalogue.revision() > 0;
+        apply.active = pendingCost() > 0 && !combat && catalogue.revision() > 0 && !feedback().waiting();
         apply.setTooltip(Tooltip.create(text(combat ? "combat" : "apply_help")));
     }
     private void undo(ProfessionData.Node node) {
+        if (feedback().waiting()) { return; }
         int current = draft().desired.getOrDefault(node.id(), 0);
         int committed = track().rank(node.id());
         if (current <= committed) { return; }
@@ -142,14 +155,14 @@ final class ProfessionsScreen extends Screen {
                 }
             }
         } while (changed);
-        refreshButtons();
+        feedback().edit(); refreshButtons();
     }
     @Override public void tick() {
         try (var zone = Profiler.get().zone("covenant:professions_screen_tick")) {
             if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
                     || minecraft.level == null || !minecraft.isWindowActive()) { onClose(); return; }
             var view = minecraft.player.getData(RpgData.PROFESSION_VIEW);
-            if (view.revision() != catalogue.revision()) { catalogue = view; drafts.clear(); rebuildWidgets(); return; }
+            if (view.revision() != catalogue.revision()) { catalogue = view; drafts.clear(); feedback.clear(); rebuildWidgets(); return; }
             catalogue = view;
             reconcileDrafts(); refreshButtons();
         }
@@ -167,8 +180,7 @@ final class ProfessionsScreen extends Screen {
     }
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         try (var zone = Profiler.get().zone("covenant:professions_screen")) {
-            graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
-            graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
+            MenuArt.panel(graphics, left, top, panelWidth, panelHeight);
             graphics.centeredText(font, title, left + panelWidth / 2, top + 10, 0xFFF5DBA6);
             var track = track(); var view = catalogue.tracks().get(profession());
             if (view != null) {
@@ -192,7 +204,8 @@ final class ProfessionsScreen extends Screen {
                 }
             }
             if (nodes.isEmpty()) { graphics.centeredText(font, text("loading"), left + panelWidth / 2, bodyTop + 10, 0xFFB6C3D1); }
-            graphics.text(font, text("provisional"), left + 10, top + panelHeight - 20, 0xFFB6C3D1);
+            MenuArt.label(graphics, feedback().state() == ApplyFeedback.State.IDLE ? text("node_help")
+                    : Component.translatable(feedback().key()), left + 10, top + panelHeight - 20, panelWidth - 101, MenuArt.MUTED);
             super.extractRenderState(graphics, mouseX, mouseY, partialTick);
             for (var entry : nodes) {
                 var button = entry.button();
@@ -203,6 +216,41 @@ final class ProfessionsScreen extends Screen {
                     break;
                 }
             }
+        }
+    }
+
+    private final class ProfessionButton extends Button {
+        private final ProfessionData.Node node;
+        ProfessionButton(ProfessionData.Node node, int x, int y, int w, int h) {
+            super(x, y, w, h, node.name(), b -> {
+                if (canAdd(node) && !feedback().waiting()) {
+                    draft().desired.merge(node.id(), 1, Integer::sum); feedback().edit(); refreshButtons();
+                }
+            }, DEFAULT_NARRATION);
+            this.node = node;
+        }
+        @Override protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+            int rank = draft().desired.getOrDefault(node.id(), 0), old = track().rank(node.id());
+            boolean pending = rank > old;
+            int edge = pending ? MenuArt.PENDING : old > 0 ? MenuArt.GOLD : MenuArt.EDGE;
+            g.fill(getX(), getY(), getRight(), getBottom(), 0xFF302D37);
+            g.outline(getX(), getY(), getWidth(), getHeight(), isHoveredOrFocused() ? MenuArt.TEXT : edge);
+            String path = node.id().getPath().substring(node.id().getPath().lastIndexOf('/') + 1);
+            String emblem = switch (path) { case "basic_affix_crafting" -> "basic"; case "focused_recovery" -> "focused"; default -> path; };
+            int iconSize = Math.min(16, getHeight() - 4);
+            if (!SkillIcons.draw(g, SkillIcons.ui(emblem), getX() + 3, getY() + 3, iconSize, -1)) {
+                SkillIcons.draw(g, SkillIcons.ui("unknown"), getX() + 3, getY() + 3, iconSize, -1);
+            }
+            MenuArt.label(g, node.name(), getX() + 22, getY() + 3, getWidth() - 26, MenuArt.TEXT);
+            Component status;
+            if (!node.implemented()) { status = Component.translatable("ui.covenant.state.planned"); }
+            else if (rank >= node.ranks().size()) { status = Component.translatable("ui.covenant.rank_max", rank); }
+            else {
+                var next = node.ranks().get(rank);
+                status = Component.translatable(pending ? "ui.covenant.rank_pending" : canAdd(node) ? "ui.covenant.rank_next" : "ui.covenant.rank_locked",
+                        rank, rank + 1, next.cost(), next.level());
+            }
+            if (getHeight() >= 24) { MenuArt.label(g, status, getX() + 22, getBottom() - 11, getWidth() - 26, edge); }
         }
     }
     @Override public void removed() { drafts.clear(); super.removed(); }

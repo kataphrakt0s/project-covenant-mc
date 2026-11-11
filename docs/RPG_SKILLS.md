@@ -1416,36 +1416,63 @@ particles. Cleave and Arcane Bolt send native swings to the caster and tracking
 players after accepted cast starts/successful execution. Custom character animation
 rigs are outside this scope.
 
-Arcane Bolt uses blue-white magic effects: a brief charge during its existing
-half-second base cast, a sparkling projectile trail, and a small burst on impact.
-These are presentation changes; its existing cast timing and single-hit damage
-behavior are preserved.
+Arcane Bolt uses a pale/violet particle body and a thin geometric filament,
+gathering corner motes during its existing half-second base cast,
+flowing trail wisps and a broken seal on collision. Its small positive-damage
+cross is separate from the collision cue and requires accepted damage, including
+absorption or Covenant shields. Cast timing and single-hit behavior are preserved.
 
-Cleave uses a vanilla-style weapon swing, a brief forward arc, and red sparks
-on enemies hit. The arc follows its 120-degree horizontal targeting within three blocks.
+Cleave uses a vanilla-style weapon swing and one short steel/crimson crescent
+following its 120-degree horizontal targeting within three blocks. The native
+particle's auxiliary values carry actual release yaw/range, with four ticks of
+breakup and no added wind-up. Accepted hits add a compact pale contact cross and
+sparse red sparks. Rend uses a separate compact crimson/steel slash only on an
+accepted target; its shared application helper also serves the circular Rend
+combo opening. Bleeding shares one small mark per target/one-second pulse when
+at least one stack damages health, absorption or Covenant shields. Blocked pulses
+and absent/offline ticking do not generate marks; there is no repeated bleed audio.
 
 Piercing Shot uses the vanilla bow-charge animation for six game ticks (0.3 seconds
-at 20 TPS), a thin yellow-white arrow trail, and a small impact spark.
+at 20 TPS), a narrow motion-aligned ivory/gold streak, and small collision dust.
+Accepted damaging contacts receive the separate compact pale cross; a collision
+alone does not confirm damage.
 The trail stays subtle to preserve aim
 visibility. Activation remains instant, with no added draw time.
 The short draw is cosmetic in first and third person: it does not start actual
 item use, change movement, or call vanilla bow release. Real item use takes priority.
 
 Native particles respect each client's particle settings and normal tracking/view
-distance. Arcane Bolt keeps its existing amethyst-shard core with a blue-white
-particle trail. Charge particles follow the pending server cast and stop when it
+distance. Arcane/Fire/Ice use narrow, untextured, travel-aligned geometric filaments
+with tiny end caps for Minimal visibility; their main body is moving particles.
+No item model is rendered and no gameplay item or server component is added.
+Fire has crimson flame wisps and rising embers; Ice has pale-blue energy wisps
+and sparse fractures. Trails emit at most fifteen energy particles per tick plus
+two elemental accents every other tick. Their two-to-seven-tick native sprite
+particles shrink, drift and fade, without bloom or world lighting. The existing
+elemental collision packets each produce at most eleven local breakup particles.
+Original and vanilla particle sprite lists use native providers and finite lifetimes;
+they are decorative and may disappear on Minimal. Charge particles follow the pending server cast and stop when it
 ends or is canceled. Impact bursts occur on projectile collisions; Cleave's hit
 sparks require an accepted damage call. Trails are generated locally on clients
 from tracked projectile movement, without per-tick trail packets or world scans.
-Lightning sends one dimension-scoped endpoint payload per beam segment to nearby
-players; clients generate the bounded spark samples. The skills channel registers
+Lightning sends one dimension-scoped endpoint payload per real link to nearby
+players. Clients generate at most 64 short jagged 3D strip segments per link,
+preserving both endpoints and keeping interior deviations under .079 blocks.
+Only real Shock-selected links branch to other targets. Four-tick thread sprites
+flicker and shed at most sixteen short electric-blue sparks per link. They follow
+native particle settings and depth tests; no decorative offshoot or invented
+damage target is added. Only actual main-ray collisions/real chain endpoints
+receive a small electrical breakup burst; accepted damage gets a separate contact cross.
+The skills channel registers
 this cosmetic payload alongside the existing skill/dash messages. Damage and target
 selection remain server-owned; the visual message cannot activate a skill.
 
 `covenant:skill_shot` is an unsaved, tracking-synced boolean attachment marking
 skill arrows for visuals only. Ordinary arrows are unaffected. Its trail stops
-on a terminal/block impact or after five seconds; the native arrow itself retains
-its normal lifecycle. Unloading/reloading an arrow does not retain this cosmetic
+on block impact, native entity removal, stationary motion or after five seconds.
+Entity-impact events run before native damage, so cosmetic style remains through
+that call for accepted-hit art. The native arrow retains its normal lifecycle.
+Unloading/reloading an arrow does not retain this cosmetic
 marker. Removing it never changes skill damage classification, outgoing Rage
 eligibility, or committed Enchanting behavior.
 
@@ -1480,15 +1507,19 @@ in the client; no new audio assets or repeating sound loops are introduced.
   blocks to avoid overlapping duplicates. Buff activations use brief recipient
   particles matching their element or class; passive refreshes remain quiet.
 
-Fire, Ice, Lightning and Arcane use distinct cast particles. Fire/Ice trails and
-impacts add small flame/snowflake accents. Arcane Arrow uses blue magic accents,
-Aimed Shot adds a brief critical-impact accent, and Multishot uses fewer particles
-per arrow. Rip and Rush's circular stages show a full circle; Cleave and Lunging
+Fire, Ice, Lightning and Arcane use distinct original cast/trail/collision sprites.
+Aimed Shot has gathering brackets only during its actual wind-up and a narrow
+paired ivory/gold streak; cancellation stops gathering without a release.
+Arcane Arrow uses pale/violet geometry and a distinct accepted-hit cross, sharing
+the broken collision seal with Arcane Bolt. Multishot uses one small two-tick streak
+per actual arrow/tick and one quiet collision mote per arrow; its entire fan shares
+one release sound. Accepted arrow damage alone adds contact art. Rip and Rush's
+circular stages show a full circle; Cleave and Lunging
 Combo's frontal finisher retain their forward arc.
 
 `covenant:skill_shot_style` supplements the existing cosmetic arrow marker:
 0 = Piercing/default, 1 = Aimed, 2 = Arcane, 3 = Multishot. It is tracking-synced,
-never saved, and clears with the marker on terminal impacts. Saved projectile
+never saved, and clears with the marker on block impacts/native removal. Saved projectile
 provenance remains independent. Skills network revision **6** requires matching
 clients for cosmetic arrow styles and the buff display below. Damage, costs,
 cooldowns, cast timing and movement are unchanged by the presentation passes.
@@ -1501,7 +1532,11 @@ not audible quality or rendered readability.
 
 ### Status icons, aura outlines and trap models
 
-The top-left status HUD uses native Minecraft item and effect icons. Open combos
+The top-left status HUD uses original 16x16 Covenant icons shared with the tree
+and bindings. Solid/hollow marks distinguish active versus passive/reserve state.
+Hidden native Rooted/Chilled effects get owner tiles with real remaining durations;
+synced freeze has no invented countdown. Visible native potion tiles are not
+duplicated. Open combos
 show stage/timer indicators; Discharge shows fire/ice/lightning charge counts;
 Threefold shows reserve percentages or active damage bonuses plus remaining time.
 Received aura passives and activations, Battle Cry, Fortitude shield capacity,
@@ -1737,7 +1772,7 @@ stat system. Effective capacities and recovery rates are never saved as characte
 | `covenant:rend` | Reaver | 20 Rage | 2 s | Instant | Strike the crosshair target within native held-item melee reach for effective attack damage; damaging hits apply one 5-second bleed stack at 10% captured attack damage per second. |
 | `covenant:lunging_combo` | Reaver | 20 / 10 / 20 Rage | 12 s from combo end | Lunge, then instant attacks | Four-block/three-tick lunge, 125% single-target strike, then three-block/120-degree 100% cleave and shared armor shred. Fixed 2 s / 3 s follow-up windows. |
 | `covenant:rip_and_rush` | Reaver | 30 / 20 / 20 Rage | 20 s from combo end | Instant areas, with dash | Three-block circular Rend, six-block/four-tick 50% dash and shared shred, then circular 100% finisher consuming shared bleeds for +10% base speed per enemy (max +30%) for four base seconds. |
-| `covenant:arcane_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Fire a straight amethyst-rendered projectile; one collision deals 6 attributed indirect-magic damage. |
+| `covenant:arcane_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Fire a straight pale/violet energy projectile; one collision deals 6 attributed indirect-magic damage. |
 | `covenant:fire_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Straight single-hit projectile; 6 fire damage and 4 seconds of native burning. |
 | `covenant:ice_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Straight single-hit projectile; 6 ice damage and 30% Chilled movement slow for 3 seconds. |
 | `covenant:lightning_bolt` | Weaver | 20 Mana | 2 s | 0.5 s | Instant aimed hit after the cast, up to 24 blocks, stopping at the first eligible enemy or solid block; 6 damage with no status. |
@@ -1841,7 +1876,10 @@ timers snapshot at start; resource availability is revalidated at completion.
 Commands and skill-slot requests share activation. There are no client-provided
 costs, timings, target IDs, or damage values. Successful
 use, pending casts, restrictions, missing equipment/targets, resources, and cooldowns
-produce chat feedback. `/covenant skill` shows effective costs/times and remaining
+produce native action-bar feedback. Cast completion/cancellation, binding and
+Apply also use server-owned action-bar messages; commands keep native routing.
+Apply screens confirm matching synced ranks, with a five-second unconfirmed
+timeout and no speculative success. `/covenant skill` shows effective costs/times and remaining
 cooldowns; `/covenant resource` shows every balance, maximum, recovery and active class.
 
 Learn/bind/use packets pass a separate unsaved per-player ingress budget before
@@ -2009,7 +2047,8 @@ Retained-world restart, rendered feedback and live multiplayer remain manual.
    resource attributes without an authored affix family use `stats set`.
 6. Reaver Rend: learn and bind Rend, seed Rage if needed, and strike the enemy
    under the crosshair at ordinary melee reach. Confirm the instant initial hit,
-   20 Rage cost, two-second cooldown, and small red bleed particles once per second.
+   20 Rage cost, two-second cooldown, single-target slash and one quiet bleed mark
+   per accepted target pulse each second, independent of stack count.
    Reapply to reach three stacks, then stop: stacks should expire five seconds
    after the last application. Misses, walls, and out-of-reach targets spend nothing;
    blocked/dodged strikes spend but cannot apply or refresh bleeding. Try a weapon

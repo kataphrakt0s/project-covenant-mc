@@ -1,11 +1,11 @@
 package dev.covenant.client;
 
 import dev.covenant.rpg.skills.LightningVisual;
-import net.minecraft.core.particles.ParticleTypes;
+import dev.covenant.rpg.skills.CombatParticles;
 import net.minecraft.util.profiling.Profiler;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 
-/** Client-only beam sampling keeps particle count bounded without one server packet per spark. */
+/** One bounded jagged stroke per authoritative link, using the existing dimension-scoped endpoints. */
 final class ClientSkillVisuals {
     private ClientSkillVisuals() {}
 
@@ -14,14 +14,21 @@ final class ClientSkillVisuals {
             try (var zone = Profiler.get().zone("covenant:lightning_visuals")) {
                 var level = context.player().level();
                 if (!level.dimension().identifier().equals(beam.dimension())) { return; }
-                var delta = beam.end().subtract(beam.start());
-                int count = Math.min(96, Math.max(1, (int) Math.ceil(delta.length() * 4)));
-                for (int i = 0; i <= count; i++) {
-                    var pos = beam.start().add(delta.scale((double) i / count));
-                    level.addParticle(ParticleTypes.ELECTRIC_SPARK,
-                            pos.x + level.getRandom().nextGaussian() * .025,
-                            pos.y + level.getRandom().nextGaussian() * .025,
-                            pos.z + level.getRandom().nextGaussian() * .025, 0, 0, 0);
+                var points = LightningPath.points(new LightningPath.Point(beam.start().x, beam.start().y, beam.start().z),
+                        new LightningPath.Point(beam.end().x, beam.end().y, beam.end().z));
+                for (int i = 1; i < points.size(); i++) {
+                    var a = points.get(i - 1); var b = points.get(i);
+                    if (a.equals(b)) { continue; }
+                    level.addParticle(CombatParticles.LIGHTNING_THREAD.get(),
+                            (a.x() + b.x()) * .5, (a.y() + b.y()) * .5, (a.z() + b.z()) * .5,
+                            b.x() - a.x(), b.y() - a.y(), b.z() - a.z());
+                    // At most sixteen sparks per link, attached to the real path rather than new branches.
+                    if (i % 4 == 0) {
+                        level.addParticle(CombatParticles.ELECTRIC_ENERGY.get(), a.x(), a.y(), a.z(),
+                                (level.getRandom().nextDouble() - .5) * .1,
+                                (level.getRandom().nextDouble() - .5) * .1,
+                                (level.getRandom().nextDouble() - .5) * .1);
+                    }
                 }
             }
         });

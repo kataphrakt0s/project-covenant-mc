@@ -43,8 +43,8 @@ Owner-synced crop targets let the client consume the hoe action without a second
 offhand use; gameplay remains server-owned (profession protocol revision 4).
 Other gathering abilities remain deferred. The shared, persistent Covenant Workbench
 now supports Add/Upgrade/Reroll/Remove and ten-input/twelve-output salvage,
-Crafting access/XP, and Recovery/Focused Recovery. It uses a netherite-block
-placeholder model and the agreed ungated recipe. See [ITEMIZATION.md](docs/ITEMIZATION.md).
+Crafting access/XP, and Recovery/Focused Recovery. It uses an original stone
+ritual-station model and the agreed ungated recipe. See [ITEMIZATION.md](docs/ITEMIZATION.md).
 Additional profession-level recipe milestones are outside the
 progression slice; Workbench and respec recipes remain ungated. See
 [PROFESSIONS.md](docs/PROFESSIONS.md) and
@@ -336,9 +336,10 @@ The current class's resource HUD stays visible above hunger, including at full o
 empty resource and outside combat: red Rage, blue Mana, yellow Focus, with centered
 current/maximum values. It follows normal F1 visibility, reads existing synced state,
 and reserves space for air/mount indicators above it. Existing skills have native
-hand swings and bounded particle effects: blue-white Arcane Bolt charge/trail/impact,
-forward Cleave sweep with red hit sparks, and a subtle yellow-white Piercing Shot
-trail/impact. A transient, tracking-synced arrow marker owns only the shot's visuals.
+hand swings and bounded original pixel effects: pale/violet Arcane, ember Fire,
+fractured Ice, real-link ivory/gold Lightning, a frontal Cleave crescent and
+distinct precision/magical/fan arrow streaks. Collision and accepted-damage marks
+are separate. A transient, tracking-synced arrow marker owns only shot visuals.
 Piercing Shot uses a six-tick cosmetic vanilla bow charge in first/third person,
 with a transient synced deadline and client render hooks rather than actual item use.
 Saved resources/loadouts and gameplay rules are unchanged. Rendered HUD/effect
@@ -353,9 +354,9 @@ styles are transient and tracking-synced. A second pass adds top-left native
 icons for combos, Discharge, Threefold and received buffs, replacing the old
 status text above hunger. Buff receipts/timers are unsaved owner-only snapshots
 updated at existing transitions (skills network revision 6). Slotted area auras
-show one merged, local-owner six-block dust outline; self-only auras have no
+show one merged, local-owner six-block supported outline; self-only auras have no
 false radius. The bounded ring follows movement, cleans up on unslotting and
-lifecycle changes, and respects particle settings. Traps now use grounded native
+lifecycle changes, and remains visible on Minimal. Traps now use grounded native
 block models with a small tumble during flight; spent cores disappear when an
 area patch triggers. Saved state and combat tuning are unchanged. Listening and
 rendered readability remain user playtesting work; progression/Workbench feedback
@@ -367,6 +368,46 @@ remains a later pass. See
 
 - Working title: Project Covenant; mod ID: `covenant`.
 - Developer: `kataphrakt0s`.
+- Art correction (2026-11-10): the user finds the overall art too desaturated
+  and realistic and wants bolder, more cohesive dark fantasy. Wolf and traps
+  are accepted anchors; all other art is eligible for eventual redesign.
+  [Art Reference Studies](<Project-Covenant/Art Reference Studies.md>) tracks
+  reference comparisons. FurfSky's strong silhouettes are approved as a reference;
+  darker black/purple/red/grey treatments are favoured, while much of its flashy
+  neo-fantasy styling is unsuitable. Use these qualities selectively for a dark
+  gothic identity. Combine forged equipment/cathedral ironwork with cursed
+  relics/ritual objects/occult symbols according to asset context; neither
+  vocabulary is mandatory everywhere. Exact palettes and family designs remain
+  open. This supersedes earlier subtle/restrained aesthetic wording below.
+- Icon follow-up: review individually for descriptive player meaning; keep
+  silhouettes close to vanilla Minecraft items/icons. Recognizability takes
+  priority over unique forged/relic shapes. Gothic colour and interior detail
+  remain; the workbench is acceptable for now. See Art Direction's icon correction.
+- The user subsequently authorized the remaining catalogue in small batches,
+  asking for direction on unclear icons. A 60-texture pass is implemented for
+  review at `.local/catalogue-review/index.html`; authoritative source is
+  `models/gothic_rework/catalogue.py`, integrated into the usual icon/material
+  rebuild. Six approved skills and all other resources are preserved. Icy Veins
+  uses the user-selected pale-blue hourglass. The prior single Movement Speed
+  boot is preserved and reused for movement effects. New drafts are not approved.
+  Review corrections restore the prior Ice/Arcane Bolt icons and cores, use the
+  classic circular bear trap for Rooted, and assign hourglass to cooldown and clock to
+  duration. Rooted's icon need not match the trap model or skill icon.
+  Flame Cloak is a cloth cloak with crimson flames along its hem.
+- Runtime handoff (2026-11-10): the user requested packaging all implemented
+  polish, including the latest catalogue corrections, into the built JAR before
+  continuing the roadmap. These assets already live in runtime resources; no
+  separate preview-to-runtime copy is required. No design decision blocks this
+  build. Packaging does not imply final visual acceptance of the catalogue drafts.
+  Phase 6 onward remains follow-up work; see `docs/VALIDATION.md` for build evidence.
+- Runtime gothic rework: 129 textures, distinct relic components, crimson/violet
+  menu framing and an eight-cuboid workbench altar are implemented for client
+  review. User-selected elemental colours are occult crimson fire, pale blue
+  ice and electric blue lightning. Wolf/trap device assets are preserved; Flame
+  Trap feedback follows the crimson palette. Native burning remains vanilla.
+  Pixel sources: ignored `models/gothic_rework/` plus existing combat sprite
+  sources; altar: `models/ritual_workbench/workbench.bbmodel`. Local review:
+  `.local/gothic-rework/review.html`. All existing gameplay/ID contracts remain.
 - Visual direction accents vanilla Minecraft with dark fantasy/gothic-lite
   character, occult imagery and magical spectacle: Minecraft with an ancient,
   forgotten supernatural history. Stalker traps are crafted hunting devices
@@ -499,6 +540,60 @@ other floors. Modest root/freeze/chill cues reuse synced target state. Flame has
 a natural-expiry-only extinguish cue. These are presentation changes; gameplay
 dimensions, damage, timing, ownership and cleanup contracts stay unchanged.
 Minecraft appearance and overlap-scene performance remain unverified.
+
+Phase 3's reference batch now establishes an original pale-core,
+lavender/violet Arcane Bolt (palette approved by the user), a steel/crimson
+120-degree Cleave crescent and a narrow motion-aligned Piercing Shot streak, with
+three original tree icons. Collision and accepted-damage marks are distinct;
+the latter requires positive damage including absorption/shields. Five short-lived
+native particle types established that reference batch. Phase 3 now extends through
+original Fire/Ice cores and cast/trail/collision sequences, bounded jagged Lightning
+links, Aimed Shot gathering during its real wind-up, violet Arcane Arrow contact,
+restrained five-arrow Multishot and single-target Rend/aggregate bleed-pulse marks.
+Ten Phase 3 skill icons join the four trap icons. The user rejected floating-item
+bolt cores on 2026-11-10: particles now supply crimson Fire, pale-blue Ice and
+violet Arcane bodies, with only narrow travel-aligned geometric filaments for
+Minimal visibility. Lightning flickers and sheds electric-blue sparks; elemental
+collisions disperse into energy particles. Twenty-three short-lived native
+particle types respect decorative settings. The old item art remains independent
+of projectile rendering. No new custom payload, saved IDs or gameplay rules.
+The existing lightning payload supplies exact endpoints; ornament never invents
+chain targets. Cosmetic arrow styles survive the pre-damage entity collision hook
+until native removal, and clear immediately on block impact. Accepted bleed stacks
+share one quiet cue per target/pulse. Minecraft appearance review remains pending.
+
+Phase 4 shares original icons across tree, bindings and top-left status, plus
+stone/iron menu framing, profession emblems/current-next costs, visible class
+previews with explicit permanent choice, grouped Stats with an optional precise
+breakdown, and radial emblems/discovery hints. The first abstract icon study was
+rejected; the recognizable-object redraw awaits user art acceptance. Locked and
+planned nodes remain inspectable only. Apply confirms matching synced ranks,
+with honest conflict/timeout states and independent profession-tab submissions.
+Existing native server action-bar messages replace repeated skill-key/cast/Apply
+chat; commands keep native routing. Root/chill tiles read hidden native effects;
+freeze reads synced state without inventing an expiry or duplicating native
+potion tiles. Resource/XP positions and F1 remain. No new custom payload, saved
+IDs, skill bar or gameplay rules. Sources are ignored models/ui_phase4; preview
+is ignored .local/phase4/icons-v2.png. Minecraft appearance remains unverified.
+
+Phase 5 replaces the Workbench placeholder with a stone ritual station, the
+user's chosen direction, retaining full-block collision and no facing property.
+Direct operation buttons and paged native family/rarity/target choices use
+token-bound server intent. Structured costs, Potential before/after, possible
+roll ranges and rejection reasons are separate from full paged details; the
+client does not parse previews or roll outcomes. Workbench protocol is now 4.
+Only the acting player's accepted transaction gets a receipt and one quiet sound;
+stale/failed requests show no success. Shared storage and native slots remain.
+Original respec icons and ten component family marks use existing item IDs.
+Component-driven rarity pips and generic unknown-entry fallbacks require no new
+saved data. Equipment tooltips group rarity/Potential and compact tier/value lines.
+Actual earned character/profession levels and the first-Wither award emit one
+owner overlay/sound per award, including multi-level awards; sync/reload does not.
+Crafting hints describe enchanting then Basic Affix Crafting. Gathering keeps
+native cues; replant supply shortages get one accurate aggregate overlay, without
+mislabeling denied placement or failed harvests. Thin XP/resource HUDs are intact.
+Sources/previews are ignored `models/ritual_workbench/` and `.local/phase5/`.
+Minecraft rendering, usability, audio balance and new art acceptance remain manual.
 
 The user handles manual client playtesting. Routine agent work ends after
 implementation and appropriate automated checks, with a short handoff of relevant

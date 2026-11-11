@@ -46,6 +46,7 @@ final class SkillsScreen extends Screen {
     private java.util.Map<net.minecraft.resources.Identifier, Integer> baseline;
     private java.util.Map<net.minecraft.resources.Identifier, Integer> draft;
     private Button apply;
+    private final ApplyFeedback<java.util.Map<net.minecraft.resources.Identifier, Integer>> feedback = new ApplyFeedback<>();
 
     SkillsScreen() { super(text("title")); }
 
@@ -64,10 +65,16 @@ final class SkillsScreen extends Screen {
         int tabX = left + panelWidth - 85;
         addTab("tree_tab", tabX, top + 43, false);
         addTab("bindings_tab", tabX, top + 68, true);
+        if (currentClass == null) {
+            addRenderableWidget(Button.builder(Component.translatable("screen.covenant.stats.title"), b -> minecraft.setScreen(new StatsScreen()))
+                    .bounds(tabX, top + 96, 77, 20).build());
+        }
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
                 .bounds(tabX, top + panelHeight - 51, 77, 20).build());
         apply = addRenderableWidget(Button.builder(Component.literal("Apply"), b -> {
+            feedback.submit(baseline, java.util.Map.copyOf(draft), minecraft.level.getGameTime());
             ClientPacketDistributor.sendToServer(new SkillNetworking.Apply(baseline, draft));
+            refresh();
         }).bounds(tabX, top + panelHeight - 27, 77, 20).build());
         if (baseline == null || !baseline.equals(loadout().ranks())) {
             baseline = loadout().ranks(); draft = new java.util.HashMap<>(baseline);
@@ -95,15 +102,15 @@ final class SkillsScreen extends Screen {
 
     private void initBindings() {
         bindingChoices = SkillTree.forClass(currentClass).stream().filter(n -> loadout().learned().contains(n.id())).toList();
-        int pickerWidth = Math.max(72, viewWidth / 2 - 5);
+        int pickerWidth = Math.max(68, viewWidth / 3);
         int rows = Math.max(1, (viewHeight - 17) / 24);
         bindingScroll = Math.clamp(bindingScroll, 0, Math.max(0, bindingChoices.size() - rows));
         for (int i = bindingScroll; i < Math.min(bindingChoices.size(), bindingScroll + rows); i++) {
             var node = bindingChoices.get(i);
-            var button = Button.builder(node.displayName(), b -> { selected = node; rebuildWidgets(); })
-                    .bounds(viewLeft, viewTop + 17 + (i - bindingScroll) * 24, pickerWidth, 22)
-                    .tooltip(Tooltip.create(nodeTooltip(node))).build();
-            button.setFGColor(node == selected ? 0xFFF5DBA6 : 0xFFE2E8ED);
+            var button = new MenuArt.IconButton(viewLeft, viewTop + 17 + (i - bindingScroll) * 24, pickerWidth, 22,
+                    selected == node ? Component.literal("> ").append(node.displayName()) : node.displayName(),
+                    node.id(), b -> { selected = node; rebuildWidgets(); });
+            button.setTooltip(Tooltip.create(nodeTooltip(node)));
             addRenderableWidget(button);
         }
         int slotX = viewLeft + pickerWidth + 8;
@@ -111,12 +118,8 @@ final class SkillsScreen extends Screen {
         int rowHeight = Math.max(23, Math.min(43, (viewHeight - 17) / 4));
         for (int slot = 0; slot < SkillLoadout.SLOT_COUNT; slot++) {
             final int index = slot;
-            var button = Button.builder(Component.empty(), b -> {
-                if (selected != null && loadout().learned().contains(selected.id())) {
-                    ClientPacketDistributor.sendToServer(new SkillNetworking.Bind(index, Optional.of(selected.id())));
-                }
-            }).bounds(slotX + (slot % 2) * slotWidth, viewTop + 17 + (slot / 2) * rowHeight,
-                    slotWidth - 3, rowHeight - 3).build();
+            var button = new BindingButton(index, slotX + (slot % 2) * slotWidth, viewTop + 17 + (slot / 2) * rowHeight,
+                    slotWidth - 3, rowHeight - 3);
             slots.add(addRenderableWidget(button));
         }
     }
@@ -125,8 +128,11 @@ final class SkillsScreen extends Screen {
 
     private void refresh() {
         var state = loadout();
+        feedback.observe(state.ranks(), minecraft.level.getGameTime());
         if (!state.ranks().equals(baseline)) { baseline = state.ranks(); draft = new java.util.HashMap<>(baseline); }
-        apply.active = !draft.equals(baseline) && !minecraft.player.getData(RpgData.PROGRESSION_VIEW).inCombat();
+        boolean combat = minecraft.player.getData(RpgData.PROGRESSION_VIEW).inCombat();
+        apply.active = !draft.equals(baseline) && !combat && !feedback.waiting();
+        apply.setTooltip(Tooltip.create(Component.translatable(combat ? "ui.covenant.combat" : "ui.covenant.apply_help")));
         int level = PlayerProfiles.get(minecraft.player).level();
         if (state.equals(previous) && level == previousLevel && draft.equals(previousDraft)) { return; }
         previousLevel = level;
@@ -139,8 +145,10 @@ final class SkillsScreen extends Screen {
             button.learned = pending.rank(node.id()) > 0;
             boolean enabled = canAdd(node);
             button.locked = !enabled;
-            // Native hit-testing ignores inactive widgets, including our right-click undo.
-            button.active = enabled || draft.getOrDefault(node.id(), 0) > baseline.getOrDefault(node.id(), 0);
+            // Locked/planned nodes remain focusable for inspection; purchase is guarded in onPress.
+            button.active = true;
+            button.setMessage(node.displayName().copy().append(" · ").append(nodeState(node))
+                    .append(" · " + draft.getOrDefault(node.id(), 0) + "/" + node.availableMaximum()));
             button.setTooltip(Tooltip.create(nodeTooltip(node)));
         }
         for (int i = 0; i < slots.size(); i++) {
@@ -162,6 +170,10 @@ final class SkillsScreen extends Screen {
                 ? " · Rank " + draft.getOrDefault(node.id(), 0) + "/" + node.availableMaximum() + " (planned " + node.plannedMaximum() + ")"
                 : " · Rank cap TBD"));
         int pending = draft.getOrDefault(node.id(), 0) - baseline.getOrDefault(node.id(), 0);
+        tip.append("\n").append(nodeState(node));
+        loadout().bindings().forEach((slot, id) -> {
+            if (id.equals(node.id())) { tip.append("\n").append(Component.translatable("ui.covenant.assigned", SkillKeyMappings.label(slot))); }
+        });
         if (pending > 0) { tip.append("\nPending: +" + pending).withStyle(ChatFormatting.AQUA); }
         if (node.availableMaximum() == 8) { tip.append("\n+2% launch velocity per rank after Rank 1; native impact damage scales with speed."); }
         node.prerequisite().ifPresent(id -> tip.append("\n").append(text("requires", SkillTree.find(id).orElseThrow().displayName())));
@@ -180,6 +192,7 @@ final class SkillsScreen extends Screen {
     }
 
     private void removePending(SkillTree.Node node) {
+        if (feedback.waiting()) { return; }
         int rank = draft.getOrDefault(node.id(), 0);
         if (rank <= baseline.getOrDefault(node.id(), 0)) { return; }
         if (rank == 1) { draft.remove(node.id()); } else { draft.put(node.id(), rank - 1); }
@@ -193,7 +206,7 @@ final class SkillsScreen extends Screen {
                 }
             }
         } while (changed);
-        refresh();
+        feedback.edit(); refresh();
     }
 
     @Override public void tick() {
@@ -250,11 +263,11 @@ final class SkillsScreen extends Screen {
 
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         try (var zone = Profiler.get().zone("covenant:skills_screen")) {
-            graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xF018202B);
-            graphics.outline(left, top, panelWidth, panelHeight, 0xFF8E7851);
+            MenuArt.panel(graphics, left, top, panelWidth, panelHeight);
             graphics.centeredText(font, title, left + panelWidth / 2, top + 8, 0xFFF5DBA6);
             graphics.centeredText(font, currentClass == null ? text("no_class") : currentClass.displayName(),
                     left + panelWidth / 2, top + 24, 0xFFE2E8ED);
+            if (currentClass != null) { SkillIcons.draw(graphics, SkillIcons.ui(currentClass.id().getPath()), left + 9, top + 16, 16, -1); }
             graphics.fill(viewLeft, viewTop, viewLeft + viewWidth, viewTop + viewHeight, 0xFF0F1620);
             if (!bindingsTab) { extractTree(graphics); }
             else {
@@ -266,12 +279,46 @@ final class SkillsScreen extends Screen {
             super.extractRenderState(graphics, mouseX, mouseY, partialTick);
             int remaining = PlayerProfiles.get(minecraft.player).level() - draft.values().stream().mapToInt(Integer::intValue).sum();
             var hint = currentClass == null ? text("choose_class") : bindingsTab ? text("binding_help")
-                    : Component.literal(remaining + " points · Click to draft upgrades. Apply out of combat.");
+                    : Component.translatable("ui.covenant.skill_points", remaining,
+                            draft.values().stream().mapToInt(Integer::intValue).sum() - loadout().spent());
+            if (feedback.state() != ApplyFeedback.State.IDLE) { hint = Component.translatable(feedback.key()); }
             int hintY = top + panelHeight - (bindingsTab ? 47 : 23);
             var lines = font.split(hint, viewWidth - 4);
             for (int i = 0; i < Math.min(lines.size(), 2); i++) {
                 graphics.text(font, lines.get(i), viewLeft + 2, hintY + i * 10, 0xFFB6C3D1);
             }
+        }
+    }
+
+    private Component nodeState(SkillTree.Node node) {
+        String state = !node.implemented() ? "planned"
+                : draft.getOrDefault(node.id(), 0) > baseline.getOrDefault(node.id(), 0) ? "pending"
+                : baseline.containsKey(node.id()) ? "learned" : canAdd(node) ? "available" : "locked";
+        return Component.translatable("ui.covenant.state." + state);
+    }
+
+    private final class BindingButton extends Button {
+        private final int slot;
+        BindingButton(int slot, int x, int y, int w, int h) {
+            super(x, y, w, h, Component.empty(), b -> {
+                if (selected != null && loadout().learned().contains(selected.id())) {
+                    ClientPacketDistributor.sendToServer(new SkillNetworking.Bind(slot, Optional.of(selected.id())));
+                }
+            }, DEFAULT_NARRATION);
+            this.slot = slot;
+        }
+        @Override protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+            g.fill(getX(), getY(), getRight(), getBottom(), 0xFF35323E);
+            g.outline(getX(), getY(), getWidth(), getHeight(), isHoveredOrFocused() ? MenuArt.GOLD : MenuArt.EDGE);
+            // Keys get the whole first line; skill art/name get the second line. Narration/tooltips retain both in full.
+            MenuArt.label(g, SkillKeyMappings.label(slot), getX() + 3, getY() + 2, getWidth() - 6, MenuArt.GOLD);
+            var id = loadout().bindings().get(slot);
+            var node = id == null ? null : SkillTree.find(id).orElse(null);
+            boolean local = node != null && node.playerClass() == currentClass;
+            int size = Math.min(16, getHeight() - 13);
+            SkillIcons.draw(g, local ? id : SkillIcons.ui("unknown"), getX() + 3, getY() + 12, size, -1);
+            MenuArt.label(g, id == null ? text("empty") : local ? node.displayName() : text("other_class"),
+                    getX() + Math.max(0, size) + 6, getY() + 12, getWidth() - Math.max(0, size) - 9, MenuArt.TEXT);
         }
     }
 
@@ -310,7 +357,7 @@ final class SkillsScreen extends Screen {
         private NodeButton(SkillTree.Node node) {
             super(nodeX(node), nodeY(node), treeLayout.nodeSize(), treeLayout.nodeSize(), node.displayName(), b -> {
                 selected = node;
-                if (canAdd(node)) { draft.merge(node.id(), 1, Integer::sum); refresh(); }
+                if (canAdd(node) && !feedback.waiting()) { draft.merge(node.id(), 1, Integer::sum); feedback.edit(); refresh(); }
             }, DEFAULT_NARRATION);
             this.node = node;
             var words = node.displayName().getString().split(" ");
@@ -325,12 +372,36 @@ final class SkillsScreen extends Screen {
             if (isHoveredOrFocused() || selected == node) {
                 graphics.outline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, 0xFFF5DBA6);
             }
-            if (SkillIcons.draw(graphics, node.id(), getX() + 3, getY() + 3, getWidth() - 6,
-                    locked && !learned ? 0xFF8997A5 : 0xFFFFFFFF)) { return; }
+            boolean art = SkillIcons.draw(graphics, node.id(), getX() + 2, getY() + 2, getWidth() - 4,
+                    locked && !learned ? 0xFF8997A5 : 0xFFFFFFFF);
             // Unauthored skills retain initials; names and rules remain in hover/focus tooltips.
             String label = font.width(initials) <= getWidth() - 4 ? initials : initials.substring(0, 1);
-            graphics.centeredText(font, label, getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2,
-                    learned ? 0xFFF5DBA6 : locked ? 0xFF77828E : 0xFFE2E8ED);
+            if (!art) { graphics.centeredText(font, label, getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2,
+                    learned ? 0xFFF5DBA6 : locked ? 0xFF77828E : 0xFFE2E8ED); }
+            // Fixed corner shapes survive tiny nodes. Full state/rank/binding is in the focus tooltip.
+            boolean pending = draft.getOrDefault(node.id(), 0) > baseline.getOrDefault(node.id(), 0);
+            String badge = !node.implemented() ? "…" : pending ? "*" : learned ? Integer.toString(draft.get(node.id())) : locked ? "-" : "+";
+            if (getWidth() >= 18) { MenuArt.badge(graphics, badge, getRight() - 1, getBottom() - 9, border); }
+            else {
+                int x = getRight() - 5, y = getBottom() - 6;
+                graphics.fill(x - 1, y - 1, getRight() - 1, getBottom() - 1, 0xF0101017);
+                if (!node.implemented()) {
+                    for (int i = 0; i < 3; i++) { graphics.fill(x + i * 2 - 1, y + 3, x + i * 2, y + 4, MenuArt.MUTED); }
+                } else if (pending) {
+                    graphics.fill(x, y + 2, x + 3, y + 3, MenuArt.PENDING);
+                    graphics.fill(x + 1, y + 1, x + 2, y + 4, MenuArt.PENDING);
+                } else if (learned) {
+                    graphics.fill(x, y + 2, x + 1, y + 3, MenuArt.GOLD);
+                    graphics.fill(x + 1, y + 3, x + 2, y + 4, MenuArt.GOLD);
+                    graphics.fill(x + 2, y + 1, x + 3, y + 3, MenuArt.GOLD);
+                } else if (locked) {
+                    graphics.outline(x, y, 3, 4, MenuArt.MUTED);
+                    graphics.fill(x - 1, y + 2, x + 4, y + 5, MenuArt.MUTED);
+                } else { graphics.outline(x, y + 1, 3, 3, MenuArt.TEXT); }
+            }
+            if (loadout().bindings().containsValue(node.id())) {
+                graphics.fill(getX() + 1, getY() + 1, getX() + 4, getY() + 3, MenuArt.TEXT);
+            }
         }
     }
 

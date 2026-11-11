@@ -73,19 +73,36 @@ public final class Workbench {
     }
     private static void tooltip(ItemTooltipEvent event) {
         var stack = event.getItemStack(); var quality = stack.get(QUALITY.get());
-        if (quality != null) { event.getToolTip().add(Component.literal(name(quality.rarity()) + " · Potential " + quality.potential()).withStyle(color(quality.rarity()))); }
+        if (stack.is(dev.covenant.rpg.progression.CombatRespecItem.ITEM.get())) {
+            event.getToolTip().add(Component.literal("Hold use for 2 seconds out of combat.").withStyle(ChatFormatting.GRAY));
+            event.getToolTip().add(Component.literal("Refunds combat skills and clears bindings; keeps level and XP.").withStyle(ChatFormatting.GRAY));
+        } else if (stack.is(dev.covenant.rpg.progression.ProfessionRespecItem.ITEM.get())) {
+            event.getToolTip().add(Component.literal("Hold use for 2 seconds out of combat.").withStyle(ChatFormatting.GRAY));
+            event.getToolTip().add(Component.literal("Refunds all four professions' allocations; keeps levels and XP.").withStyle(ChatFormatting.GRAY));
+        } else if (stack.is(ITEM.get())) {
+            event.getToolTip().add(Component.literal("Enchant at a table for Crafting XP, then learn Basic Affix Crafting.").withStyle(ChatFormatting.GRAY));
+        }
+        if (quality != null) {
+            event.getToolTip().add(Component.literal(name(quality.rarity()) + " equipment").withStyle(color(quality.rarity())));
+            event.getToolTip().add(Component.literal("Crafting Potential: " + quality.potential() + " remaining").withStyle(ChatFormatting.GRAY));
+        }
         AffixPages.get(stack).ifPresent(page -> {
             for (var affix : page.affixes()) {
-                event.getToolTip().add(Component.literal(name(affix.id()) + " · " + name(affix.rarity()) + " · Tier " + affix.tier()).withStyle(color(affix.rarity())));
+                event.getToolTip().add(Component.literal(name(affix.id()) + "  [T" + affix.tier() + " · " + name(affix.rarity()) + "]").withStyle(color(affix.rarity())));
                 for (var modifier : affix.modifiers()) {
-                    boolean percent = modifier.operation() != RpgModifier.Operation.ADD || modifier.stat().getNamespace().equals("covenant");
-                    double value = modifier.amount() * (percent ? 100 : 1);
-                    event.getToolTip().add(Component.literal("  " + String.format(Locale.ROOT, "%+.3f%s ", value, percent ? "%" : ""))
-                            .append(Component.translatable(modifier.stat().getNamespace().equals("covenant")
-                                    ? "attribute.covenant." + modifier.stat().getPath() : "attribute.name." + modifier.stat().getPath())).withStyle(ChatFormatting.GRAY));
+                    event.getToolTip().add(Component.literal("  " + AffixText.value(modifier.stat(), modifier.operation(), modifier.amount()) + " ")
+                            .append(AffixText.stat(modifier.stat())).withStyle(ChatFormatting.GRAY));
                 }
             }
         });
+        if (stack.is(MATERIAL.get())) {
+            var identity = stack.get(MATERIAL_ID.get());
+            event.getToolTip().add(Component.literal("Workbench ingredient · matches family and rarity").withStyle(ChatFormatting.GRAY));
+            if (identity != null && (!identity.family().getNamespace().equals(Covenant.MOD_ID)
+                    || !identity.rarity().getNamespace().equals(Covenant.MOD_ID))) {
+                event.getToolTip().add(Component.literal(identity.family() + " / " + identity.rarity()).withStyle(ChatFormatting.DARK_GRAY));
+            }
+        }
     }
     private static final class MaterialItem extends Item {
         MaterialItem(Properties properties) { super(properties); }

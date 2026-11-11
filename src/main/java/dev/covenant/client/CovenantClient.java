@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.covenant.Covenant;
 import dev.covenant.rpg.skills.Skills;
 import dev.covenant.rpg.skills.SkillVisuals;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.util.profiling.Profiler;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.minecraft.client.KeyMapping;
@@ -39,6 +38,9 @@ public final class CovenantClient {
         modBus.addListener(ProgressionHud::register);
         modBus.addListener(ClientDash::register);
         modBus.addListener(ClientSkillVisuals::register);
+        modBus.addListener(CombatParticle::register);
+        modBus.addListener(EnergyParticle::register);
+        modBus.addListener(AffixMaterialProperty::register);
         modBus.addListener(this::registerKeys);
         NeoForge.EVENT_BUS.addListener(this::onKey);
         NeoForge.EVENT_BUS.addListener(this::onMouseButton);
@@ -54,9 +56,9 @@ public final class CovenantClient {
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(Skills.HUNTER_PET.get(), HunterPetRenderer::new);
-        event.registerEntityRenderer(Skills.ARCANE_BOLT.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(Skills.FIRE_BOLT.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(Skills.ICE_BOLT.get(), ThrownItemRenderer::new);
+        event.registerEntityRenderer(Skills.ARCANE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.ARCANE));
+        event.registerEntityRenderer(Skills.FIRE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.FIRE));
+        event.registerEntityRenderer(Skills.ICE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.ICE));
         event.registerEntityRenderer(Skills.TRAP.get(), TrapRenderer::new);
         event.registerEntityRenderer(Skills.RAGE_STORM.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
     }

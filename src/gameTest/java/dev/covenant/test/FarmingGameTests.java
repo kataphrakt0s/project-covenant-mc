@@ -31,6 +31,41 @@ import net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent;
 
 /** Real server hoe-use and native break/placement transactions, with independent classless progression. */
 final class FarmingGameTests {
+    static void feedback(GameTestHelper helper) {
+        try (var f = new ProfessionActivityGameTests.ActivityFixture(helper, 195)) {
+            var packets = new ArrayList<net.minecraft.network.protocol.Packet<?>>();
+            var player = f.entities.player(null, packets); player.setPos(Vec3.atBottomCenterOf(f.pos(2, 0, 2)));
+            buy(player, 1, true); hoe(player);
+            for (int x = 6; x <= 8; x++) { for (int z = 6; z <= 8; z++) { crop(f, x, 0, z, wheat(7)); } }
+            packets.clear(); use(player, f.pos(7, 0, 7));
+            var notices = shortages(packets);
+            check(notices.size() == 1 && notices.getFirst().getArgs()[0].equals(9), "Nine missing replants produce one accurate batch cue");
+            crop(f, 7, 0, 7, wheat(7)); player.setShiftKeyDown(true); packets.clear(); use(player, f.pos(7, 0, 7));
+            check(shortages(packets).size() == 1 && shortages(packets).getFirst().getArgs()[0].equals(1), "Sneaking reports only its single harvested crop");
+            crop(f, 7, 0, 7, wheat(7)); player.getInventory().setItem(1, new ItemStack(Items.WHEAT_SEEDS, 2));
+            Consumer<EntityPlaceEvent> deny = event -> { if (event.getEntity() == player) { event.setCanceled(true); } };
+            NeoForge.EVENT_BUS.addListener(deny);
+            try { packets.clear(); use(player, f.pos(7, 0, 7));
+                check(shortages(packets).isEmpty() && player.getInventory().getItem(1).getCount() == 2, "Protection-denied placement is not reported as missing supplies");
+            } finally { NeoForge.EVENT_BUS.unregister(deny); }
+            crop(f, 7, 0, 7, wheat(7)); player.getInventory().setItem(1, ItemStack.EMPTY);
+            Consumer<BreakBlockEvent> block = event -> { if (event.getPlayer() == player) { event.setCanceled(true); } };
+            NeoForge.EVENT_BUS.addListener(block);
+            try { packets.clear(); use(player, f.pos(7, 0, 7));
+                check(shortages(packets).isEmpty() && player.level().getBlockState(f.pos(7, 0, 7)) == wheat(7), "Denied harvest does not emit an invented replant failure");
+            } finally { NeoForge.EVENT_BUS.unregister(block); }
+            crop(f, 7, 0, 7, wheat(7)); var tool = hoe(player); tool.setDamageValue(tool.getMaxDamage() - 1);
+            packets.clear(); use(player, f.pos(7, 0, 7));
+            check(tool.isEmpty() && shortages(packets).size() == 1, "Last successful crop can report a missing replant supply even when its hoe breaks");
+            helper.succeed();
+        }
+    }
+    private static List<net.minecraft.network.chat.contents.TranslatableContents> shortages(List<net.minecraft.network.protocol.Packet<?>> packets) {
+        return packets.stream().filter(p -> p instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket s && s.overlay()
+                && s.content().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t
+                && t.getKey().equals("profession.covenant.replant_supplies"))
+                .map(p -> (net.minecraft.network.chat.contents.TranslatableContents)((net.minecraft.network.protocol.game.ClientboundSystemChatPacket)p).content().getContents()).toList();
+    }
     private static final net.minecraft.resources.Identifier FARMING = ProfessionData.id("farming");
     private static void check(boolean value, String message) { ProfessionGameTests.check(value, message); }
     private static BlockState wheat(int age) { return Blocks.WHEAT.defaultBlockState().setValue(BlockStateProperties.AGE_7, age); }

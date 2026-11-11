@@ -1,5 +1,7 @@
 package dev.covenant.client;
 
+import dev.covenant.rpg.skills.CombatParticles;
+
 import dev.covenant.rpg.skills.TrapEntity;
 import dev.covenant.rpg.skills.TrapKind;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -18,7 +20,7 @@ final class TrapVisuals {
                 || trap.tickCount % 6 != 0) { return; }
         if (trap.phase() == TrapEntity.Phase.ARMED) {
             if (trap.kind() == TrapKind.FROST || trap.kind() == TrapKind.FLAME) {
-                trap.level().addParticle(trap.kind() == TrapKind.FROST ? ParticleTypes.SNOWFLAKE : ParticleTypes.SMALL_FLAME,
+                trap.level().addParticle(trap.kind() == TrapKind.FROST ? ParticleTypes.SNOWFLAKE : CombatParticles.EMBER.get(),
                         trap.getX(), trap.getY() + .32, trap.getZ(), 0, .01, 0);
             }
             // Bear stays mechanical; Blast has a solid unlit primer and no countdown decoration.
@@ -31,7 +33,7 @@ final class TrapVisuals {
             var offset = new Vec3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
             if (!GroundMarks.supported(trap, offset, true)) { return; }
             if (trap.kind() == TrapKind.FLAME) {
-                trap.level().addParticle(ParticleTypes.SMALL_FLAME,
+                trap.level().addParticle(CombatParticles.EMBER.get(),
                         trap.getX() + offset.x, trap.getY() + .045, trap.getZ() + offset.z, 0, .008, 0);
                 return;
             }

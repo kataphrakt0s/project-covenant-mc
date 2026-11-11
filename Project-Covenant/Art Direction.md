@@ -1,13 +1,212 @@
 ---
 project: Project Covenant
 type: design-document
-status: direction-agreed-asset-proposals-open
+status: direction-reset-reference-review-open
 updated: 2026-11-10
 ---
 
 # Art direction
 
-## Agreed direction
+## Current correction — 2026-11-10
+
+The user finds the overall art too desaturated and realistic, with too little
+bold dark fantasy flavour. **The wolf and traps are accepted anchors; all other
+art is subject to eventual redesign.** Pursue stronger colour identity, purposeful
+pixel clusters and expressive fantasy silhouettes while retaining Minecraft scale.
+Earlier calls for subtle flavour, stone/lavender dominance and restrained accents
+must not constrain this correction. Preserve gameplay readability and semantics.
+
+[[Art Reference Studies]] tracks the new comparison sources and open decisions.
+The first Dungeons/Faithless and Dokucraft comparison did not settle a direction;
+the user requested broader exploration. Subsequent FurfSky feedback approves
+its **strong silhouettes** and favours its darker **black, purple, red and grey**
+examples. Much of its flashy, neo-fantasy styling is unsuitable for Covenant's
+dark gothic identity; use those accepted qualities selectively. Exact swatches,
+ornament and per-family treatments remain open. Maintain rich colour and readable
+forms rather than returning to washed-out realism or indistinct near-black art.
+The sections below retain earlier design history and technical contracts; their
+aesthetic proposals are subordinate to this correction and reference feedback.
+
+### Bolt correction: pure energy
+
+On 2026-11-10 the user rejected the floating-item spell presentation. Elemental
+bolts must be primarily particles: flaming, icy or electrified energy. Simple
+geometric supports/particle attractors are acceptable; recognizable item cores
+are not the intended world effect. Fire remains crimson, ice pale blue and
+lightning electric blue. Runtime now uses flowing particle bodies and thin
+geometric filaments for Fire/Ice/Arcane, plus flickering particle lightning.
+This supersedes earlier item-core guidance, without changing the approved icon
+direction. Final Minecraft appearance awaits user review.
+
+### Icon correction: vanilla recognition first
+
+The first gothic rework made icon silhouettes too distinctive. Review icons
+**individually**, starting from what each must communicate to the player and the
+closest vanilla Minecraft item or status symbol. Keep the vanilla object's
+proportions, orientation and recognizable silhouette; use colour and small
+interior details for Covenant's gothic identity. Do not invent an exotic weapon
+or relic shape simply to make an icon unique.
+
+For skills, distinguish the action with one readable secondary cue where needed
+(for example, a sweep beside a familiar sword). Judge at native 16px first.
+Shared meanings may reuse familiar shapes. Descriptive clarity takes priority
+over silhouette variety. The crimson/pale-blue/electric-blue elemental palette
+remains agreed. The workbench is acceptable for now and needs no further pass.
+
+Individual review: **Cleave** uses the approved vanilla-shaped iron sword plus
+one broad sweep that widens in an arc toward the blade, with a small crimson
+grip accent. **The user approved the finished 16px icon**, including the widened
+arc, on 2026-11-10. Use this as the reference for familiar weapon proportions;
+other icons still need individual review. This is art approval, not a client test.
+[Cleave comparison](../.local/icon-review/cleave.html).
+
+**Rend**: sword-and-blood-drop direction approved. The user explicitly requests
+a very clear, simple classic water-droplet shape. Implemented as a separate
+crimson teardrop with a centered pointed top and rounded base, beside the same
+familiar sword proportions. **Finished icon approved on 2026-11-10**, including
+the stain widened across the lower blade face without increasing its length.
+[Rend comparison](../.local/icon-review/rend.html). This is art approval;
+in-game testing remains separate.
+
+**Lunging Combo**: the sword-and-streaks implementation did not convey lunging
+clearly enough. The user suggested a character silhouette instead. The new
+study uses a square-headed blocky player leaning into a sword thrust, with a
+bent leading knee and extended rear leg. **The user accepted this pose** and
+requested red for the character as part of Reaver's identity. Reaver crimson
+is now applied to the character; the sword remains steel-coloured. Pose conveys
+forward movement; tooltip/stage labels describe the full combo. **The finished
+crimson character icon is approved on 2026-11-10.**
+[Lunging Combo comparison](../.local/icon-review/lunging-combo.html).
+
+**Rip and Rush**: the user approved a crimson blocky character turning through
+a broad circular sword sweep. The 16px redraw uses a planted stance and an arc
+passing behind the body and across the foreground, emphasizing the circular
+attack. The user found the arms overcomplicated for 16px: simplify to one short,
+straight visible sword arm and omit the rear arm. Let the sweep convey the
+movement. **The finished simplified icon is approved on 2026-11-10.**
+[Rip and Rush comparison](../.local/icon-review/rip-and-rush.html).
+
+**Battle Cry — reference reset**: the user rejected the previous face and
+requested a fresh start using their supplied shouting manga and red warcry
+images. The new study uses a tilted, close-cropped shouting face, dark hair,
+shadowed brow/jaw, pale facial planes and crimson background. The generated
+source was reduced to a native 16×16 eight-colour base grid, with mouth/teeth clusters
+clarified in the editable source. The previous headband/flat-face design
+is discarded. The user likes this reference-led direction and requests a zoom
+so the mouth and jaw fill the frame. The current icon crops directly from the
+larger study before 16px reduction, preserving the mouth/teeth detail; eyes and
+hair are outside the crop. The user accepted this crop and requested the small
+corner sword restored; Battle Cry now includes it. The clean crop is preserved
+pixel-identically as `models/gothic_rework/cry_face_base.png`, with its editable
+`cry_face_icon()` source and the larger study/crop beside it. **The finished
+Battle Cry icon, including the restored sword, is approved on 2026-11-10.**
+[Battle Cry comparison](../.local/icon-review/battle-cry.html).
+
+**Future Enduring Cry** should share the shouting-face layout with a heart or
+shield corner badge when implemented, using the preserved clean base above.
+The choice between those two badges
+remains open. This is a visual direction only, not a gameplay or asset delivery.
+
+**Rage Storm**: the user requested a cyclone image while keeping the existing
+colours. The redraw has a broad rotating crown and tapering funnel, using the
+exact prior steel-grey, crimson, red highlight and dark outline palette.
+**The finished cyclone icon is approved on 2026-11-10.**
+[Rage Storm comparison](../.local/icon-review/rage-storm.html).
+
+### Remaining catalogue pass — 2026-11-10
+
+The user authorized continuing the remaining catalogue in small batches using
+the approved examples, asking for direction where a result is unclear. This
+supersedes the requirement to obtain a separate concept decision before every
+ordinary icon; finished artwork still requires visual review.
+
+After review corrections, the pass revises **60 existing textures**: 22 skill icons,
+22 menu/profession emblems, three status icons and 13 item textures. The previous
+Ice Bolt and Arcane Bolt, including their matching item cores, are restored exactly.
+The six approved skill icons, accepted Movement Speed component, wolf,
+traps, workbench, rarity pips and all other resources remain byte-identical.
+[Complete native-size comparison](../.local/catalogue-review/index.html).
+
+Key descriptive treatments:
+
+- Blood Fever: classic blood drop with speed streaks. Ripping Aura shares the
+  drop with the existing aura marker.
+- Disengage: a green blocky character and a leftward retreat arrow. Bows/arrows,
+  feathers, axes, picks, hoes, books and ingots use familiar vanilla proportions.
+- **Icy Veins:** the user selected a **pale-blue hourglass**, communicating
+  cooldown/cast-time benefits. This is direction approval, not final-icon approval.
+- **Movement speed:** the user prefers the previous single-boot silhouette.
+  Preserve the Movement Speed component exactly and reuse that boot in Swiftness
+  Aura. Canonical source: `models/gothic_rework/movement_boot.png`.
+- Fire remains crimson, ice pale blue and lightning electric blue. Threefold
+  contains visibly different fire/ice/lightning shapes; Discharge releases them
+  outward. Flame Cloak uses a broad cloth cloak with visible folds and crimson
+  flames along its hem; avoid a central droplet-shaped flame.
+- Teleport: a plain rectangular obsidian portal. Unknown content uses a simple
+  question mark. Statistics uses bars; professions use recognizable tools.
+- Affix families: heart, sword, shield, feather, accepted boot, resource vial,
+  hourglass for cooldown, clock for duration, a gathering arc/spell spark for
+  cast wind-up, and crystal; their existing separate rarity pips retain reserved
+  rows 13–15. Dodge uses a curved feather with an exposed quill; Attack Speed
+  uses a clear upright sword with motion streaks. Combat Respec uses a dark ink
+  sword glyph on parchment. Rooted uses an independent circular bear trap with
+  inward teeth and a central pressure plate; it need not match the model or skill icon.
+
+Authoritative exports: `models/gothic_rework/catalogue.py`, integrated into
+`icons.py` and `materials.py`. The source rebuild and package audits pass;
+review sheets are not Minecraft rendering. The 60 revised textures remain
+**review drafts**, not automatically approved.
+
+### Elemental palette and working-tree rework
+
+The user selected **occult crimson fire**, **pale blue ice**, and **electric blue
+lightning that pops as elemental bolts**. These supersede the earlier orange-fire
+and ivory/gold-lightning proposals. Ice uses fractured shards; lightning uses
+sharp forks and a bright white-blue core with a saturated blue edge. Arcane keeps
+its separate violet identity. Keep native burning and ordinary vanilla assets
+intact; Covenant's own fire cues use crimson.
+
+The working-tree rework now covers 129 runtime textures: 71 skill/menu/status/item
+textures, all 57 existing combat frames, and the workbench atlas. The workbench
+is an eight-cuboid altar with recessed pointed niches, iron buttresses and a
+crimson/violet seal, within the existing one-block footprint. UI panels share
+dark iron, crimson inlay and violet selection accents. Affix families are distinct
+relic objects, retaining separate rarity pips and existing component selectors.
+Wolf and trap device assets remain unchanged; Flame Trap's elemental feedback
+uses the new crimson family. No gameplay dimensions, timings or saved IDs change.
+
+Editable native pixel sources live in ignored `models/gothic_rework/`, with the
+existing effect sources in `models/{combat_examples,elemental_spells,bow_melee_effects}/`.
+The altar source remains `models/ritual_workbench/workbench.bbmodel`.
+[Before/after review](../.local/gothic-rework/review.html) includes native-size
+light/dark icon samples, effect frames and headless model views. This is an authored
+implementation for client review, not final visual acceptance. Branding and
+separate promotional scenes are outside this runtime-art pass.
+
+## Agreed combination — construction and occult meaning
+
+Use **forged weapons, armour and cathedral ironwork** alongside **cursed relics,
+ritual objects and occult symbols**, with the balance determined by context.
+The user approved this combination on 2026-11-10. Gothic construction supplies
+physical form; occult details can express an object's purpose, history or power.
+Neither vocabulary needs to appear equally in every asset.
+
+Working applications for future asset briefs:
+
+- Physical equipment and martial icons: emphasize forged silhouettes, material
+  separation and purposeful construction; add occult character where relevant.
+- Relics and magical icons: emphasize distinctive ritual objects and meaningful
+  symbols, using the shared pixel treatment and dark colour families.
+- Ritual stations and magical constructs: combine architectural or forged
+  structure with an identifiable occult focal feature.
+- Ordinary profession tools and natural creatures: retain recognizable function
+  and anatomy; the shared art treatment provides cohesion without obligatory runes.
+
+These applications guide reference selection, not final asset designs. Preserve
+the accepted wolf and traps. Exact motifs, palettes and family samples remain
+subject to review.
+
+## Earlier agreed foundation
 
 Covenant should primarily **accent vanilla Minecraft**, while including occult
 imagery and magical spectacle in a **dark fantasy, gothic-lite** style. The
@@ -89,7 +288,7 @@ Minecraft client playtest.
 | Combat feedback | Cast/release/impact sounds, native poses, bounded particles, elemental cues and status icons already have lifecycle hooks. | Give these cues original shapes, timing and materials. |
 | Traps | Original iron/crystal Frost, toothed Bear jaws/plate, vented Flame cage and bound Blast charge/solid primer. | Review the family together at gameplay scale. |
 | AoE and auras | Supported depth-tested trap squares/patch circles and one broken owner-only aura footprint, including on Minimal. | Review terrain gaps, overlap readability and renderer cost in Minecraft. |
-| Projectiles | Arcane/Fire/Ice bolts use thrown vanilla item models; lightning uses sampled electric sparks. | Original cores, angular lightning, authored trails and impact frames. |
+| Projectiles | Original pale/violet Arcane, ember Fire and fractured Ice cores; bounded jagged Lightning links; precise/magical/fan arrow streaks. | Review first/third-person aim visibility, real links and collision versus damage feedback. |
 | Original assets | Packaged logo, original wolf and the four trap models/atlases/icons demonstrate the pixel/model direction. | Review Minecraft appearance before expanding the combat family. |
 | Summons | Hunter's Pet and Elemental Golem remain planned skills. The wolf has geometry, UVs and texture, but no animation clips or runtime integration. | Plan assets now; companion gameplay and entity integration are separate implementation work. |
 
@@ -117,8 +316,10 @@ can remain physical; each class should have its own expression of the direction.
 | Weaver | Old stone, iron bindings, fractured crystal, pointed recesses and geometric seals. | Ritual arcs, angular elemental forms, luminous cores and more elaborate major releases. |
 
 Retain clear elemental meanings: orange/ember fire, pale blue/white ice,
-ivory/gold lightning. Arcane currently uses blue-white effects; lavender/violet
-seals around a pale core are a proposal to review, not an agreed recolor.
+ivory/gold lightning. The user approved a pale Arcane core with restrained
+lavender/violet geometric accents during Phase 3. Arcane Bolt establishes this
+family, now shared by Arcane Arrow's trail/collision/accepted-hit art. Major Arcane
+effects outside Phase 3 retain their existing presentation until scheduled.
 The current red Rage, blue Mana and yellow Focus HUD colors remain established
 functional cues. Material palettes can vary without recoloring that interface.
 
@@ -272,7 +473,38 @@ same-elevation treatment while deliberately omitting trap cover rays. Small
 status hints and actual-trigger/expiry cues stay separate from passive refresh.
 Headless mapped
 previews and technical validation do not establish Minecraft appearance.
-Arcane's possible violet shift and the golem's stone-guardian concept remain open.
+Phase 3's first batch establishes the approved pale/violet Arcane Bolt, a
+steel/crimson frontal Cleave crescent and precise ivory/gold Piercing Shot
+streaks, with matching small icons. Distinct collision and accepted-damage marks
+reuse real server outcomes. The remaining Phase 3 batches now add Fire's stepped
+embers, Ice's angular core/fractures, exact-endpoint jagged Lightning and real
+Shock links, Aimed gathering during the actual cast, violet Arcane Arrow, a quiet
+five-arrow Multishot fan and single-target Rend/one cue per accepted bleed pulse.
+Native weapon poses and sounds remain. The golem's stone-guardian concept remains
+open. Minecraft visual review is pending across these families.
+
+The user rejected Phase 4's first abstract UI icon study in favor of recognizable
+forms. The implemented redraw uses fuller silhouettes of familiar equipment,
+tools, a wolf head, horn, cloak, book and distinct elements, with substantial
+pixel clusters and restrained material ramps. Resolved vanilla inventory art was
+studied for weight and negative space; no vanilla or texture-pack pixels are
+exported. All playable skills share identities across tree, bindings and status.
+Native/enlarged pale/dark samples are ignored `.local/phase4/icons-v2.png`, with
+sources/reference notes in `models/ui_phase4/`. The revised art and Minecraft
+rendering still await user acceptance.
+
+For Phase 5 the user chose a **stone ritual station** over the initial timber
+cabinet proposal. The implemented Workbench uses a worn stone work slab, heavy
+iron binding strips and restrained carved niches/marks, preserving the existing
+solid one-block footprint. The original 32x32 atlas packs native-density faces;
+no world light or emission is added. New 16x16 respec art uses a sword-marked
+parchment and a tool ledger. Component charms use recognizable family marks and
+1–5 rarity pips; unknown datapack entries retain neutral art and named tooltips.
+The packaged logo and official Ancient City corridor informed broad stone
+clusters/bands. The linked Mystic Shrine imagery was host-blocked; no inspection
+of that image or reuse of third-party pixels is claimed. Source/reference notes
+are in ignored `models/ritual_workbench/BRIEF.md`. Headless previews were inspected;
+Minecraft appearance and user acceptance of these assets remain pending.
 
 Related: [[Project Covenant - GDD]], [[Abilities]], [[Classes and Specializations]],
 [[Skill Trees Brainstorm]], [combat feedback contract](../docs/RPG_SKILLS.md#combat-feedback-pass).

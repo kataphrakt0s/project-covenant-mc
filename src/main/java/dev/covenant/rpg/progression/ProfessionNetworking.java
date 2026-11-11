@@ -17,7 +17,7 @@ public final class ProfessionNetworking {
         event.registrar(dev.covenant.CovenantNetwork.version("professions/4")).playToServer(Apply.TYPE, Apply.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && player.getData(RpgData.SKILL_RUNTIME)
                     .acceptRequest(ClassResources.now(player), request)) {
-                player.sendSystemMessage(ProfessionAllocations.apply(player, request.profession(), request.revision(), request.expected(), request.desired()));
+                player.sendOverlayMessage(ProfessionAllocations.apply(player, request.profession(), request.revision(), request.expected(), request.desired()));
             }
         });
     }

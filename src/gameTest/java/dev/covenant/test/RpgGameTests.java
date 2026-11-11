@@ -69,6 +69,11 @@ public final class RpgGameTests {
         FUNCTIONS.register("feedback_casting", () -> SkillFeedbackGameTests::casting);
         FUNCTIONS.register("feedback_impacts", () -> SkillFeedbackGameTests::impacts);
         FUNCTIONS.register("feedback_melee", () -> SkillFeedbackGameTests::melee);
+        FUNCTIONS.register("feedback_projectile_contacts", () -> SkillFeedbackGameTests::projectileContacts);
+        FUNCTIONS.register("feedback_elemental_contacts", () -> SkillFeedbackGameTests::elementalContacts);
+        FUNCTIONS.register("feedback_lightning_links", () -> SkillFeedbackGameTests::lightningLinks);
+        FUNCTIONS.register("feedback_bow_contacts", () -> SkillFeedbackGameTests::bowContacts);
+        FUNCTIONS.register("feedback_bleed", () -> SkillFeedbackGameTests::bleedFeedback);
         FUNCTIONS.register("weaver_activation", () -> WeaverGameTests::activation);
         FUNCTIONS.register("weaver_discharge_cast", () -> WeaverGameTests::dischargeCast);
         FUNCTIONS.register("weaver_discharge_mixed", () -> WeaverGameTests::dischargeMixed);
@@ -100,6 +105,9 @@ public final class RpgGameTests {
         FUNCTIONS.register("workbench_upgrades", () -> ItemizationGameTests::upgrades);
         FUNCTIONS.register("workbench_salvage", () -> ItemizationGameTests::salvageBatch);
         FUNCTIONS.register("workbench_menus", () -> ItemizationGameTests::menus);
+        FUNCTIONS.register("polish_workbench", () -> PhaseFiveGameTests::workbench);
+        FUNCTIONS.register("polish_progression", () -> PhaseFiveGameTests::progression);
+        FUNCTIONS.register("polish_replant", () -> FarmingGameTests::feedback);
         FUNCTIONS.register("workbench_storage", () -> ItemizationGameTests::storage);
         FUNCTIONS.register("itemization_loot", () -> ItemizationGameTests::loot);
         FUNCTIONS.register("stalker_activation", () -> StalkerGameTests::activation);

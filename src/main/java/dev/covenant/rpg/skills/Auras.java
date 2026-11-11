@@ -170,9 +170,9 @@ public final class Auras {
     /** One brief receipt cue per activation; passive refreshes never emit particles or sounds. */
     private static void activationParticles(ServerPlayer source, LivingEntity target, Kind kind) {
         ParticleOptions particle = switch (kind) {
-            case FREEZING, ICY_VEINS, DISCHARGE_FREEZE -> ParticleTypes.SNOWFLAKE;
-            case FLAME_CLOAK, IMMOLATION -> ParticleTypes.SMALL_FLAME;
-            case SHOCK -> ParticleTypes.ELECTRIC_SPARK;
+            case FREEZING, ICY_VEINS, DISCHARGE_FREEZE -> CombatParticles.ICE_SHARD.get();
+            case FLAME_CLOAK, IMMOLATION -> CombatParticles.EMBER.get();
+            case SHOCK -> CombatParticles.LIGHTNING_MOTE.get();
             case DODGE, SWIFTNESS -> ParticleTypes.CLOUD;
             case RIPPING, RAGING, BATTLE_CRY -> RAGE_CUE;
             default -> ParticleTypes.ENCHANT;

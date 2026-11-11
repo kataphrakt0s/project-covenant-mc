@@ -11,7 +11,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
-/** A single-hit magical bolt using vanilla projectile collision, item rendering, and damage attribution. */
+/** A single-hit magical bolt using vanilla projectile collision and damage attribution. */
 public final class ArcaneBolt extends ThrowableItemProjectile {
     public ArcaneBolt(EntityType<? extends ArcaneBolt> type, Level level) {
         super(type, level);

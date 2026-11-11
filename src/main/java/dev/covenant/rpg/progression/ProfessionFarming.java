@@ -53,7 +53,7 @@ public final class ProfessionFarming {
             }
             // Consume this interaction even when a mature target's native harvest is refused.
             event.setCanceled(true); event.setCancellationResult(InteractionResult.CONSUME);
-            var tool = player.getMainHandItem(); boolean harvested = false;
+            var tool = player.getMainHandItem(); boolean harvested = false; int missingSupplies = 0;
             for (var target : targets) {
                 if (!participant(player) || player.level() != level || player.getMainHandItem() != tool || !hoe(tool)
                         || read(level, target.pos()) != target.state()
@@ -66,9 +66,10 @@ public final class ProfessionFarming {
                 tool.hurtAndBreak(1, player, InteractionHand.MAIN_HAND);
                 if (tool.isEmpty()) { EventHooks.onPlayerDestroyItem(player, beforeWear, InteractionHand.MAIN_HAND); }
                 // Finish this crop even if its harvest broke the hoe; never use a replacement tool for more crops.
-                if (replant && participant(player) && player.level() == level) { replant(player, target); }
+                if (replant && participant(player) && player.level() == level && !replant(player, target)) { missingSupplies++; }
             }
             if (harvested) { player.swing(InteractionHand.MAIN_HAND); }
+            if (missingSupplies > 0) { player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("profession.covenant.replant_supplies", missingSupplies), true); }
             player.inventoryMenu.broadcastChanges();
         }
     }
@@ -92,12 +93,12 @@ public final class ProfessionFarming {
     }
 
     /** Native item placement supplies survival checks, placement events/rollback, sound and game events. */
-    private static void replant(ServerPlayer player, Target target) {
+    private static boolean replant(ServerPlayer player, Target target) {
         var level = player.level(); var ground = target.pos().below();
         var state = read(level, target.pos());
         if (state == null || !state.isAir() || read(level, ground) == null
                 || !level.mayInteract(player, target.pos()) || !level.mayInteract(player, ground)
-                || !level.getWorldBorder().isWithinBounds(target.pos())) { return; }
+                || !level.getWorldBorder().isWithinBounds(target.pos())) { return true; }
         var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
             var supply = inventory.getItem(slot);
@@ -108,7 +109,8 @@ public final class ProfessionFarming {
             var hit = new BlockHitResult(Vec3.atCenterOf(ground).add(0, .5, 0), Direction.UP, ground, false);
             var context = new BlockPlaceContext(player, InteractionHand.MAIN_HAND, planting, hit);
             if (planting.useOn(context).consumesAction() && planting.isEmpty()) { supply.shrink(1); inventory.setChanged(); }
-            return;
+            return true; // Native placement denial is not mislabeled as missing supplies.
         }
+        return false;
     }
 }

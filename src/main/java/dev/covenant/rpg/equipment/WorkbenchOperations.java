@@ -66,14 +66,14 @@ public final class WorkbenchOperations {
         }
         int potential = quality == null ? equipmentRarity.potential() : quality.potential();
         int potentialCost = data.settings().potentialCost();
-        if (potential < potentialCost) { return fail("Not enough Crafting Potential (requires " + potentialCost + ")."); }
         boolean common = rarity.id().equals(ItemizationData.id("common"));
         int cost = operation == Operation.REMOVE ? 0 : common ?
                 (operation == Operation.REROLL ? data.settings().commonReroll() : data.settings().commonAdd()) :
                 (operation == Operation.REROLL ? rarity.rerollCost() : rarity.addCost());
         var ingredient = operation == Operation.REMOVE ? ItemStack.EMPTY : common ? new ItemStack(Items.LAPIS_LAZULI)
                 : Workbench.material(new AffixMaterial(family.id(), rarity.id()), 1);
-        String error = count(player, ingredient) < cost ? "Missing ingredients: " + cost + " " + ingredient.getHoverName().getString() + "." : "";
+        String error = potential < potentialCost ? "Not enough Crafting Potential (requires " + potentialCost + ")."
+                : count(player, ingredient) < cost ? "Missing ingredients: " + cost + " " + ingredient.getHoverName().getString() + "." : "";
         return new Plan(error, ingredient, cost, potentialCost, tier, family, rarity, category,
                 new EquipmentQuality(equipmentRarity.id(), potential));
     }

@@ -26,7 +26,7 @@ final class RadialMenuScreen extends Screen {
         this.activationCode = activationCode;
         releaseHint = Component.translatable("screen.covenant.radial.release", binding.getTranslatedKeyMessage());
         for (int slot = 0; slot < options.length; slot++) {
-            options[slot] = Component.translatable("screen.covenant.radial.option", slot + 1);
+            options[slot] = Component.translatable("ui.covenant.dormant", slot + 1);
         }
         options[0] = Component.translatable("screen.covenant.skills.title");
         options[1] = Component.translatable("screen.covenant.stats.title");
@@ -127,13 +127,20 @@ final class RadialMenuScreen extends Screen {
                 double angle = RadialMenuLayout.angle(slot);
                 int x = centerX + (int) Math.round(Math.cos(angle) * radius * 0.72);
                 int y = centerY + (int) Math.round(Math.sin(angle) * radius * 0.72);
-                graphics.centeredText(font, Integer.toString(slot + 1), x, y - font.lineHeight / 2,
-                        slot == hovered ? 0xFFFFD084 : 0xFFE2E8ED);
+                if (slot < 3) {
+                    String emblem = switch (slot) { case 0 -> "skills"; case 1 -> "stats"; default -> "professions"; };
+                    SkillIcons.draw(graphics, SkillIcons.ui(emblem), x - 8, y - 9, 16, -1);
+                    graphics.text(font, Integer.toString(slot + 1), x + 8, y + 2, MenuArt.TEXT);
+                } else {
+                    graphics.centeredText(font, "-", x, y - 7, MenuArt.MUTED);
+                    graphics.centeredText(font, Integer.toString(slot + 1), x, y + 2, MenuArt.MUTED);
+                }
             }
             graphics.centeredText(font, hovered < 0 ? title : options[hovered], centerX, centerY - 10, 0xFFF5DBA6);
             graphics.centeredText(font, hovered >= 0 && hovered <= 2 ? Component.translatable("screen.covenant.radial.open") : PLACEHOLDER,
                     centerX, centerY + 4, 0xFFABB6C2);
             graphics.centeredText(font, releaseHint, centerX, centerY + radius + 10, 0xFFE2E8ED);
+            MenuArt.label(graphics, Component.translatable("ui.covenant.discovery"), 8, height - 13, width - 16, MenuArt.TEXT);
         }
     }
 }

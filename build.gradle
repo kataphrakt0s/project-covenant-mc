@@ -118,6 +118,15 @@ def radialMenuTest = tasks.register('radialMenuTest', JavaExec) {
 }
 tasks.named('check') { dependsOn radialMenuTest }
 
+def lightningPathTest = tasks.register('lightningPathTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks exact lightning endpoints, bounded jagged geometry and degenerate/vertical aim.'
+    classpath = sourceSets.geometryTest.runtimeClasspath
+    mainClass = 'dev.covenant.client.LightningPathTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+tasks.named('check') { dependsOn lightningPathTest }
+
 def skillTreeLayoutTest = tasks.register('skillTreeLayoutTest', JavaExec) {
     group = 'verification'
     description = 'Checks full skill tree visibility and separate node bounds across GUI sizes.'
@@ -135,6 +144,15 @@ def professionTreeLayoutTest = tasks.register('professionTreeLayoutTest', JavaEx
     javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
 }
 tasks.named('check') { dependsOn professionTreeLayoutTest }
+
+def applyFeedbackTest = tasks.register('applyFeedbackTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks authoritative Apply confirmation, conflicts, timeouts and independent tab submissions.'
+    classpath = sourceSets.geometryTest.runtimeClasspath
+    mainClass = 'dev.covenant.client.ApplyFeedbackTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+tasks.named('check') { dependsOn applyFeedbackTest }
 
 tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false

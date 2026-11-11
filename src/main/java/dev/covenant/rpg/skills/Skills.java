@@ -78,6 +78,7 @@ public final class Skills {
         dev.covenant.rpg.progression.CombatProgression.register();
         NeoForge.EVENT_BUS.addListener(SkillCommands::register);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, SkillVisuals::arrowImpact);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, SkillVisuals::damageLanded);
     }
 
     /** Returns localized feedback and changes nothing on rejection. Casts spend only at completion. */
@@ -241,12 +242,14 @@ public final class Skills {
                 if (!player.isAlive() || player.isSpectator() || type != cast.playerClass() || !SkillControls.canAct(player)
                         || (cast.skill() == SkillDefinition.AIMED_SHOT && validate(player, cast.skill()) != null)) {
                     runtime.cancelCast(player);
-                    player.sendSystemMessage(message("cancelled"));
+                    player.sendOverlayMessage(message("cancelled"));
                 } else if (now >= cast.endsAt()) {
                     runtime.cancelCast(player);
-                    player.sendSystemMessage(execute(player, cast.skill(), cast.cost(), cast.cooldown()));
+                    player.sendOverlayMessage(execute(player, cast.skill(), cast.cost(), cast.cooldown()));
                 } else if (cast.skill().effect() == SkillDefinition.Effect.RAGE_STORM) {
                     SkillVisuals.rageCharge(player);
+                } else if (cast.skill() == SkillDefinition.AIMED_SHOT) {
+                    SkillVisuals.aimedCharge(player);
                 } else if (SpellSkills.isSpell(cast.skill())) {
                     SkillVisuals.charge(player, cast.skill());
                 }

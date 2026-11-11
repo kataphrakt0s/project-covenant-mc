@@ -354,8 +354,10 @@ final class ReaverGameTests {
         void use(ServerPlayer source, SkillDefinition skill) {
             // Isolate activation spending from the independent out-of-combat Rage decay clock.
             ClassResources.markCombat(source);
-            var result = Skills.activate(source, skill).getString();
-            check(result.startsWith("Used") || result.startsWith("Casting"), "Activation: " + result);
+            var result = Skills.activate(source, skill);
+            check(result.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents feedback
+                    && (feedback.getKey().equals("commands.covenant.skill.used") || feedback.getKey().equals("commands.covenant.skill.started")),
+                    "Activation: " + result.getString());
         }
         void team(ServerPlayer... members) {
             var board = helper.getLevel().getScoreboard(); var team = board.addPlayerTeam("r" + UUID.randomUUID().toString().substring(0, 8)); teams.add(team);

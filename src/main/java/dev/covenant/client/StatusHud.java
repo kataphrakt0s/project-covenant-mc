@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -18,10 +17,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
@@ -29,7 +24,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 public final class StatusHud {
     private static final int CELL = 24, STEP = 26, ROW = 34, MARGIN = 5;
     private static final int PASSIVE = 0xFF93B6C8, ACTIVE = 0xFFFFD36B;
-    private static final int FIRE = 0xFFFF9856, ICE = 0xFFB9E9FF, LIGHTNING = 0xFFFFEF9B;
+    private static final int FIRE = 0xFFED4C68, ICE = 0xFFD0E7F5, LIGHTNING = 0xFF55C5FF;
     private static final Identifier BACKGROUND = Identifier.withDefaultNamespace("hud/effect_background");
     private static final Identifier AMBIENT_BACKGROUND = Identifier.withDefaultNamespace("hud/effect_background_ambient");
     private static LocalPlayer owner;
@@ -38,24 +33,23 @@ public final class StatusHud {
     private static BuffDisplay buffView = BuffDisplay.EMPTY;
     private static float shieldView;
     private static long nextRefresh;
+    private static int rootSeconds, chillSeconds;
+    private static boolean frozenView;
     /** Local-level deadline retained across packet ordering until Weaver confirms the buff ended. */
     private static long threefoldDeadline;
     private static List<List<Tile>> groups = List.of();
 
-    /** Cached vanilla resources; item stacks are presentation-only and never modified. */
+    /** Same original identity as the skill tree and assignment picker. */
     private enum Icon {
-        LUNGE(Items.IRON_SWORD), RUSH(Items.IRON_AXE), DISCHARGE(Items.FIREWORK_STAR),
-        THREEFOLD(Items.AMETHYST_SHARD), FIRE(Items.FIRE_CHARGE), ICE(Items.SNOWBALL), LIGHTNING(Items.LIGHTNING_ROD),
-        DODGE(MobEffects.LUCK), SPEED(MobEffects.SPEED), RIPPING(Items.SWEET_BERRIES),
-        FORTITUDE(MobEffects.RESISTANCE), SHIELD(MobEffects.ABSORPTION), RAGE(MobEffects.STRENGTH),
-        ICY_VEINS(MobEffects.HASTE), FIRE_CLOAK(MobEffects.FIRE_RESISTANCE), FREEZING(MobEffects.SLOWNESS),
-        SHOCK(Items.LIGHTNING_ROD), IMMOLATION(Items.BLAZE_POWDER), ENCHANTING(Items.ENCHANTED_BOOK),
-        BATTLE_CRY(Items.GOAT_HORN), BLOOD_FEVER(Items.REDSTONE), UNKNOWN(Items.PAPER);
-
-        final ItemStack item;
-        final Identifier sprite;
-        Icon(Item item) { this.item = new ItemStack(item); sprite = null; }
-        Icon(Holder<MobEffect> effect) { item = ItemStack.EMPTY; sprite = Gui.getMobEffectSprite(effect); }
+        LUNGE("lunging_combo"), RUSH("rip_and_rush"), DISCHARGE("discharge"), THREEFOLD("threefold_system"),
+        FIRE("fire_bolt"), ICE("ice_bolt"), LIGHTNING("lightning_bolt"), DODGE("dodge_aura"), SPEED("swiftness_aura"),
+        RIPPING("ripping_aura"), FORTITUDE("fortitude_aura"), SHIELD("shield", true), RAGE("raging_aura"),
+        ICY_VEINS("icy_veins"), FIRE_CLOAK("flame_cloak"), FREEZING("freezing_aura"), FROZEN("frozen", true),
+        SHOCK("shock_aura"), IMMOLATION("immolation_aura"), ENCHANTING("enchanting_aura"),
+        BATTLE_CRY("battle_cry"), BLOOD_FEVER("blood_fever"), ROOTED("rooted", true), CHILLED("chilled", true), UNKNOWN("unknown", true);
+        final Identifier id;
+        Icon(String path) { this(path, false); }
+        Icon(String path, boolean ui) { id = ui ? SkillIcons.ui(path) : Identifier.fromNamespaceAndPath("covenant", path); }
     }
 
     private record Tile(Icon icon, String badge, String footer, int color, boolean active, List<Component> tooltip) {}
@@ -80,10 +74,15 @@ public final class StatusHud {
             var buffs = player.getData(RpgData.BUFF_DISPLAY);
             float shield = player.getData(RpgData.FORTITUDE_CAPACITY);
             long tick = minecraft.level.getGameTime();
+            int root = controlSeconds(player, dev.covenant.rpg.skills.Rooted.EFFECT);
+            int chill = controlSeconds(player, dev.covenant.rpg.skills.Chilled.EFFECT);
+            boolean frozen = player.getData(RpgData.AURA_FROZEN);
             if (owner != player || !combos.equals(comboView) || !weaver.equals(weaverView)
-                    || !buffs.equals(buffView) || shield != shieldView || tick >= nextRefresh) {
+                    || !buffs.equals(buffView) || shield != shieldView || tick >= nextRefresh
+                    || root != rootSeconds || chill != chillSeconds || frozen != frozenView) {
                 if (owner != player) { threefoldDeadline = 0; }
                 owner = player; comboView = combos; weaverView = weaver; buffView = buffs; shieldView = shield;
+                rootSeconds = root; chillSeconds = chill; frozenView = frozen;
                 rebuild(tick);
             }
             int columns = Math.clamp((graphics.guiWidth() / 2 - MARGIN * 2) / STEP, 1, 8);
@@ -110,10 +109,13 @@ public final class StatusHud {
     private static void draw(GuiGraphicsExtractor graphics, Tile tile, int x, int y) {
         var font = Minecraft.getInstance().font;
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, tile.active ? BACKGROUND : AMBIENT_BACKGROUND, x, y, CELL, CELL);
-        if (tile.icon.sprite != null) {
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, tile.icon.sprite, x + 3, y + 3, 18, 18);
-        } else { graphics.item(tile.icon.item, x + 4, y + 4); }
+        SkillIcons.draw(graphics, tile.icon.id, x + 4, y + 3, 16, -1);
         graphics.fill(x + 2, y + CELL - 2, x + CELL - 2, y + CELL - 1, tile.color);
+        // Solid diamond = active; hollow square = passive/reserve, independent of palette.
+        if (tile.active) {
+            graphics.fill(x + 1, y + 2, x + 4, y + 3, tile.color);
+            graphics.fill(x + 2, y + 1, x + 3, y + 4, tile.color);
+        } else { graphics.outline(x + 1, y + 1, 3, 3, tile.color); }
         if (!tile.badge.isEmpty()) {
             graphics.pose().pushMatrix();
             graphics.pose().translate(x + CELL - 2, y + 13);
@@ -135,6 +137,13 @@ public final class StatusHud {
     private static void rebuild(long tick) {
         var next = new ArrayList<List<Tile>>(4);
         nextRefresh = tick + 20 - Math.floorMod(tick, 20);
+        var controls = new ArrayList<Tile>(3);
+        if (rootSeconds != 0) { controls.add(control(Icon.ROOTED, "rooted", rootSeconds)); }
+        if (chillSeconds != 0) { controls.add(control(Icon.CHILLED, "chilled", chillSeconds)); }
+        if (frozenView && buffView.rows().stream().noneMatch(row -> row.skill().getPath().equals("discharge_freeze"))) {
+            controls.add(control(Icon.FROZEN, "frozen", -1));
+        }
+        if (!controls.isEmpty()) { next.add(List.copyOf(controls)); }
         var combos = new ArrayList<Tile>(2);
         long comboNow = tick + comboView.clockOffset();
         for (var row : comboView.rows()) {
@@ -207,6 +216,17 @@ public final class StatusHud {
         groups = List.copyOf(next);
     }
 
+    private static int controlSeconds(LocalPlayer player, Holder<MobEffect> type) {
+        var effect = player.getEffect(type);
+        // Do not duplicate a native potion tile if a datapack/mod elects to show it there.
+        return effect == null || effect.showIcon() ? 0 : effect.isInfiniteDuration() ? -1 : (effect.getDuration() + 19) / 20;
+    }
+
+    private static Tile control(Icon icon, String name, int remaining) {
+        return new Tile(icon, "", remaining > 0 ? remaining + "s" : "", ICE, true,
+                List.of(Component.translatable("ui.covenant.control." + name), Component.translatable("ui.covenant.control." + name + ".description")));
+    }
+
     private static Tile charge(Icon icon, String element, int count, int color) {
         return new Tile(icon, Integer.toString(count), "", color, count > 0, List.of(skillName("discharge"),
                 Component.translatable("hud.covenant.status." + element),
@@ -240,7 +260,8 @@ public final class StatusHud {
             case "raging_aura" -> Icon.RAGE;
             case "icy_veins" -> Icon.ICY_VEINS;
             case "flame_cloak" -> Icon.FIRE_CLOAK;
-            case "freezing_aura", "discharge_freeze" -> Icon.FREEZING;
+            case "freezing_aura" -> Icon.FREEZING;
+            case "discharge_freeze" -> Icon.FROZEN;
             case "shock_aura" -> Icon.SHOCK;
             case "immolation_aura" -> Icon.IMMOLATION;
             case "enchanting_aura" -> Icon.ENCHANTING;

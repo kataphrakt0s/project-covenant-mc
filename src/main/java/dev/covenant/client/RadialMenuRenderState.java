@@ -42,8 +42,8 @@ record RadialMenuRenderState(Matrix3x2fc pose, int centerX, int centerY, int rad
     @Override
     public void buildVertices(VertexConsumer vertices) {
         for (int slot = 0; slot < RadialMenuLayout.SLOT_COUNT; slot++) {
-            int fill = slot == hovered ? 0xF05B4730 : 0xE51A222C;
-            int edge = slot == hovered ? 0xFFFFD084 : 0xFF677581;
+            int fill = slot == hovered ? (slot < 3 ? 0xF04D4358 : 0xF02B2931) : slot < 3 ? 0xF0302C38 : 0xD51C1B22;
+            int edge = slot == hovered ? MenuArt.GOLD : slot < 3 ? MenuArt.EDGE : 0xFF45424B;
             float inner = radius * RadialMenuLayout.INNER_RADIUS_RATIO;
             band(vertices, slot, inner, radius, fill);
             band(vertices, slot, radius - 1, radius, edge);

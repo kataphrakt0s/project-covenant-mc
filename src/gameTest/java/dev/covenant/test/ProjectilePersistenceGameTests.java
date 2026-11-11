@@ -125,7 +125,9 @@ final class ProjectilePersistenceGameTests {
             FixtureSkills.learn(player, skill.id(), true);
             SkillLoadouts.bind(player, 0, skill.id());
             ClassResources.set(player, PlayerProfiles.getSelectedClass(player).orElseThrow(), 100);
-            check(Skills.activate(player, skill).getString().contains("Used"), "Required aura activates");
+            var result = Skills.activate(player, skill);
+            check(result.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents feedback
+                    && feedback.getKey().equals("commands.covenant.skill.used"), "Required aura activates");
             ClassResources.set(player, PlayerProfiles.getSelectedClass(player).orElseThrow(), 0);
         }
 

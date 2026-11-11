@@ -25,6 +25,7 @@ public final class Covenant {
     public Covenant(IEventBus modBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.SERVER, SkillConfig.SPEC);
         RpgData.register(modBus);
+        dev.covenant.rpg.skills.CombatParticles.register(modBus);
         dev.covenant.rpg.equipment.Workbench.register(modBus);
         dev.covenant.rpg.progression.CombatRespecItem.register(modBus);
         dev.covenant.rpg.progression.ProfessionRespecItem.register(modBus);

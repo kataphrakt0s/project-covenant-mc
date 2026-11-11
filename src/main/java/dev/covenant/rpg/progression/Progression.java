@@ -46,6 +46,7 @@ public final class Progression {
         if (next.level == profile.level() && next.experience == profile.experience()) { return false; }
         PlayerProfiles.update(player, p -> p.withProgression(next.level, next.experience, p.witherClaimed()));
         refreshView(player);
+        earned(player, ProgressionData.CHARACTER, profile.level(), next.level);
         return true;
     }
 
@@ -61,6 +62,7 @@ public final class Progression {
         if (next.level == old.level() && next.experience == old.experience()) { return false; }
         player.setData(RpgData.PROFESSIONS, state.with(track, old.withProgression(next.level, next.experience)));
         refreshView(player);
+        earned(player, track, old.level(), next.level);
         return true;
     }
 
@@ -83,7 +85,20 @@ public final class Progression {
         long retained = xp;
         PlayerProfiles.update(player, p -> p.withProgression(level, retained, true));
         refreshView(player);
+        earned(player, ProgressionData.CHARACTER, old.level(), level);
         return true;
+    }
+
+    /** One owner-only cue per real award crossing levels; never called by loading or synchronization. */
+    private static void earned(ServerPlayer player, Identifier track, int before, int after) {
+        if (after <= before) { return; }
+        boolean character = track.equals(ProgressionData.CHARACTER);
+        var name = character ? net.minecraft.network.chat.Component.translatable("progression.covenant.character")
+                : net.minecraft.network.chat.Component.translatable("profession." + track.getNamespace() + "." + track.getPath());
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(character ? "progression.covenant.earned_skill" : "progression.covenant.earned_profession",
+                name, after, after - before), true);
+        player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP),
+                net.minecraft.sounds.SoundSource.PLAYERS, player.getX(), player.getY(), player.getZ(), .35f, 1.25f, 0L));
     }
 
     public static void refreshView(ServerPlayer player) {

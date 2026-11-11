@@ -2,8 +2,18 @@
   "sources": [
     {
       "type": "minecraft:single",
-      "resource": "minecraft:mob_effect/slowness",
+      "resource": "covenant:mob_effect/rooted",
       "sprite": "covenant:mob_effect/rooted"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "covenant:mob_effect/chilled",
+      "sprite": "covenant:mob_effect/chilled"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "covenant:mob_effect/armor_shred",
+      "sprite": "covenant:mob_effect/armor_shred"
     }
   ]
 }
