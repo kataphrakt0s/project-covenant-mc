@@ -203,14 +203,16 @@ public final class StatusHud {
             if (active) {
                 tooltip.add(Component.translatable("hud.covenant.status.remaining", footer)); expireAt(row.expiresAt(), tick);
             }
-            if (row.stacks() > 0) { tooltip.add(Component.translatable("hud.covenant.status.stacks", row.stacks())); }
+            if (row.stacks() > 0) { tooltip.add(Component.translatable(skill.equals("blood_fever")
+                    ? "hud.covenant.status.bleeding_enemies" : "hud.covenant.status.stacks", row.stacks())); }
             boolean shield = skill.equals("fortitude_aura") && shieldView > 0 && active;
             if (shield) {
                 badge = String.format(Locale.ROOT, "%.1f", shieldView);
                 tooltip.add(Component.translatable("hud.covenant.fortitude", badge));
             }
             if (skill.equals("rip_and_rush")) { tooltip.add(Component.translatable("hud.covenant.status.rush_speed")); }
-            buffs.add(new Tile(icon(skill, shield), badge, footer, active ? ACTIVE : PASSIVE, active, List.copyOf(tooltip)));
+            buffs.add(new Tile(icon(skill, shield), badge, footer,
+                    skill.equals("blood_fever") ? FIRE : active ? ACTIVE : PASSIVE, active, List.copyOf(tooltip)));
         }
         if (!buffs.isEmpty()) { next.add(List.copyOf(buffs)); }
         groups = List.copyOf(next);

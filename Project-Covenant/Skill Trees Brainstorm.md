@@ -4,6 +4,8 @@ The image is the proposed skill roster and level layout. The levels transcribed
 below are the minimum character levels required to invest the first point in each
 skill; they are real unlock gates, not informational labels. Once a skill is
 unlocked at Rank 1, further ranks do not require additional character levels.
+Blood Fever has no skill prerequisite; the original image's Rend connection is
+superseded by the current tree and the entry below.
 Piercing Shot, Aimed Shot, Cleave, Rend, Arcane Bolt, all four Stalker traps, all
 three elemental bolts, all eleven auras, Lunging Combo, Rip and Rush,
 Disengage, Arcane Arrow, and Multishot are
@@ -978,7 +980,7 @@ are deferred.
 #### Blood Fever
 Minimum character level: 5.
 
-Requires: Rend.
+No skill prerequisite; Rend is not required.
 
 Implemented Rank 1: free self-only passive while assigned to a skill slot.
 Every five ticks, count distinct bleeding enemies within four blocks (including

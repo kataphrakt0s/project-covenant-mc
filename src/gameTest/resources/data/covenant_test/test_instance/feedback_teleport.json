@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "covenant_test:feedback_teleport",
+  "structure": "covenant_test:empty",
+  "max_ticks": 100,
+  "environment": "minecraft:default"
+}

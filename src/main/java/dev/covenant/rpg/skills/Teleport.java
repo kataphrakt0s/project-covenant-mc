@@ -1,7 +1,6 @@
 package dev.covenant.rpg.skills;
 
 import java.util.Set;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.AABB;
@@ -94,8 +93,6 @@ public final class Teleport {
         if (old.distanceToSqr(destination) >= 4) {
             SkillSounds.play(player.level(), destination, net.minecraft.sounds.SoundEvents.ENDERMAN_TELEPORT, .35f, 1.5f);
         }
-        for (var point : new Vec3[] { old, destination }) {
-            player.level().sendParticles(ParticleTypes.PORTAL, point.x, point.y + 1, point.z, 24, .3, .7, .3, .05);
-        }
+        MovementVisuals.teleport(player, old);
     }
 }

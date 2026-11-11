@@ -7,6 +7,16 @@ updated: 2026-11-10
 
 # Art direction
 
+## Approved promotional-art benchmark — 2026-11-10
+
+The user approved the finished hybrid three-class banner as the benchmark for
+promotional art. See [the canonical image and visual rules](../docs/promotional-art/README.md).
+Match its Minecraft-adjacent voxel forms, restrained neutral lighting on characters,
+soft floor light/contact shadows, quiet near-black background, silver/lavender gothic
+border and serif lettering. No overhead/background halos. Limited imagegen refinement
+is acceptable at this restrained level; earlier cinematic treatments are superseded.
+This approval is specific to promotional art and does not approve runtime visuals.
+
 ## Current correction — 2026-11-10
 
 The user finds the overall art too desaturated and realistic, with too little

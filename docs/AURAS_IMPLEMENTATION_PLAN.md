@@ -10,6 +10,13 @@ This supersedes the original temporary-icon/no-persistent-outline presentation
 scope below. Gameplay, coverage queries and saved-state boundaries are unchanged.
 See [Status presentation](RPG_SKILLS.md#status-icons-aura-outlines-and-trap-models).
 
+Phase 6 polish (2026-11-10) replaces generic activation particles with compact
+family-colored release and actual-recipient cues for all eleven auras. Final
+active-supplier expiry, guaranteed Dodge consumption and Fortitude absorption/
+depletion have separate event-driven cues. Passive refresh, source cleanup and
+shield replacement stay quiet. The existing owner-only footprint, icons and
+gameplay contracts remain unchanged; Minecraft visual review remains pending.
+
 The behavior contract lives in [RPG_SKILLS.md](RPG_SKILLS.md#aura-contract)
 and [Skill Trees Brainstorm](<../Project-Covenant/Skill Trees Brainstorm.md>).
 This checklist organizes implementation of all 11 aura skills, including Icy

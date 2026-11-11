@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "environment": "minecraft:default",
+  "function": "covenant_test:feedback_aura_activations",
+  "type": "minecraft:function",
+  "max_ticks": 100
+}

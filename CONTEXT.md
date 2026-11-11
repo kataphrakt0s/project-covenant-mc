@@ -1,5 +1,15 @@
 # Project Covenant context
 
+## Promotional art benchmark
+
+The user approved the final lit, halo-free hybrid combat-class banner on 2026-11-10.
+Use [the benchmark and visual rules](docs/promotional-art/README.md) for future
+promotional artwork: finished Minecraft-adjacent voxel forms, restrained neutral
+lighting and floor shadows, quiet dark background, gothic border and serif type.
+The canonical PNG is `docs/promotional-art/benchmark.png`; that folder is local-only,
+Git-ignored, and absent from fresh checkouts. This is promotional-art
+approval; runtime visual acceptance remains separate.
+
 ## Game design reference
 
 The foundational [Project Covenant GDD](<Project-Covenant/Project Covenant - GDD.md>)
@@ -153,7 +163,8 @@ new projectiles and bleeds capture the bonus once. Rage Storm winds up for sixte
 ticks, then travels eight blocks along full release-time aim, stopping at solid
 terrain; its two-block area pulses for three armor-mitigated damage every ten ticks.
 Blood Fever counts up to five bleeding enemies within four blocks every five ticks
-for up to +10% base movement and +15% base attack speed. It requires Rend.
+for up to +10% base movement and +15% base attack speed. It unlocks at level 5
+without a skill prerequisite; Rend is not required.
 Server datapacks tune these three skills through `data/covenant/skills/reaver.json`;
 higher ranks and converting other Reaver tuning remain separate work. See
 `docs/RPG_SKILLS.md` for snapshots, cleanup and resource bounds. The remaining brainstorm nodes
@@ -594,6 +605,35 @@ native cues; replant supply shortages get one accurate aggregate overlay, withou
 mislabeling denied placement or failed harvests. Thin XP/resource HUDs are intact.
 Sources/previews are ignored `models/ritual_workbench/` and `.local/phase5/`.
 Minecraft rendering, usability, audio balance and new art acceptance remain manual.
+
+Phase 6's first movement-polish batch adds green Disengage departure/actual-segment
+trail/completion cues and violet open Teleport endpoint brackets. Interruptions
+never claim a Disengage arrival; Teleport shows no invented travel path. Native
+particles reuse Minecraft glitter sprites, fade within four/six ticks and respect
+particle settings. Existing sounds, icons, movement, spending and cooldowns remain.
+No new saved data or custom payload. Phase 6's combo batch adds steel/crimson
+actual-segment trails, a short Lunging Combo jab, distinct circular Rip and Rush
+opening/finisher effects, accepted-hit chips and qualifying bleed-consumption
+marks. Lunging Combo's finisher retains the frontal Cleave crescent; its first
+stage still deals no damage. Presentation preserves current stage timing,
+targeting, native status outcomes and resource rules. Existing icons and sounds
+are retained. Reaver signatures now have a Battle Cry snapshot pulse/receipt,
+Rage Storm hollow depth-tested sphere bands with release-synced radius and native
+entity lifetime, and a quiet Blood Fever bleeding-enemy count label/accent.
+Storm geometry survives Minimal; optional decoration is client-local. Accepted
+pulse contacts and natural/terrain breakup use existing authoritative boundaries.
+Weaver signatures now show Discharge's actual consumed elements/strength with
+separate real chains and accepted contacts. Threefold has reserve-proportional
+consumption and one natural-expiry cue from an unsaved receipt on the existing
+owner refresh; banking, unassignment and lifecycle cleanup stay quiet.
+Existing elemental energy/shards are reused; gameplay and icons remain.
+All eleven aura activations now use compact family-colored release/recipient
+cues. Last-supplier expiry is distinct from silent cleanup; guaranteed Dodge
+consumption and Fortitude absorption/depletion have event-driven feedback.
+Passive refresh, overlap bookkeeping and shield replacement never claim a
+false consumption or end. No new visual state, timers or coverage queries.
+Phase 6 implementation is complete;
+Minecraft appearance is unverified. See the Visual Polish Roadmap and validation.
 
 The user handles manual client playtesting. Routine agent work ends after
 implementation and appropriate automated checks, with a short handoff of relevant

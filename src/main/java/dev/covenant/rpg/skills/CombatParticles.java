@@ -34,8 +34,38 @@ public final class CombatParticles {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ICE_ENERGY = type("ice_energy");
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ARCANE_ENERGY = type("arcane_energy");
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ELECTRIC_ENERGY = type("electric_energy");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> RETREAT_MOTE = type("retreat_mote");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BLINK_MOTE = type("blink_mote");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DISENGAGE_DEPARTURE = type("disengage_departure");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DISENGAGE_TRAIL = type("disengage_trail");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DISENGAGE_ARRIVAL = type("disengage_arrival");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> TELEPORT_DEPARTURE = type("teleport_departure");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> TELEPORT_ARRIVAL = type("teleport_arrival");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> COMBO_STEEL = type("combo_steel");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> COMBO_CRIMSON = type("combo_crimson");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> LUNGE_TRAIL = type("lunge_trail");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> RUSH_TRAIL = type("rush_trail");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> LUNGE_STRIKE = type("lunge_strike");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> RIP_SWEEP = type("rip_sweep");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> RUSH_FINISHER = type("rush_finisher");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> COMBO_CONTACT = type("combo_contact");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> COMBO_CONSUME = type("combo_consume");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BATTLE_CRY_PULSE = type("battle_cry_pulse");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BATTLE_CRY_RECEIVED = type("battle_cry_received");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> STORM_DISSIPATE = type("storm_dissipate");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DISCHARGE_FIRE = type("discharge_fire");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DISCHARGE_ICE = type("discharge_ice");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DISCHARGE_LIGHTNING = type("discharge_lightning");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> THREEFOLD_CONSUME = type("threefold_consume");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> THREEFOLD_EXPIRE = type("threefold_expire");
 
     private CombatParticles() {}
+
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURA_RELEASE = type("aura_release");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURA_RECEIVED = type("aura_received");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURA_CONSUMED = type("aura_consumed");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURA_EXPIRED = type("aura_expired");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURA_ABSORB = type("aura_absorb");
 
     private static DeferredHolder<ParticleType<?>, SimpleParticleType> type(String name) {
         return TYPES.register(name, () -> new SimpleParticleType(false));

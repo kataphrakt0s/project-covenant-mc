@@ -5,7 +5,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -43,6 +42,7 @@ public final class Discharge {
     static void execute(ServerPlayer player) {
         var config = WeaverSkillData.get(player.level().getServer()).discharge();
         int[] stacks = WeaverPower.consumeCharges(player);
+        WeaverVisuals.discharge(player, stacks, config);
         var center = player.position(); var eye = player.getEyePosition();
         double fire = stacks[0] * config.damage() * AuraDamage.elementalMultiplier(player, WeaverPower.Element.FIRE);
         double ice = stacks[1] * config.damage() * AuraDamage.elementalMultiplier(player, WeaverPower.Element.ICE);
@@ -55,18 +55,20 @@ public final class Discharge {
         Set<UUID> claimed = new HashSet<>(); LivingEntity first = targets.isEmpty() ? null : targets.getFirst();
         for (var target : targets) {
             claimed.add(target.getUUID());
-            if (hit(player, target, ICE, ice) && target.isAlive()) {
+            boolean landed = hit(player, target, ICE, ice);
+            if (landed && target.isAlive()) {
                 if (stacks[1] == config.stacks()) { Auras.dischargeFreeze(player, target, freezeTicks); }
                 else { DischargeSlow.apply(target, player, config.slow(), slowTicks); }
             }
-            if (hit(player, target, FIRE, fire) && target.isAlive() && !target.fireImmune()) { target.igniteForTicks(burnTicks); }
-            hit(player, target, LIGHTNING, lightning);
+            boolean fireLanded = hit(player, target, FIRE, fire);
+            if (fireLanded && target.isAlive() && !target.fireImmune()) { target.igniteForTicks(burnTicks); }
+            landed |= fireLanded;
+            landed |= hit(player, target, LIGHTNING, lightning);
             if (stacks[0] == config.stacks()) {
-                hit(player, target, EXPLOSION, blast * Math.max(0, 1 - center.distanceTo(target.position()) / config.radius()));
+                landed |= hit(player, target, EXPLOSION, blast * Math.max(0, 1 - center.distanceTo(target.position()) / config.radius()));
             }
+            if (landed) { WeaverVisuals.contact(player, target); }
         }
-        player.level().sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 1, center.z, 32, config.radius() / 2, .6, config.radius() / 2, .04);
-        if (stacks[0] == config.stacks()) { player.level().sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 1, center.z, 1, 0, 0, 0, 0); }
         if (stacks[2] == config.stacks() && first != null) {
             var from = first.getEyePosition();
             for (int jump = 0; jump < config.chainTargets(); jump++) {
@@ -78,7 +80,7 @@ public final class Discharge {
                         .stream().min(Comparator.comparingDouble((LivingEntity t) -> origin.distanceToSqr(t.getEyePosition())).thenComparing(LivingEntity::getUUID)).orElse(null);
                 if (next == null) { break; }
                 claimed.add(next.getUUID()); SkillVisuals.lightning(player.level(), origin, next.getEyePosition());
-                hit(player, next, LIGHTNING, lightning * config.chainMultiplier());
+                if (hit(player, next, LIGHTNING, lightning * config.chainMultiplier())) { WeaverVisuals.contact(player, next); }
                 from = next.getEyePosition();
             }
         }

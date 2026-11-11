@@ -138,6 +138,7 @@ public final class SkillVisuals {
     }
 
     static void charge(ServerPlayer player, SkillDefinition skill) {
+        if (skill.effect() == SkillDefinition.Effect.DISCHARGE) { WeaverVisuals.dischargeCharge(player); return; }
         if (player.tickCount % 2 != 0) { return; }
         var hand = player.getEyePosition().add(player.getLookAngle().scale(0.6)).add(0, -0.25, 0);
         if (skill == SkillDefinition.ARCANE_BOLT) {
@@ -156,9 +157,7 @@ public final class SkillVisuals {
     }
 
     static void rageCharge(ServerPlayer player) {
-        if (player.tickCount % 2 != 0) { return; }
-        var hand = player.getEyePosition().add(player.getLookAngle().scale(.6)).add(0, -.25, 0);
-        player.level().sendParticles(RED, hand.x, hand.y, hand.z, 4, .15, .15, .15, 0);
+        ReaverVisuals.stormCharge(player);
     }
 
     static void aimedCharge(ServerPlayer player) {
@@ -172,28 +171,6 @@ public final class SkillVisuals {
         // Count zero preserves these auxiliary values (as with vanilla's sweep-size parameter).
         player.level().sendParticles(CombatParticles.CLEAVE.get(), player.getX(), player.getY() + .8, player.getZ(),
                 0, Math.toRadians(player.getYRot()), range, 0, 1);
-    }
-
-    /** Rip and Rush affects the full circle; its cue must not imply Cleave's frontal restriction. */
-    static void circularSweep(ServerPlayer player, double range) {
-        sweep(player, range, true);
-    }
-
-    private static void sweep(ServerPlayer player, double range, boolean circular) {
-        var level = player.level();
-        for (int i = 0; i < 24; i++) {
-            double angle = circular ? Math.PI * 2 * i / 24
-                    : Math.toRadians(player.getYRot() + 90 - Skills.CLEAVE_HALF_ANGLE_DEGREES
-                            + i * (2 * Skills.CLEAVE_HALF_ANGLE_DEGREES) / 23.0);
-            double x = player.getX() + Math.cos(angle) * range;
-            double z = player.getZ() + Math.sin(angle) * range;
-            level.sendParticles(RED, x, player.getY() + 0.7, z, 1, 0, 0, 0, 0);
-            if (i % 6 == 0) {
-                level.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                        player.getX() + Math.cos(angle) * range * 0.5, player.getY() + 0.9,
-                        player.getZ() + Math.sin(angle) * range * 0.5, 1, 0, 0, 0, 0);
-            }
-        }
     }
 
     static void cleaveHit(ServerLevel level, LivingEntity target) {

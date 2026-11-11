@@ -2,6 +2,238 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Hunter's Pet walking after combat (2026-11-10)
+
+- Fixed a pinned GeckoLib 5.5.2 controller lockout: completed triggered bite/hurt
+  clips retained control and skipped the idle/walk handler. The controller now
+  receives those callbacks, preserves unfinished actions and explicitly releases
+  completed actions. Hurt/death priority and the existing movement fallback remain.
+- Expanded `pet_locomotion` to advance the actual pinned controller with the
+  shipped clips. It covers repeated bite/hurt recovery, stopping, the negative
+  finished-timeline sentinel, death interruption and held death. The fixture
+  seeds initialized client-trigger state without a physical-client clock.
+- The focused regression failed with `Walk must resume after triggered attack`
+  before enabling the fix, then passed with it. Evidence:
+  `.local/pet-animation-regression-red.log` and
+  `.local/pet-animation-regression-green.log`.
+- `scripts/Dev.ps1 verify` passed build checks, all five wolf clips with 34,926
+  runtime samples, and **All 193 required tests passed :)**. Evidence:
+  `.local/pet-animation-verify.log`. The production JAR contains `HunterPet` and
+  excludes GameTest classes/data.
+- Manual client check: follow/wander, bite an enemy, take damage, then continue
+  moving and stop. Confirm walking resumes after each action and idle resumes
+  on stopping. No client was launched or deployment performed.
+
+## Blood Fever prerequisite removal (2026-11-10)
+
+- Removed Rend from Blood Fever's shared tree metadata. Server purchases and
+  bindings, client prerequisite text/connections, and dependent removal now treat
+  Blood Fever as independent. Its level-5 gate and slotted passive remain.
+- `scripts/Dev.ps1 verify` passed the build checks and **All 193 required tests
+  passed :)**. Updated fixtures cover rejection below level 5, purchase and
+  binding without Rend, shared-bleed bonuses and passive HUD feedback without
+  Rend. Evidence: `.local/blood-fever-prerequisite-verify.log`.
+- Manual client check: the Reaver tree shows no Rend connection or requirement
+  for Blood Fever, and allows its purchase at level 5 without learning Rend.
+  No client was launched or deployment performed.
+
+## Phase 6 aura activation effects (2026-11-10)
+
+- `scripts/Dev.ps1 build` passed. Final `scripts/Dev.ps1 verify` reported
+  **All 193 required tests passed :)**. Evidence:
+  `.local/phase6/aura-build.log`, `.local/phase6/aura-final-verify.log` and
+  `runs/gametest/logs/latest.log`. `git diff --check` passed.
+- All eleven instant aura activations now have compact family-colored release
+  and actual-recipient cues. Generic cloud/enchant/dust receipts are replaced
+  with open green, crimson, steel, pale-blue, electric-blue and violet shapes.
+  Real entity dimensions size recipients within fixed limits. Current icons,
+  native sounds, merged owner-only footprint and gameplay remain unchanged.
+- Natural expiry emits only when the final overlapping active supplier ends.
+  Passive refresh/expiry and lifecycle/loadout cleanup remain quiet. Guaranteed
+  Dodge consumption emits once; Fortitude distinguishes positive partial
+  absorption from depletion, without false breaks on replacement or expiry
+  after depletion. Hooks use existing authoritative transitions and expiry work;
+  no new visual state, scans, tick handlers or custom payloads.
+- Three native feedback tests cover every aura identity, payment rejection,
+  freeze immunity, self versus hostile recipients, teammates/pets, late entrants,
+  overlapping expiry, actual guaranteed Dodge, rejected shield damage, partial
+  absorption, depletion, replacement, unassignment and lifecycle cleanup.
+  Expiry fixtures advance existing deadlines; existing aura tests retain
+  real-duration, damage, ownership, projectile and lifecycle coverage.
+- Packaged audit passed **52 particle definitions / 322 sprite references**,
+  byte-matching sources and resolving native/Covenant textures. Aura emitter and
+  common helper classes are present; test classes are absent. Evidence:
+  `.local/phase6/aura-asset-audit.txt`. Brief/source map:
+  ignored `models/aura_activations/BRIEF.md`.
+- Budgets per event: 12 release, eight receipt/consumption, four partial-shield
+  or natural-expiry children. Existing two-to-seven-tick particles use native
+  depth and limiting. Event counts scale with actual recipients/hits, not
+  passive refreshes. These are code limits, not measured performance gains.
+- Output: `build/libs/covenant-0.1.0-dev.jar`; no deployment or client launch.
+  Manual checks: all eleven identities in first/third person, pet scaling,
+  observers, overlapping sources, shield damage/depletion versus replacement,
+  expiry versus cleanup, Minimal, terrain contrast and resource reload. Minecraft
+  rendering, latency/multiplayer and performance acceptance remain pending.
+
+## Phase 6 Weaver signature effects (2026-11-10)
+
+- `scripts/Dev.ps1 build` passed. Final `scripts/Dev.ps1 verify` reported
+  **All 190 required tests passed :)**. Evidence:
+  `.local/phase6/weaver-final-verify.log` and `runs/gametest/logs/latest.log`.
+  `git diff --check` passed.
+- Discharge emits only its actual consumed elements, with density based on
+  charge fraction and a full-bank accent. Main targets receive one aggregated
+  accepted-hit mark; external lightning chains retain real endpoints and accepted
+  contacts. Wind-up motes show held elements only. Old enchant/explosion sprites
+  are removed. Damage, riders, targeting, costs and timings remain unchanged.
+- Threefold has inward consumption cues proportional to actual reserves and one
+  small natural-expiry breakup retaining consumed element identity. An unsaved
+  receipt runs on the existing owner refresh, with no additional tick handler.
+  Reserve banking, passive refresh, unassignment and lifecycle cleanup remain
+  quiet. Existing icons, energy/shards and authoritative HUD are retained.
+- Two new native feedback tests use real casts/damage to check partial/full/absent
+  banks, payment/cancellation, one-time consumption, actual chain endpoints,
+  accepted versus protected contacts, reserve fractions, natural expiry once,
+  unassignment and logout. Expiry feedback advances only the fixture deadline;
+  existing Weaver tests cover normal duration, resource, damage, reload and
+  lifecycle behavior. These tests do not establish client appearance.
+- The first full run exposed an existing aura ownership fixture that queried
+  newly spawned pets without waiting for entity-ticking chunks. That test now
+  holds fixture-only loading tickets and waits for readiness before setup.
+  The second run exposed a similar lifecycle-route fixture using a fixed
+  two-tick delay for remote trap lanes; it now waits for simulation readiness
+  with its own tickets. Both release resources on completion, with idempotent
+  timeout fallback cleanup. No production chunk forcing was added. Earlier
+  logs: `.local/phase6/weaver-initial-verify.log` and
+  `.local/phase6/weaver-second-verify.log`; both new Weaver tests passed in each.
+- Packaged audit passed **47 particle definitions / 282 sprite references**,
+  byte-matching source files and resolving native/Covenant textures. Weaver
+  emitter/helper classes are packaged; test classes are absent. Evidence:
+  `.local/phase6/weaver-asset-audit.txt`; brief/source mapping:
+  ignored `models/weaver_signatures/BRIEF.md`.
+- Limits: three wind-up motes every four owner ticks, at most 91 Discharge
+  children across all-full banks, 24 Threefold activation and nine expiry motes.
+  Native limiting/depth behavior and short energy/shard lifetimes apply. These
+  are code limits, not measured performance improvements.
+- Output: `build/libs/covenant-0.1.0-dev.jar`; no deployment or client launch.
+  Manual checks: first/third-person aim, partial/mixed/full banks, real chains,
+  protected/covered targets, Threefold expiry versus cancellation, Minimal,
+  terrain contrast, overlapping casts, observers and resource reload. Rendering,
+  real latency/multiplayer and comparative performance acceptance remain pending.
+
+## Phase 6 Reaver signature effects (2026-11-10)
+
+- Battle Cry now emits one radius-aware shout pulse and a brief receipt at each
+  actual beneficiary. Rage Storm has a real-cast hand cue, hollow rotating bands
+  using its release-synced radius, accepted-hit marks and one natural/terrain
+  breakup. Blood Fever retains its quiet synced count with a crimson accent and
+  a specific bleeding-enemy label. Current icons, sounds, timings, recipient/
+  target rules, resource costs, cooldowns and gameplay remain unchanged.
+- `scripts/Dev.ps1 build` passed. Final `scripts/Dev.ps1 verify` reported
+  **All 188 required tests passed :)**. Three new native feedback tests cover
+  shout recipients/late entrants/rejections, real cast cancellation and rejected
+  storm admission, native radius tracking/distance culling, accepted versus
+  immune pulse damage, terrain/lifecycle termination, and quiet Blood Fever
+  count refresh. Fixtures wait for entity-ticking chunks, use distinct player
+  names for scoreboard teams, and originally learned Rend before binding Blood
+  Fever (that prerequisite was removed on 2026-11-10).
+  Existing Reaver gameplay, reload, damage and lifecycle coverage remains passing.
+  Final evidence: `.local/phase6/reaver-final-verify.log` and
+  `runs/gametest/logs/latest.log`.
+- The production mesh check is part of `build`: spherical vertex bounds,
+  hollow center, thin nondegenerate bands, all-axis extent, bounded mesh size,
+  tiny/large legal radii, rotating phases and invalid-input rejection passed.
+  Five broken bands use 80 quads. Native `debugQuads` was checked in resolved
+  26.1.2.126 sources: translucent blending, depth test enabled, no depth writes,
+  no culling. The renderer accounts for visual radius in frustum and distance
+  culling; the tiny gameplay body stays unchanged.
+- Packaged audit passed **42 definitions / 242 sprite references**, all
+  byte-matching sources and resolving native/Covenant textures. New renderer,
+  geometry, emitter and common helper classes plus the HUD label are packaged;
+  test classes are absent. Evidence: `.local/phase6/reaver-asset-audit.txt`.
+  `git diff --check` passed. No new bitmap assets or custom payloads.
+- Budgets: 32 shout motes, six per actual recipient, six local storm motes every
+  other client tick and twelve at natural/terrain termination. Decoration fades
+  within four ticks and respects native limiting; the shell survives Minimal.
+  No world scan, chunk forcing, persistent visual state, per-refresh passive
+  spectacle or recurring server storm-particle stream. These are implementation
+  limits, not measured performance gains. Brief/source mapping:
+  ignored `models/reaver_signatures/BRIEF.md`.
+- Output: `build/libs/covenant-0.1.0-dev.jar`; no deployment or client launch.
+  Manual checks: shout recipients/observers, real cast cancellation, near/steep/
+  vertical storm motion, hollow volume and targets, walls and lifecycle removal,
+  Minimal, distant/frustum culling, pale/dark terrain, multiple storms, Blood
+  Fever count readability, F1 and resource reload. Minecraft rendering,
+  latency/multiplayer and comparative performance acceptance remain pending.
+
+## Phase 6 Reaver combo effects (2026-11-10)
+
+- Lunging Combo has a steel trail on actual movement, a small hand-level strike
+  and the existing frontal Cleave crescent. Its first stage remains harmless.
+  Rip and Rush has separate circular opening/finisher bursts, a crimson trail,
+  accepted-hit chips and inward marks on qualifying bleed consumption. Damage
+  marks do not claim successful native armor-shred application. The existing
+  icons, stage HUD, sounds, windows, costs, targeting and cooldowns are retained.
+- `scripts/Dev.ps1 build` passed and `scripts/Dev.ps1 verify` reported
+  **All 185 required tests passed :)**. Two new tests use native activations and
+  captured particle packets to verify harmless movement, actual trail coordinates,
+  completed/interrupted trail silence, native picked strikes, frontal versus
+  circular damage, defended/empty attacks, one dash contact per target, and
+  qualifying lethal bleed consumption versus dry/prevented hits and repeats.
+  Existing movement/prediction, combo lifecycle, damage and progression tests
+  remain passing. Evidence: `.local/phase6/combo-build.log`,
+  `.local/phase6/combo-verify.log` and `runs/gametest/logs/latest.log`.
+- Packaged audit passed **39 definitions / 218 sprite references**, including
+  nine new combo definitions using native glitter frames. Sources byte-match
+  the JAR, all native/Covenant sprites resolve, movement/combo runtime classes
+  are packaged and test classes are absent. Evidence:
+  `.local/phase6/combo-asset-audit.txt`. `git diff --check` passed.
+- Local effects expire in four ticks: three motes per actual movement segment,
+  24 per circular release, five per jab, four per contact and six per qualifying
+  bleed consumption. These are explicit budgets, not measured performance gains.
+  The old repeated-packet circular dust/sweep helper is removed. No new custom
+  networking, saved state or recurring stage emitter. Brief/source mapping:
+  ignored `models/combo_effects/BRIEF.md`.
+- Output: `build/libs/covenant-0.1.0-dev.jar`; no deployment or client launch.
+  Manual checks remain: first/third person, vertical/sliding/clipped movement,
+  root/knockback, frontal versus circular recognition, whiffs and defended hits,
+  consumption versus ordinary contact, crowded enemies, pale/dark terrain,
+  nearby observers, particle settings and resource reload. Minecraft appearance,
+  real-network observer timing and comparative performance are unverified.
+
+## Phase 6 movement effects (2026-11-10)
+
+- Disengage now emits one green departure, low flecks along actual native
+  collision segments and one arrival at natural/terrain completion. Arrival
+  retains the departure heading. Root/lifecycle cancellation stops further
+  emission without an arrival; existing motes fade within four ticks.
+- Teleport replaces the old portal clouds with two open violet bracket effects
+  at the confirmed endpoints, lasting six ticks. No invented travel line,
+  preparation delay, new sound, saved state or custom payload. Native particle
+  limiting and distance/depth checks remain; the small breakup uses collision.
+- `scripts/Dev.ps1 build` passed, followed by `scripts/Dev.ps1 verify` with
+  **All 183 required tests passed :)**. The two new production-activation tests
+  verify actual trail segment coordinates, heading capture, wall clipping,
+  interruption/lifecycle silence, ceiling-clipped blink endpoints, rejected
+  destinations/cooldowns, unchanged rejected spending and native limiter flags.
+  Existing movement prediction, control, lifecycle and combo tests also pass.
+  Evidence: `.local/phase6/verify.log` and `runs/gametest/logs/latest.log`.
+- Packaged audit passed for **30 particle definitions / 146 sprite references**,
+  including seven new definitions reusing native glitter frames. Definitions
+  byte-match sources; all sprites resolve in Covenant or the pinned Minecraft
+  client JAR; both new runtime classes are packaged and test classes are absent.
+  Evidence: `.local/phase6/asset-audit.txt`. Native nullable particle-provider
+  and engine APIs were checked in the resolved 26.1.2.126 sources.
+- Unobstructed Disengage creates at most 28 local motes, with a solver-bound
+  maximum of 64; Teleport creates 24 from two endpoint packets. These are
+  emission budgets, not measured performance improvements. Sources/brief:
+  ignored `models/movement_effects/BRIEF.md`; runtime output:
+  `build/libs/covenant-0.1.0-dev.jar`. No deployment or client launch.
+- Manual checks remain: first/third-person aim, turning, airborne/vertical
+  Teleport, walls/slabs/low ceilings, root and knockback, nearby observers,
+  pale/dark terrain, All/Decreased/Minimal, overlap and resource reload. No
+  Minecraft visual, audio-balance or real-network acceptance is claimed.
+
 ## Particle-driven bolt correction (2026-11-10)
 
 - Replaced Arcane/Fire/Ice generated-item rendering with thin travel-aligned
@@ -632,7 +864,8 @@ Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 ## Reaver Battle Cry, Rage Storm and Blood Fever (2026-11-08)
 
 - Rank 1 implementations follow the Obsidian Reaver balance proposal. Blood Fever
-  is passive while slotted and requires Rend. Rage Storm follows full release-time
+  is passive while slotted; its original Rend prerequisite was removed on
+  2026-11-10. Rage Storm follows full release-time
   aim, stops at solid terrain, and cannot damage through cover. Higher ranks and
   other proposed Reaver changes remain deferred. See `RPG_SKILLS.md` for the
   implementation contract and `data/covenant/skills/reaver.json` tuning schema.

@@ -6,9 +6,6 @@ import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.stats.RpgStats;
 import java.util.*;
 import net.minecraft.core.Holder;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,7 +22,6 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /** Transient source-owned coverage. Only assigned sources query space; recipients age their own grants. */
 public final class Auras {
-    private static final DustParticleOptions RAGE_CUE = new DustParticleOptions(0xE34336, .7f);
     /** Radius in blocks, refresh interval and passive grace in game ticks; none scale with duration. */
     public static final double RADIUS = 6;
     public static final int REFRESH_TICKS = 10, COVERAGE_TICKS = 20;
@@ -125,11 +121,12 @@ public final class Auras {
     static void battleCry(ServerPlayer source) {
         var config = ReaverSkillData.get(source.level().getServer()).cry();
         long until = now(source) + Math.max(1, (long) Math.ceil(RpgStats.scaleSkillValue(source, RpgStats.SKILL_DURATION, config.duration())));
+        ReaverVisuals.shout(source, config.radius());
         for (var target : nearby(source, config.radius())) {
             if (!allied(source, target)) { continue; }
             target.getData(RpgData.AURAS).battleCryPower.put(source.getUUID(), config.bonus());
             grant(source, target, Kind.BATTLE_CRY, true, until);
-            activationParticles(source, target, Kind.BATTLE_CRY);
+            ReaverVisuals.received(source, target);
         }
     }
 
@@ -151,6 +148,7 @@ public final class Auras {
         var kind = Kind.of(definition);
         long until = now(source) + Math.max(1, (long) Math.ceil(RpgStats.scaleSkillValue(source, RpgStats.SKILL_DURATION, kind.duration)));
         boolean self = kind.selfOnly || kind == Kind.SHOCK || kind == Kind.IMMOLATION;
+        AuraVisuals.emit(source, kind, CombatParticles.AURA_RELEASE.get());
         for (var target : self ? List.<LivingEntity>of(source) : nearby(source)) {
             if (!self && !(kind.offensive ? Skills.canHit(source, target) : allied(source, target))) { continue; }
             if (kind == Kind.FREEZING && target.isInvulnerableTo(source.level(), source.damageSources().freeze())) { continue; }
@@ -163,22 +161,8 @@ public final class Auras {
                     Combos.interruptMovement(player, false);
                 }
             }
-            activationParticles(source, target, kind);
+            AuraVisuals.emit(target, kind, CombatParticles.AURA_RECEIVED.get());
         }
-    }
-
-    /** One brief receipt cue per activation; passive refreshes never emit particles or sounds. */
-    private static void activationParticles(ServerPlayer source, LivingEntity target, Kind kind) {
-        ParticleOptions particle = switch (kind) {
-            case FREEZING, ICY_VEINS, DISCHARGE_FREEZE -> CombatParticles.ICE_SHARD.get();
-            case FLAME_CLOAK, IMMOLATION -> CombatParticles.EMBER.get();
-            case SHOCK -> CombatParticles.LIGHTNING_MOTE.get();
-            case DODGE, SWIFTNESS -> ParticleTypes.CLOUD;
-            case RIPPING, RAGING, BATTLE_CRY -> RAGE_CUE;
-            default -> ParticleTypes.ENCHANT;
-        };
-        source.level().sendParticles(particle, target.getX(), target.getY() + .9, target.getZ(),
-                6, .3, .35, .3, .01);
     }
 
     /** Damage-gated Discharge rider shares freeze control while retaining separate source cleanup. */
@@ -249,6 +233,7 @@ public final class Auras {
         var grants = target.getData(RpgData.AURAS).active.remove(Kind.DODGE);
         grants.keySet().forEach(owner -> unlink(target, owner));
         sync(target);
+        AuraVisuals.emit(target, Kind.DODGE, CombatParticles.AURA_CONSUMED.get());
         return true;
     }
 
@@ -260,7 +245,11 @@ public final class Auras {
 
     static float absorb(LivingEntity target, float damage) {
         float absorbed = Math.min(shield(target), Math.max(0, damage));
-        if (absorbed > 0) { target.getData(RpgData.AURAS).shield -= absorbed; sync(target); }
+        if (absorbed > 0) {
+            target.getData(RpgData.AURAS).shield -= absorbed; sync(target);
+            AuraVisuals.emit(target, Kind.FORTITUDE, shield(target) > 0
+                    ? CombatParticles.AURA_ABSORB.get() : CombatParticles.AURA_CONSUMED.get());
+        }
         return absorbed;
     }
 
@@ -380,14 +369,19 @@ public final class Auras {
             boolean changed = false;
             state.nextExpiry = Long.MAX_VALUE;
             for (var maps : List.of(state.passive, state.active)) {
-                for (var grants : maps.values()) {
+                for (var entry : maps.entrySet()) {
+                    var grants = entry.getValue();
                     var iterator = grants.entrySet().iterator();
                     while (iterator.hasNext()) { var grant = iterator.next(); if (grant.getValue() <= now) { removedOwners.add(grant.getKey()); iterator.remove(); changed = true; }
                         else { state.nextExpiry = Math.min(state.nextExpiry, grant.getValue()); } }
+                    if (maps == state.active && grants.isEmpty()) {
+                        AuraVisuals.emit(target, entry.getKey(), CombatParticles.AURA_EXPIRED.get());
+                    }
                 }
                 maps.values().removeIf(Map::isEmpty);
             }
             if (state.shieldOwner != null && (state.shieldUntil <= now || state.shield <= 0)) {
+                if (state.shield > 0) { AuraVisuals.emit(target, Kind.FORTITUDE, CombatParticles.AURA_EXPIRED.get()); }
                 removedOwners.add(state.shieldOwner); state.shieldOwner = null; state.shield = 0; changed = true;
             }
             if (state.shieldOwner != null) { state.nextExpiry = Math.min(state.nextExpiry, state.shieldUntil); }

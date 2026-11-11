@@ -5,6 +5,7 @@ import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -134,12 +135,21 @@ public final class HunterPet extends Wolf implements GeoEntity {
             var pet = state.animatable();
             if (pet.isDeadOrDying()) { return state.setAndContinue(DEATH); }
             if (pet.hurtTime > 0) { return state.setAndContinue(HURT); }
+            var controller = state.controller();
+            if (controller.isTriggeredAnimation("attack") || controller.isTriggeredAnimation("hurt")) {
+                // GeckoLib 5.5.2 retains completed triggers and otherwise skips this handler forever.
+                // Keep pending/playing actions intact, then explicitly hand control back to locomotion.
+                var point = controller.getCurrentAnimationPoint();
+                if (point == null || !point.hasFinished()) { return PlayState.CONTINUE; }
+                controller.stopTriggeredAnimation();
+            }
             // Remote wolves can travel through interpolation with no native limb-speed flag.
             // Native cached tick displacement detects that travel without using AI intent or stale velocity.
             double travel = pet.getKnownSpeed().horizontalDistanceSqr();
             boolean moved = !pet.isPassenger() && travel >= .000025 && travel <= 1;
             return state.setAndContinue(state.isMoving() || moved ? WALK : IDLE);
-        }).triggerableAnim("attack", ATTACK).triggerableAnim("hurt", HURT).triggerableAnim("death", DEATH));
+        }).receiveTriggeredAnimations()
+                .triggerableAnim("attack", ATTACK).triggerableAnim("hurt", HURT).triggerableAnim("death", DEATH));
     }
     @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
 }

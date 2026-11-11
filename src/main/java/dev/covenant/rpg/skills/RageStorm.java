@@ -7,9 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -30,6 +31,7 @@ import net.minecraft.world.phys.Vec3;
 
 /** Short-lived native entity, fixed 3D release aim, local pulses and terrain clipping; never saved or chunk-forced. */
 public final class RageStorm extends Entity {
+    private static final EntityDataAccessor<Float> VISUAL_RADIUS = SynchedEntityData.defineId(RageStorm.class, EntityDataSerializers.FLOAT);
     public static final ResourceKey<DamageType> DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE,
             Identifier.fromNamespaceAndPath("covenant", "rage_storm"));
     private ServerPlayer owner;
@@ -43,6 +45,13 @@ public final class RageStorm extends Entity {
 
     public RageStorm(EntityType<? extends RageStorm> type, Level level) { super(type, level); }
     public ServerPlayer getOwner() { return owner; }
+    /** Release-time radius in blocks, zero until the paid release; native tracking supplies it to observers. */
+    public float visualRadius() { return entityData.get(VISUAL_RADIUS); }
+    @Override public boolean shouldRenderAtSqrDistance(double distance) {
+        // The gameplay entity is a tiny center marker; distance culling must use its visible volume.
+        double range = Math.max(1, visualRadius() * 2) * 64 * getViewScale();
+        return visualRadius() > 0 && distance < range * range;
+    }
 
     /** Prepare before spending; an entity-join rejection never spends resource or commits a cooldown. */
     static RageStorm prepare(ServerPlayer owner) {
@@ -58,7 +67,10 @@ public final class RageStorm extends Entity {
     void release() {
         released = true;
         owner.getData(RpgData.SKILL_RUNTIME).storms.add(this);
-        if (validOwner() && loaded(getBoundingBox().inflate(config.radius()))) { pulse(); }
+        if (validOwner() && loaded(getBoundingBox().inflate(config.radius()))) {
+            entityData.set(VISUAL_RADIUS, (float) config.radius());
+            pulse();
+        }
         else { discard(); }
     }
     public static void clear(ServerPlayer owner) {
@@ -66,7 +78,7 @@ public final class RageStorm extends Entity {
     }
     public int attempts(LivingEntity target) { return attempts.getOrDefault(target.getUUID(), 0); }
 
-    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) { builder.define(VISUAL_RADIUS, 0f); }
     @Override protected void readAdditionalSaveData(ValueInput input) { discard(); }
     @Override protected void addAdditionalSaveData(ValueOutput output) {}
     @Override public boolean hurtServer(ServerLevel level, DamageSource source, float damage) { return false; }
@@ -84,23 +96,30 @@ public final class RageStorm extends Entity {
     @Override public void tick() {
         try (var zone = Profiler.get().zone("covenant:rage_storm")) {
             super.tick();
+            if (level().isClientSide()) {
+                // Entity-owned decoration stops on native removal. No server particle stream or world scan.
+                if (visualRadius() > 0 && tickCount % 2 == 0) {
+                    for (int i = 0; i < 6; i++) {
+                        double angle = tickCount * .35 + i * Math.PI / 3;
+                        double height = (i % 3 - 1) * visualRadius() * .55;
+                        double ring = Math.sqrt(visualRadius() * visualRadius() - height * height) * .9;
+                        level().addParticle(CombatParticles.COMBO_CRIMSON.get(), getX() + Math.cos(angle) * ring,
+                                getY() + height, getZ() + Math.sin(angle) * ring, 0, 0, 0);
+                    }
+                }
+                return;
+            }
             if (!(level() instanceof ServerLevel level)) { return; }
             if (!released || !validOwner()) { discard(); return; }
             double step = Math.min(config.speed(), config.distance() - travelled);
             var next = position().add(direction.scale(step));
             if (!loaded(new AABB(position(), next).inflate(config.radius()))) { discard(); return; }
             var hit = level.clip(new ClipContext(position(), next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-            if (hit.getType() != HitResult.Type.MISS) { discard(); return; }
+            if (hit.getType() != HitResult.Type.MISS) { ReaverVisuals.stormEnd(this); discard(); return; }
             setPos(next);
             travelled += step;
             if (++age % config.interval() == 0) { pulse(); }
-            if (age % 2 == 0) {
-                // Bounded visible volume with no custom client simulation or gameplay packets.
-                level.sendParticles(ParticleTypes.CRIMSON_SPORE, getX(), getY(), getZ(), 10,
-                        config.radius() * .55, config.radius() * .55, config.radius() * .55, .01);
-                level.sendParticles(ParticleTypes.SWEEP_ATTACK, getX(), getY(), getZ(), 1, .5, .5, .5, 0);
-            }
-            if (travelled >= config.distance() - 1e-6) { discard(); }
+            if (travelled >= config.distance() - 1e-6 && !isRemoved()) { ReaverVisuals.stormEnd(this); discard(); }
         }
     }
     private boolean loaded(AABB box) {
@@ -116,7 +135,9 @@ public final class RageStorm extends Entity {
             if (attempts(target) >= config.hits() || level.clip(new ClipContext(position(), target.getBoundingBox().getCenter(),
                     ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() != HitResult.Type.MISS) { continue; }
             attempts.merge(target.getUUID(), 1, Integer::sum);
+            var before = AuraDamage.before(target);
             target.hurtServer(level, source, damage);
+            if (before.landed(target)) { ComboVisuals.contact(owner, target); }
         }
     }
 }

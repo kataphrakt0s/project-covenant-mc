@@ -40,6 +40,11 @@ public final class CovenantClient {
         modBus.addListener(ClientSkillVisuals::register);
         modBus.addListener(CombatParticle::register);
         modBus.addListener(EnergyParticle::register);
+        modBus.addListener(MovementParticle::register);
+        modBus.addListener(ComboParticle::register);
+        modBus.addListener(ReaverParticle::register);
+        modBus.addListener(WeaverParticle::register);
+        modBus.addListener(AuraParticle::register);
         modBus.addListener(AffixMaterialProperty::register);
         modBus.addListener(this::registerKeys);
         NeoForge.EVENT_BUS.addListener(this::onKey);
@@ -60,7 +65,7 @@ public final class CovenantClient {
         event.registerEntityRenderer(Skills.FIRE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.FIRE));
         event.registerEntityRenderer(Skills.ICE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.ICE));
         event.registerEntityRenderer(Skills.TRAP.get(), TrapRenderer::new);
-        event.registerEntityRenderer(Skills.RAGE_STORM.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(Skills.RAGE_STORM.get(), RageStormRenderer::new);
     }
 
     private void registerKeys(RegisterKeyMappingsEvent event) {

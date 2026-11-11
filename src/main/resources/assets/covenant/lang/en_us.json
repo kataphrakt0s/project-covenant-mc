@@ -379,6 +379,7 @@
   "hud.covenant.status.passive": "Passive effect",
   "hud.covenant.status.remaining": "Active: %s remaining",
   "hud.covenant.status.stacks": "%s stacks",
+  "hud.covenant.status.bleeding_enemies": "%s bleeding enemies",
   "hud.covenant.status.discharge": "Stored elemental charges",
   "hud.covenant.status.threefold.active": "Elemental damage bonuses active",
   "hud.covenant.status.threefold.reserve": "Stored elemental power",

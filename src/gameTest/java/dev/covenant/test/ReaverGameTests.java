@@ -88,6 +88,7 @@ final class ReaverGameTests {
         try (var f = new Fixture(helper)) {
             var source = f.player(PlayerClass.REAVER, 0); var friend = f.player(PlayerClass.REAVER, 1); f.team(source, friend);
             f.learn(source, SkillDefinition.BLOOD_FEVER);
+            check(!source.getData(RpgData.SKILL_LOADOUT).learned().contains(SkillDefinition.REND.id()), "Passive fixture has no Rend");
             var target = f.target(2); Bleeding.apply(target, friend, .1f, 100);
             BloodFever.refresh(source);
             near(source.getAttributeValue(Attributes.MOVEMENT_SPEED), .1, "Learned but unassigned passive grants nothing");
@@ -245,10 +246,15 @@ final class ReaverGameTests {
     static void config(GameTestHelper helper) {
         try (var f = new Fixture(helper)) {
             var source = f.player(PlayerClass.REAVER, 0);
+            dev.covenant.rpg.PlayerProfiles.update(source, profile -> dev.covenant.rpg.progression.Progression.atLevel(profile, 4));
+            SkillLoadouts.apply(source, java.util.Map.of(), java.util.Map.of(SkillDefinition.BLOOD_FEVER.id(), 1));
+            check(source.getData(RpgData.SKILL_LOADOUT).learned().isEmpty(), "Blood Fever still requires level five");
             dev.covenant.rpg.PlayerProfiles.update(source, profile -> dev.covenant.rpg.progression.Progression.atLevel(profile, 5));
             SkillLoadouts.apply(source, java.util.Map.of(), java.util.Map.of(SkillDefinition.BLOOD_FEVER.id(), 1));
-            check(source.getData(RpgData.SKILL_LOADOUT).learned().isEmpty(), "Blood Fever requires Rend");
-            SkillLoadouts.apply(source, java.util.Map.of(), java.util.Map.of(SkillDefinition.REND.id(), 1, SkillDefinition.BLOOD_FEVER.id(), 1,
+            check(source.getData(RpgData.SKILL_LOADOUT).ranks().equals(java.util.Map.of(SkillDefinition.BLOOD_FEVER.id(), 1)), "Blood Fever purchases without Rend");
+            SkillLoadouts.bind(source, 0, SkillDefinition.BLOOD_FEVER.id());
+            check(BloodFever.assigned(source), "Blood Fever binds without Rend");
+            SkillLoadouts.apply(source, java.util.Map.of(SkillDefinition.BLOOD_FEVER.id(), 1), java.util.Map.of(SkillDefinition.REND.id(), 1, SkillDefinition.BLOOD_FEVER.id(), 1,
                     SkillDefinition.CLEAVE.id(), 1, SkillDefinition.RAGE_STORM.id(), 1, SkillDefinition.BATTLE_CRY.id(), 1));
             check(source.getData(RpgData.SKILL_LOADOUT).learned().size() == 5, "Five-point playable branch purchases");
             try (var reader = helper.getLevel().getServer().getServerResources().resourceManager().getResourceOrThrow(ReaverSkillData.FILE).openAsReader()) {

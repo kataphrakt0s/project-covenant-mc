@@ -53,6 +53,8 @@ public final class Combos {
         int ticks;
         boolean stepping;
         boolean hitSoundPlayed;
+        boolean travelled;
+        double departureYaw;
         long lastTick = Long.MIN_VALUE;
         Movement(Progress progress, Vec3 step, int ticks, boolean noGravity, float damage, int shredDuration) {
             this.progress = progress; this.step = step; this.ticks = ticks; this.noGravity = noGravity;
@@ -112,12 +114,13 @@ public final class Combos {
         float damage = (float) (player.getAttributeValue(RpgStats.DAMAGE) * AuraDamage.multiplier(player, false));
         int shredDuration = duration(player, ArmorShred.DURATION_TICKS);
         if (progress.kind == Kind.LUNGING && progress.stage == 1) {
+            ComboVisuals.strike(player);
             var target = MeleeSkills.rendTarget(player);
             if (target != null) {
                 var before = AuraDamage.before(target);
                 MeleeSkills.hurtMeleeSkill(player, target, damage * 1.25f);
                 if (before.landed(target)) {
-                    SkillVisuals.cleaveHit(player.level(), target);
+                    ComboVisuals.contact(player, target);
                     SkillSounds.meleeHit(player);
                 }
             }
@@ -129,7 +132,7 @@ public final class Combos {
         int speedDuration = duration(player, 80);
         int consumed = 0;
         boolean landed = false;
-        if (progress.kind == Kind.RUSH) { SkillVisuals.circularSweep(player, 3); }
+        if (progress.kind == Kind.RUSH) { ComboVisuals.sweep(player, progress.stage == 2); }
         else { SkillVisuals.cleave(player, 3); }
         for (var target : targets) {
             if (player.getData(RpgData.SKILL_RUNTIME).combos.get(progress.kind) != progress) { break; }
@@ -143,13 +146,14 @@ public final class Combos {
             MeleeSkills.hurtMeleeSkill(player, target, damage);
             if (!before.landed(target)) { continue; }
             landed = true;
-            SkillVisuals.cleaveHit(player.level(), target);
+            ComboVisuals.contact(player, target);
             if (progress.kind == Kind.LUNGING) {
                 ArmorShred.apply(target, player, shredDuration);
             } else if (bleeding || Bleeding.count(target) > 0) {
                 // Death cleanup may already have removed the pre-hit bleeds; a killing hit still earns credit.
                 Bleeding.consume(target);
                 consumed++;
+                ComboVisuals.consume(player, target);
             }
         }
         if (landed) { SkillSounds.meleeHit(player); }
@@ -191,6 +195,7 @@ public final class Combos {
         var step = new Vec3(Math.sin(yaw) * 4 / ticks, 2.0 * (ticks - 1) / (ticks * ticks), -Math.cos(yaw) * 4 / ticks);
         var movement = new Movement(null, step, ticks, player.isNoGravity(), 0, 0);
         movement.acceleration = new Vec3(0, -4.0 / (ticks * ticks), 0);
+        movement.departureYaw = yaw;
         runtime.movement = movement;
         runtime.awaitingDashSequence = 0;
         player.setDeltaMovement(Vec3.ZERO);
@@ -199,6 +204,7 @@ public final class Combos {
         player.setData(RpgData.COMBO_MOVING, true);
         sendMotion(player, new DashMotion(++runtime.motionSequence, player.level().dimension().identifier(),
                 player.position(), step, ticks, movement.noGravity, Vec3.ZERO, movement.acceleration));
+        MovementVisuals.disengageDeparture(player);
     }
 
     /** Used by movement mixins on both sides; owner display remains separate. */
@@ -276,8 +282,18 @@ public final class Combos {
             movement.stepping = true;
             DashMovement.Result result;
             try {
-                result = DashMovement.move(player, movement.step, movement.progress != null && movement.progress.kind == Kind.RUSH ? (body, travelled) -> {
-                    dashHits(player, movement, body, travelled);
+                result = DashMovement.move(player, movement.step, movement.progress != null ? (body, travelled) -> {
+                    if (runtime.movement != movement) { return false; }
+                    ComboVisuals.trail(player, movement.progress.kind, body, travelled);
+                    if (movement.progress.kind == Kind.RUSH) { dashHits(player, movement, body, travelled); }
+                    return runtime.movement == movement;
+                } : movement.progress == null ? (body, travelled) -> {
+                    if (runtime.movement != movement) { return false; }
+                    if (travelled.lengthSqr() >= 1e-8) {
+                        movement.travelled = true;
+                        MovementVisuals.disengageStep(player.level(),
+                                new Vec3((body.minX + body.maxX) * .5, body.minY, (body.minZ + body.maxZ) * .5), travelled);
+                    }
                     return runtime.movement == movement;
                 } : null, movement.progress != null);
             }
@@ -288,7 +304,11 @@ public final class Combos {
             if (runtime.movement != movement) { return; }
             if (Math.abs(result.nextStep().y - movement.step.y) > 1e-8) { movement.acceleration = Vec3.ZERO; }
             movement.step = result.nextStep().add(movement.acceleration);
-            if (--movement.ticks == 0 || movement.step.lengthSqr() < 1e-8) { interruptMovement(player, false); }
+            if (--movement.ticks == 0 || movement.step.lengthSqr() < 1e-8) {
+                // Only natural/terrain completion gets an arrival. Interruptions and lifecycle cleanup stay quiet.
+                if (movement.progress == null && movement.travelled) { MovementVisuals.disengageArrival(player, movement.departureYaw); }
+                interruptMovement(player, false);
+            }
         }
     }
 
@@ -305,7 +325,7 @@ public final class Combos {
                 MeleeSkills.hurtMeleeSkill(player, target, movement.damage);
                 if (before.landed(target)) {
                     ArmorShred.apply(target, player, movement.shredDuration);
-                    SkillVisuals.cleaveHit(player.level(), target);
+                    ComboVisuals.contact(player, target);
                     if (!movement.hitSoundPlayed) {
                         movement.hitSoundPlayed = true;
                         SkillSounds.meleeHit(player);

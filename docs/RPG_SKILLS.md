@@ -243,7 +243,7 @@ remain manual playtesting; dedicated fixtures are not evidence for those checks.
 Battle Cry, Rage Storm and Blood Fever implement Rank 1 from the
 [Reaver balance proposal](<../Project-Covenant/Project_Covenant_Reaver_Balance_Proposal.md>).
 All retain the normal level gates, one-point purchase, eight-distinct-skill limit,
-and existing Apply flow. Blood Fever requires Rend; Rage Storm requires Cleave.
+and existing Apply flow. Blood Fever has no skill prerequisite; Rage Storm requires Cleave.
 Higher ranks remain unavailable pending concrete upgrades.
 
 | Skill | Default behavior |

@@ -100,43 +100,68 @@ public final class AuraGameTests {
 
     public static void ownership(GameTestHelper helper) {
         var f = new Fixture(helper);
-        try {
-            var source = f.player(PlayerClass.STALKER, 0);
-            var friend = f.player(PlayerClass.WEAVER, 2);
-            var outsider = f.player(PlayerClass.REAVER, 3);
-            f.team(source, friend);
-            var pet = f.wolf(friend, 4);
-            var ownPet = f.wolf(source, 5);
-            var above = f.wolf(friend, 0); above.setPos(source.position().add(0, 6.01, 0));
-            f.equip(source, SkillDefinition.SWIFTNESS_AURA, 0);
-            SkillLoadouts.bind(source, 1, SkillDefinition.SWIFTNESS_AURA.id());
-            ClassResources.set(source, PlayerClass.STALKER, 0);
-            f.coverage(source);
-            near(friend.getAttributeValue(Attributes.MOVEMENT_SPEED), .11, "Teammate coverage");
-            near(source.getAttributeValue(Attributes.MOVEMENT_SPEED), .11, "Duplicate slots do not stack");
-            check(Auras.passive(pet, Auras.Kind.SWIFTNESS) && Auras.passive(ownPet, Auras.Kind.SWIFTNESS), "Both owners' pets benefit");
-            check(!Auras.passive(outsider, Auras.Kind.SWIFTNESS) && !Auras.passive(above, Auras.Kind.SWIFTNESS), "Outsiders and sphere exterior excluded");
-            check(!Skills.canHit(source, pet) && Skills.canHit(source, outsider), "Offensive pet/team policy");
-            f.cast(source, SkillDefinition.SWIFTNESS_AURA);
-            near(friend.getAttributeValue(Attributes.MOVEMENT_SPEED), .13, "Passive and active add to 30 percent");
-            double step = friend.getAttributeValue(Attributes.STEP_HEIGHT);
-            check(step >= 1.1, "Native step height increases by half a block");
-            var late = f.wolf(friend, 1);
-            check(!Auras.active(late, Auras.Kind.SWIFTNESS), "Late arrivals get no active buff");
-            friend.setPos(source.position().add(0, 0, 12));
-            check(Auras.active(friend, Auras.Kind.SWIFTNESS), "Leaving field retains active");
-            SkillLoadouts.bind(source, 0, null);
-            check(Auras.active(friend, Auras.Kind.SWIFTNESS), "Removing one duplicate retains ownership");
-            long cooldown = Skills.cooldownRemaining(source, SkillDefinition.SWIFTNESS_AURA);
-            SkillLoadouts.bind(source, 1, null);
-            check(!Auras.active(friend, Auras.Kind.SWIFTNESS), "Last slot removes remote active immediately");
-            near(friend.getAttributeValue(Attributes.MOVEMENT_SPEED), .1, "Source cleanup restores native speed");
-            check(Skills.cooldownRemaining(source, SkillDefinition.SWIFTNESS_AURA) == cooldown, "Cleanup retains cooldown");
-            var before = ClassResources.current(source, PlayerClass.STALKER);
-            check(Skills.activate(source, SkillDefinition.SWIFTNESS_AURA).getString().toLowerCase(java.util.Locale.ROOT).contains("assign"), "Command requires assignment");
-            near(ClassResources.current(source, PlayerClass.STALKER), before, "Rejected activation spends nothing");
-            helper.succeed();
-        } finally { f.close(); }
+        // Pets are found through the native entity index; a one-block template can
+        // border chunks that are not entity-ticking when the test function starts.
+        var ticket = new net.minecraft.server.level.TicketType(net.minecraft.server.level.TicketType.NO_TIMEOUT,
+                net.minecraft.server.level.TicketType.FLAG_LOADING | net.minecraft.server.level.TicketType.FLAG_SIMULATION
+                | net.minecraft.server.level.TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        var chunks = new java.util.HashSet<net.minecraft.world.level.ChunkPos>();
+        for (int x = net.minecraft.util.Mth.floor(f.origin.x - 7) >> 4; x <= net.minecraft.util.Mth.floor(f.origin.x + 7) >> 4; x++) {
+            for (int z = net.minecraft.util.Mth.floor(f.origin.z - 7) >> 4; z <= net.minecraft.util.Mth.floor(f.origin.z + 13) >> 4; z++) {
+                var chunk = new net.minecraft.world.level.ChunkPos(x, z); chunks.add(chunk);
+                helper.getLevel().getChunkSource().addTicketWithRadius(ticket, chunk, 2);
+            }
+        }
+        Runnable cleanup = () -> {
+            f.close();
+            chunks.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(ticket, chunk, 2));
+            chunks.clear();
+        };
+        helper.runBeforeTestEnd(cleanup);
+        helper.startSequence().thenWaitUntil(() -> {
+            for (var chunk : chunks) {
+                helper.assertTrue(helper.getLevel().areEntitiesActuallyLoadedAndTicking(chunk), "Aura ownership fixture chunks must be entity-ticking");
+            }
+        }).thenExecute(() -> {
+            try {
+                var source = f.player(PlayerClass.STALKER, 0);
+                var friend = f.player(PlayerClass.WEAVER, 2);
+                var outsider = f.player(PlayerClass.REAVER, 3);
+                f.team(source, friend);
+                var pet = f.wolf(friend, 4);
+                var ownPet = f.wolf(source, 5);
+                var above = f.wolf(friend, 0); above.setPos(source.position().add(0, 6.01, 0));
+                f.equip(source, SkillDefinition.SWIFTNESS_AURA, 0);
+                SkillLoadouts.bind(source, 1, SkillDefinition.SWIFTNESS_AURA.id());
+                ClassResources.set(source, PlayerClass.STALKER, 0);
+                f.coverage(source);
+                near(friend.getAttributeValue(Attributes.MOVEMENT_SPEED), .11, "Teammate coverage");
+                near(source.getAttributeValue(Attributes.MOVEMENT_SPEED), .11, "Duplicate slots do not stack");
+                check(Auras.passive(pet, Auras.Kind.SWIFTNESS) && Auras.passive(ownPet, Auras.Kind.SWIFTNESS), "Both owners' pets benefit");
+                check(!Auras.passive(outsider, Auras.Kind.SWIFTNESS) && !Auras.passive(above, Auras.Kind.SWIFTNESS), "Outsiders and sphere exterior excluded");
+                check(!Skills.canHit(source, pet) && Skills.canHit(source, outsider), "Offensive pet/team policy");
+                f.cast(source, SkillDefinition.SWIFTNESS_AURA);
+                near(friend.getAttributeValue(Attributes.MOVEMENT_SPEED), .13, "Passive and active add to 30 percent");
+                double step = friend.getAttributeValue(Attributes.STEP_HEIGHT);
+                check(step >= 1.1, "Native step height increases by half a block");
+                var late = f.wolf(friend, 1);
+                check(!Auras.active(late, Auras.Kind.SWIFTNESS), "Late arrivals get no active buff");
+                friend.setPos(source.position().add(0, 0, 12));
+                check(Auras.active(friend, Auras.Kind.SWIFTNESS), "Leaving field retains active");
+                SkillLoadouts.bind(source, 0, null);
+                check(Auras.active(friend, Auras.Kind.SWIFTNESS), "Removing one duplicate retains ownership");
+                long cooldown = Skills.cooldownRemaining(source, SkillDefinition.SWIFTNESS_AURA);
+                SkillLoadouts.bind(source, 1, null);
+                check(!Auras.active(friend, Auras.Kind.SWIFTNESS), "Last slot removes remote active immediately");
+                near(friend.getAttributeValue(Attributes.MOVEMENT_SPEED), .1, "Source cleanup restores native speed");
+                check(Skills.cooldownRemaining(source, SkillDefinition.SWIFTNESS_AURA) == cooldown, "Cleanup retains cooldown");
+                var before = ClassResources.current(source, PlayerClass.STALKER);
+                check(Skills.activate(source, SkillDefinition.SWIFTNESS_AURA).getString().toLowerCase(java.util.Locale.ROOT).contains("assign"), "Command requires assignment");
+                near(ClassResources.current(source, PlayerClass.STALKER), before, "Rejected activation spends nothing");
+                helper.succeed();
+            } catch (RuntimeException error) { helper.fail(error.toString()); }
+            finally { cleanup.run(); }
+        });
     }
 
     public static void coverage(GameTestHelper helper) {
@@ -446,6 +471,7 @@ public final class AuraGameTests {
         final List<BlockPos> blocks = new ArrayList<>();
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
         final Vec3 origin;
+        boolean closed;
         Fixture(GameTestHelper helper) { this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 110, 1))); }
         ServerPlayer player(PlayerClass type, double z) {
             var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(new com.mojang.authlib.GameProfile(UUID.randomUUID(), "aura" + UUID.randomUUID().toString().substring(0, 8)), false);
@@ -497,6 +523,8 @@ public final class AuraGameTests {
         void tick() { for (var player : players) { player.doTick(); } }
         void block(BlockPos pos) { helper.getLevel().setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState()); blocks.add(pos); }
         @Override public void close() {
+            if (closed) { return; }
+            closed = true;
             listeners.forEach(NeoForge.EVENT_BUS::unregister);
             for (var player : players) { Auras.clear(player); helper.getLevel().getServer().getPlayerList().remove(player); }
             entities.forEach(Entity::discard);

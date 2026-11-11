@@ -261,6 +261,8 @@ final class HunterPetGameTests {
             check(controller.getCurrentRawAnimation().equals(walk), "Native moving flag still selects walk");
             pet.hurtTime = 3; handler.handle(test);
             check(controller.getCurrentRawAnimation().equals(com.geckolib.animation.RawAnimation.begin().thenPlay("animation.original_wolf.hurt")), "Hurt keeps priority over locomotion");
+            pet.hurtTime = 0;
+            HunterPetAnimationFixture.checkActionRecovery(pet, manager);
             helper.succeed();
         } catch (ReflectiveOperationException error) { throw new IllegalStateException(error); }
     }

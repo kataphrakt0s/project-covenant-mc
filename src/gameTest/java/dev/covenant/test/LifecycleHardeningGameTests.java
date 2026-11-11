@@ -118,7 +118,12 @@ final class LifecycleHardeningGameTests {
     static void cancellationRoutes(GameTestHelper helper) {
         var f = new Fixture(helper);
         f.forceLanes();
-        helper.runAfterDelay(2, () -> {
+        helper.runBeforeTestEnd(f::close);
+        helper.startSequence().thenWaitUntil(() -> {
+            for (var chunk : f.forced) {
+                helper.assertTrue(helper.getLevel().areEntitiesActuallyLoadedAndTicking(chunk), "Lifecycle fixture lanes must be entity-ticking");
+            }
+        }).thenExecute(() -> {
         try (f) {
             for (int route = 0; route < 3; route++) {
                 var combo = f.player(PlayerClass.REAVER);
@@ -163,7 +168,7 @@ final class LifecycleHardeningGameTests {
             FixtureSkills.learn(unlearned, SkillDefinition.ARCANE_BOLT.id(), false);
             check(!Skills.isCasting(unlearned), "Actual unlearning routes pending-cast cancellation");
             helper.succeed();
-        }
+        } catch (RuntimeException error) { helper.fail(error.toString()); }
         });
     }
 
@@ -208,6 +213,10 @@ final class LifecycleHardeningGameTests {
         final List<ServerPlayer> players = new ArrayList<>();
         final List<Entity> entities = new ArrayList<>();
         final java.util.Set<net.minecraft.world.level.ChunkPos> forced = new java.util.HashSet<>();
+        final net.minecraft.server.level.TicketType laneTicket = new net.minecraft.server.level.TicketType(
+                net.minecraft.server.level.TicketType.NO_TIMEOUT, net.minecraft.server.level.TicketType.FLAG_LOADING
+                | net.minecraft.server.level.TicketType.FLAG_SIMULATION | net.minecraft.server.level.TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        boolean closed;
         final Vec3 origin;
 
         Fixture(GameTestHelper helper) {
@@ -218,7 +227,8 @@ final class LifecycleHardeningGameTests {
             // All three routes need native entity queries in lanes beyond the template's forced chunks.
             for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 128) >> 4; x++) {
                 for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 24) >> 4; z++) {
-                    if (helper.getLevel().setChunkForced(x, z, true)) { forced.add(new net.minecraft.world.level.ChunkPos(x, z)); }
+                    var chunk = new net.minecraft.world.level.ChunkPos(x, z);
+                    if (forced.add(chunk)) { helper.getLevel().getChunkSource().addTicketWithRadius(laneTicket, chunk, 2); }
                 }
             }
         }
@@ -257,12 +267,14 @@ final class LifecycleHardeningGameTests {
         }
 
         @Override public void close() {
+            if (closed) { return; }
+            closed = true;
             for (var player : players) {
                 SkillLifecycle.cancelPlayer(player, SkillLifecycle.Reason.LOGOUT);
                 helper.getLevel().getServer().getPlayerList().remove(player);
             }
             entities.forEach(Entity::discard);
-            forced.forEach(chunk -> helper.getLevel().setChunkForced(chunk.x(), chunk.z(), false)); forced.clear();
+            forced.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(laneTicket, chunk, 2)); forced.clear();
         }
     }
 }

@@ -40,7 +40,12 @@ decision blocks this build. The catalogue drafts are selected for inclusion,
 with final appearance still subject to Minecraft review. See
 [validation evidence](../docs/VALIDATION.md).
 
-Continue with Phase 6's advanced class effects after this handoff. Enduring Cry's
+Phase 6's movement and combo batches now implement Disengage, Teleport,
+Lunging Combo and Rip and Rush. The Reaver signature batch adds Battle Cry,
+Rage Storm and Blood Fever, plus Discharge and Threefold. All eleven aura
+activations now have release/receipt, final expiry and applicable consumption
+cues. Phase 6 implementation is complete; Minecraft review remains pending.
+Enduring Cry's
 future badge and the golem's gameplay/form decisions belong to later work and
 do not block packaging the currently implemented polish.
 
@@ -389,8 +394,7 @@ polish work.
 - Review sound timing with each effect family; original audio production is an
   optional later task if native sounds no longer fit the art.
 
-Current tracking: **Phases 1-4 implemented;
-manual Minecraft review pending**.
+Current tracking: **Phases 1-6 implemented; manual Minecraft review pending**.
 The original Frost Trap uses twelve cuboids, a 32x32 opaque atlas at vanilla
 texel density, and one 16x16 skill-tree icon with initials retained for other
 skills. Sources and the asset brief live in ignored `models/frost_trap/`; mapped
@@ -507,7 +511,8 @@ Additional Phase 3 client review: all elemental silhouettes in grayscale, ember
 rise versus ice fracture, near/steep/vertical Lightning and cover-clipped chains,
 real Aimed wind-up/cancellation, Arcane collision versus damage, whole-volley
 brightness/sound, immune/blocked arrow contact, and quiet Rend/bleed pulses.
-Phases 6-9 remain pending; Phase 5 delivery is recorded below.
+Phase 6 movement delivery and Phase 5 delivery are recorded below;
+Phase 6's final aura group is recorded below; Phases 7-9 remain pending in this polish sequence.
 
 Final complete Phase 3 automated validation: `scripts/Dev.ps1 build` and
 `scripts/Dev.ps1 verify` passed, including **All 178 required tests passed :)**
@@ -605,6 +610,172 @@ and 43-resource packaged asset audit also passed. Three new native server tests
 cover Workbench choice/commit feedback, earned-level cues and aggregate replant
 shortages; existing storage/removal, harvesting and progression coverage remains
 passing. See `docs/VALIDATION.md` for precise evidence and manual limits.
+
+Phase 6's movement reference batch now uses emerald open chevrons and low flecks
+for Disengage, plus violet broken rectangular brackets for Teleport. Native
+glitter sprites supply short breakup; current skill icons retain their separate
+review status. Departures follow accepted uses. Disengage's trail follows each
+actual collision-resolved segment, with one arrival at natural/terrain completion
+and no arrival on interruption or lifecycle cleanup. Turning does not rotate the
+captured retreat heading. Teleport shows confirmed departure/arrival only, with
+no invented travel delay or straight line across its potentially clipped path.
+
+Seven native particle definitions use existing Minecraft sprites; small motes
+expire in four/six ticks, honor particle settings and collide during breakup.
+Two Teleport packets create at most 24 motes. An unobstructed Disengage creates
+28, bounded to 64 under the movement solver's segment cap. No new custom
+payload, saved data, sound, cost, range, cooldown or movement rule is introduced.
+Sources/brief are in ignored `models/movement_effects/`; evidence is in
+`docs/VALIDATION.md` and ignored `.local/phase6/`.
+
+Phase 6 movement client review: first/third-person aim clarity, turning during
+Disengage, walls and low ceilings, airborne/vertical Teleport, root/knockback and
+lifecycle interruption, pale/dark terrain, nearby observers, overlap, particle
+settings and resource reload. Later signature and aura batches are recorded
+below. No rendered or comparative performance acceptance
+is claimed for this reference batch.
+
+Phase 6 movement automated validation: `scripts/Dev.ps1 build` and
+`scripts/Dev.ps1 verify` passed **All 183 required tests passed :)**.
+The two new native packet tests cover actual movement, interruption and rejected
+blink boundaries; the packaged audit passes 30 definitions / 146 sprite references.
+
+Phase 6's Reaver combo batch adds steel Lunging Combo and crimson Rip and Rush
+trails on actual collision-resolved movement segments. The lunge stays movement-only;
+its instant follow-up has a compact hand-level jab and its finisher reuses the
+original 120-degree Cleave crescent. Rip and Rush's opening uses a thin circular
+cut; its finisher closes an open steel/crimson circle inward. Neither circle is
+a filled disk or a terrain-conforming guarantee of the gameplay sphere.
+
+Small pale chips confirm accepted strike/dash/finisher damage. Opening Rend
+retains its existing accepted-hit marks. Inward crimson target flecks occur only
+in the qualifying bleed-consumption branch, including lethal hits with pre-hit
+bleed; dry and prevented hits cannot claim consumption. Chips do not claim that
+native armor-shred application succeeded. The existing stage HUD, sounds,
+windows, movement, targeting, costs, effects and cooldowns remain unchanged.
+
+Nine native particle definitions reuse glitter frames, with four-tick lifetimes:
+three flecks per real segment, 24 per circular release, five per jab, four per
+contact and six per qualifying consumption. No new custom payload, persisted
+state or recurring stage emitter. Current skill icons are unchanged. Brief and
+editable-source mapping: ignored `models/combo_effects/BRIEF.md`; validation:
+`docs/VALIDATION.md` and ignored `.local/phase6/combo-*`.
+
+Phase 6 combo client review: first/third-person aim, vertical/wall-clipped/sliding
+movement, root/knockback cancellation, frontal versus circular recognition,
+whiffs and defended hits, lethal consumption versus ordinary contact, crowded
+enemies, pale/dark terrain, nearby observers, particle settings and resource
+reload. No Minecraft appearance or comparative performance acceptance is claimed.
+
+Phase 6 combo automated validation: `scripts/Dev.ps1 build` passed and
+`scripts/Dev.ps1 verify` reported **All 185 required tests passed :)**.
+Two new native activation/particle tests cover stages, hit/whiff distinctions,
+trail termination and qualifying bleed consumption. Packaged validation passes
+39 particle definitions / 218 sprite references. See `docs/VALIDATION.md`.
+
+Phase 6's Reaver signature batch gives Battle Cry one low shout pulse at the
+configured radius plus brief receipt marks on the existing actual recipient
+snapshot. It remains a shout, not a maintained field: late entrants, rejected
+uses, display refresh and lifecycle cleanup never replay activation.
+
+Rage Storm now has short opposing hand motes during its real cast and a hollow
+rotating steel/crimson cyclone after paid release. Five broken latitude bands
+stay within the actual spherical radius and leave targets visible. A single
+native synced radius captures release tuning; tracked movement/removal owns the
+effect. Both frustum and distance culling account for the visual volume. The
+80-quad depth-tested shell survives Minimal, with six optional local motes every
+other tick. Accepted damage gets a compact contact cue; natural/terrain stop
+gets one breakup at the last valid center. Cancelled casts and lifecycle removal
+do not claim natural completion. Existing pulse timing, cover and damage stay.
+
+Blood Fever retains its quiet owner-only count, now explicitly labeled as
+bleeding enemies with a crimson accent. Refreshes, extra stacks and count
+changes create no world particles or sound. Existing icons, resources, cooldowns,
+native sounds and saved IDs remain. Sources/brief: ignored
+`models/reaver_signatures/BRIEF.md`; evidence: `docs/VALIDATION.md` and ignored
+`.local/phase6/reaver-*`.
+
+Phase 6 Reaver client review: shout recipients and observers, cast cancellation,
+near/vertical/steep storm motion, hollow volume and targets, walls, endpoint and
+lifecycle removal, Minimal, distant/frustum culling, pale/dark terrain, multiple
+storms, Blood Fever readability, F1 and resource reload. Minecraft appearance,
+latency/multiplayer and comparative performance remain unverified.
+
+Phase 6 Reaver automated validation: `scripts/Dev.ps1 build` passed; final
+`scripts/Dev.ps1 verify` reported **All 188 required tests passed :)**.
+Three new native feedback tests and the production spherical-geometry check
+passed. Packaged validation covers 42 particle definitions / 242 sprite references
+and the Blood Fever label. See `docs/VALIDATION.md` for evidence and manual limits.
+
+Phase 6's Weaver signature batch replaces Discharge's generic enchant cloud
+with short elemental spokes from the actual consumed charges. Partial banks
+have lighter bursts; full banks add density, with ice splinters. Wind-up motes
+show held elements only. Main-target contacts aggregate accepted elemental/rider
+hits into one mark, while lightning chains keep their actual external endpoints
+and accepted-hit marks. No absent element, cancelled/unpaid release or protected
+damage is invented. Existing target selection, damage, riders and costs stay.
+
+Threefold uses actual consumed reserve fractions for inward colored sectors.
+Banking/refresh stays quiet; the existing HUD retains bonus/duration information.
+One small natural-expiry breakup remembers the consumed elements using an
+unsaved receipt on the existing owner refresh. Unassignment and lifecycle
+cancellation discard it silently. No new timer, world scan or custom payload.
+Current icons and native short-lived energy/shards are reused.
+
+Budgets: three wind-up motes every four owner ticks; at most 91 Discharge
+children across all-full banks, 24 Threefold activation and nine expiry motes.
+Native particle limiting applies; Minimal may omit decoration. These are code
+limits, not measured performance gains. Source/brief:
+ignored `models/weaver_signatures/BRIEF.md`; evidence: `docs/VALIDATION.md` and
+ignored `.local/phase6/weaver-*`.
+
+Phase 6 Weaver client review: first/third-person aim, partial/mixed/full banks,
+actual chains, cover/protection, Threefold consumption/expiry versus cancellation,
+Minimal, pale/dark terrain, overlapping casts, observers and resource reload.
+Minecraft appearance, latency/multiplayer and performance remain unverified.
+Aura activation polish is recorded below.
+
+Phase 6 Weaver automated validation: `scripts/Dev.ps1 build` passed; final
+`scripts/Dev.ps1 verify` reported **All 190 required tests passed :)**. Two new
+native feedback tests passed; existing aura ownership and lifecycle-route
+fixtures now wait for entity-ticking chunks. Packaged audit passed 47 particle
+definitions / 282 sprite references. See `docs/VALIDATION.md` for run evidence
+and manual limits.
+
+Phase 6's final aura batch replaces generic receipt clouds across all eleven
+auras with compact, family-colored shapes. Paid casts get a small local stamp;
+actual recipients get green strokes, crimson hooks/wisps, steel brackets,
+pale-blue collars/energy, electric-blue sparks or violet marks. Self-active
+Shock/Immolation do not imply activation on their passive enemies. Freeze
+immunity and actual teammate/pet snapshots remain authoritative.
+
+Only the final overlapping active grant emits natural expiry. Passive refresh,
+passive expiry, unassignment and lifecycle cleanup stay quiet. Guaranteed Dodge
+consumption emits once after all guarantees are removed. Fortitude distinguishes
+positive absorption from depletion; recasts replace capacity without a break,
+and depleted shields do not later replay expiry. Icons, sounds, owner-only aura
+footprint, native gameplay, durations and costs remain unchanged.
+
+Budgets per event: 12 release, eight receipt/consumption, four partial-shield or
+expiry children, using existing two-to-seven-tick providers and native limiting.
+Shapes follow real entity size within fixed bounds. No new persistent visual
+state, world scan, tick handler or custom payload. Source/brief: ignored
+`models/aura_activations/BRIEF.md`; evidence: `docs/VALIDATION.md` and ignored
+`.local/phase6/aura-*`. These are code limits, not measured performance gains.
+
+Phase 6 aura client review: first/third-person aim, all eleven identities, pet
+scale, allies/observers, overlapping sources, shield absorption/depletion versus
+replacement, natural expiry versus cleanup, Minimal, terrain contrast and
+resource reload. Minecraft rendering, real multiplayer/latency and performance
+acceptance remain pending. Phase 7 Hunter's Pet is next in this sequence; audit
+its existing gameplay/model/animations before treating older planning text as
+unimplemented work.
+
+Phase 6 aura automated validation: `scripts/Dev.ps1 build` passed; final
+`scripts/Dev.ps1 verify` reported **All 193 required tests passed :)**. Three new
+native feedback tests cover all eleven activations, overlap and defense receipts.
+Packaged audit passed 52 particle definitions / 322 sprite references. See
+`docs/VALIDATION.md` for evidence and remaining manual checks.
 
 Keep this roadmap as the production-order source; [[Art Direction]] owns the
 agreed style and open aesthetic decisions.

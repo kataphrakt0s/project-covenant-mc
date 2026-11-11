@@ -74,6 +74,18 @@ public final class RpgGameTests {
         FUNCTIONS.register("feedback_lightning_links", () -> SkillFeedbackGameTests::lightningLinks);
         FUNCTIONS.register("feedback_bow_contacts", () -> SkillFeedbackGameTests::bowContacts);
         FUNCTIONS.register("feedback_bleed", () -> SkillFeedbackGameTests::bleedFeedback);
+        FUNCTIONS.register("feedback_disengage", () -> SkillFeedbackGameTests::disengageFeedback);
+        FUNCTIONS.register("feedback_teleport", () -> SkillFeedbackGameTests::teleportFeedback);
+        FUNCTIONS.register("feedback_lunging_combo", () -> SkillFeedbackGameTests::lungingFeedback);
+        FUNCTIONS.register("feedback_rip_and_rush", () -> SkillFeedbackGameTests::rushFeedback);
+        FUNCTIONS.register("feedback_battle_cry", () -> SkillFeedbackGameTests::cryFeedback);
+        FUNCTIONS.register("feedback_rage_storm", () -> SkillFeedbackGameTests::stormFeedback);
+        FUNCTIONS.register("feedback_blood_fever", () -> SkillFeedbackGameTests::feverFeedback);
+        FUNCTIONS.register("feedback_discharge", () -> SkillFeedbackGameTests::dischargeFeedback);
+        FUNCTIONS.register("feedback_threefold", () -> SkillFeedbackGameTests::threefoldFeedback);
+        FUNCTIONS.register("feedback_aura_activations", () -> SkillFeedbackGameTests::auraActivations);
+        FUNCTIONS.register("feedback_aura_overlap", () -> SkillFeedbackGameTests::auraOverlap);
+        FUNCTIONS.register("feedback_aura_defenses", () -> SkillFeedbackGameTests::auraDefenses);
         FUNCTIONS.register("weaver_activation", () -> WeaverGameTests::activation);
         FUNCTIONS.register("weaver_discharge_cast", () -> WeaverGameTests::dischargeCast);
         FUNCTIONS.register("weaver_discharge_mixed", () -> WeaverGameTests::dischargeMixed);

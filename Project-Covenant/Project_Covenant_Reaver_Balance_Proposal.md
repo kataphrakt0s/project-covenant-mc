@@ -6,8 +6,8 @@
 **Design philosophy:** Vanilla-first balance, with server datapack configurability for modpacks.
 
 **Implemented subset (2026-11-08):** Battle Cry, Rage Storm and Blood Fever now
-use these Rank 1 defaults. Blood Fever is a self-only passive while slotted and
-requires Rend. Rage Storm follows full release-time 3D aim and stops at solid
+use these Rank 1 defaults. Blood Fever is a self-only passive while slotted with
+no skill prerequisite. Rage Storm follows full release-time 3D aim and stops at solid
 terrain, with cover blocking pulses; its first pulse is immediate, then every ten
 ticks, with four attempts per target as a ceiling. Battle Cry uses existing allied
 recipients and captures its bonus on new projectiles/bleeds, never retroactively
@@ -336,7 +336,7 @@ Can only be activated against targets at or below 30% health.
 
 **Unlock:** Level 5  
 **Maximum rank:** 8  
-**Prerequisites:** Rend
+**Prerequisites:** None
 
 | Parameter | Rank 1 |
 |---|---:|

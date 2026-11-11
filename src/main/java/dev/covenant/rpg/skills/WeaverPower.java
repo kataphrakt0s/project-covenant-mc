@@ -23,6 +23,9 @@ public final class WeaverPower {
         final double[] bonus = new double[3];
         Reserves reserves;
         long until;
+        // Unsaved presentation receipt, independent of banking and gameplay bonuses.
+        int visualElements;
+        boolean expiryPending;
     }
     private static final class Reserves {
         final double[][] buckets = new double[3][WINDOW];
@@ -114,10 +117,17 @@ public final class WeaverPower {
     }
     static void activate(ServerPlayer player) {
         var s = state(player); var config = WeaverSkillData.get(player.level().getServer()).threefold();
-        for (var e : Element.values()) { s.bonus[e.ordinal()] = config.bonus() * reserve(player, e) / config.capacity(); }
+        var consumed = new double[3];
+        s.visualElements = 0;
+        for (var e : Element.values()) {
+            consumed[e.ordinal()] = reserve(player, e) / config.capacity();
+            s.bonus[e.ordinal()] = config.bonus() * consumed[e.ordinal()];
+            if (consumed[e.ordinal()] > 0) { s.visualElements |= 1 << e.ordinal(); }
+        }
         s.reserves = null;
         s.until = ClassResources.now(player) + Math.max(1, (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.SKILL_DURATION, config.duration())));
-        player.level().sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANT, player.getX(), player.getY() + 1, player.getZ(), 24, .5, .7, .5, .03);
+        s.expiryPending = true;
+        WeaverVisuals.threefold(player, consumed);
         sync(player);
     }
     static void clear(ServerPlayer player) {
@@ -129,11 +139,17 @@ public final class WeaverPower {
         var s = state(player); if (s == null) { sync(player); return; }
         if (!eligible(player)) { clear(player); return; }
         if (!player.getData(RpgData.SKILL_LOADOUT).learned().contains(SkillDefinition.DISCHARGE.id())) { java.util.Arrays.fill(s.charges, 0); }
-        if (!assigned(player)) { s.reserves = null; s.until = 0; java.util.Arrays.fill(s.bonus, 0); }
+        if (!assigned(player)) { s.reserves = null; s.until = 0; s.expiryPending = false; s.visualElements = 0; java.util.Arrays.fill(s.bonus, 0); }
         sync(player);
     }
     /** Called at most four times per second from the existing player tick; only changed snapshots send. */
     static void sync(ServerPlayer player) {
+        var s = state(player);
+        // Piggyback on the existing owner refresh. Never infer activation/expiry from a display packet.
+        if (s != null && s.expiryPending && s.until > 0 && s.until <= ClassResources.now(player)) {
+            s.expiryPending = false;
+            if (assigned(player)) { WeaverVisuals.expire(player, s.visualElements); }
+        }
         var view = WeaverDisplay.EMPTY;
         boolean discharge = eligible(player) && player.getData(RpgData.SKILL_LOADOUT).learned().contains(SkillDefinition.DISCHARGE.id());
         boolean threefold = assigned(player);
