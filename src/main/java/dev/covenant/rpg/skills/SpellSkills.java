@@ -31,7 +31,7 @@ final class SpellSkills {
                 var bolt = new ArcaneBolt(Skills.ARCANE_BOLT.get(), player.level());
                 bolt.setOwner(player);
                 ProjectileCombat.captureSupport(bolt, player);
-                bolt.setData(RpgData.AURA_PROJECTILE_POWER, AuraDamage.multiplier(player, false));
+                bolt.setData(RpgData.AURA_PROJECTILE_POWER, AuraDamage.multiplier(player, false) + ElementalGolems.spellBonus(player));
                 bolt.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
                 bolt.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, 1.5f, 0);
                 player.level().addFreshEntity(bolt);

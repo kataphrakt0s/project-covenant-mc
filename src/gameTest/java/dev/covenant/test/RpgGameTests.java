@@ -52,6 +52,15 @@ public final class RpgGameTests {
             DeferredRegister.create(Registries.TEST_FUNCTION, "covenant_test");
 
     static {
+        FUNCTIONS.register("golem_spawning", () -> ElementalGolemGameTests::spawning);
+        FUNCTIONS.register("golem_skill", () -> ElementalGolemGameTests::skill);
+        FUNCTIONS.register("golem_benefits", () -> ElementalGolemGameTests::benefits);
+        FUNCTIONS.register("golem_persistence", () -> ElementalGolemGameTests::persistence);
+        FUNCTIONS.register("golem_repair_defeat", () -> ElementalGolemGameTests::repairAndDefeat);
+        FUNCTIONS.register("golem_targeting", () -> ElementalGolemGameTests::targeting);
+        FUNCTIONS.register("golem_native_ai", () -> ElementalGolemGameTests::nativeAi);
+        FUNCTIONS.register("golem_cleanup", () -> ElementalGolemGameTests::cleanup);
+        FUNCTIONS.register("golem_animations", () -> ElementalGolemGameTests::animations);
         FUNCTIONS.register("pet_activation", () -> HunterPetGameTests::activation);
         FUNCTIONS.register("pet_rejected_spawn", () -> HunterPetGameTests::rejectedSpawn);
         FUNCTIONS.register("pet_lifecycle", () -> HunterPetGameTests::lifecycle);

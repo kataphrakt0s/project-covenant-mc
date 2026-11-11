@@ -45,9 +45,8 @@ Lunging Combo and Rip and Rush. The Reaver signature batch adds Battle Cry,
 Rage Storm and Blood Fever, plus Discharge and Threefold. All eleven aura
 activations now have release/receipt, final expiry and applicable consumption
 cues. Phase 6 implementation is complete; Minecraft review remains pending.
-Enduring Cry's
-future badge and the golem's gameplay/form decisions belong to later work and
-do not block packaging the currently implemented polish.
+Enduring Cry's future badge remains deferred. The golem now has its full Rank 1
+skill; Phase 8 below records its agreed controls, benefits and lifecycle.
 
 ## Current priority — reference review and art reset
 
@@ -165,8 +164,8 @@ Detailed existing combat/geometry contracts remain in [[Art Direction]] and
 | 4 | Combat HUD, menus and navigation | Make skills, build choices and controls easier to recognize. | Can begin after Phase 1's icon sample; does not wait for all Phase 3 effects. |
 | 5 | Workbench, items and progression feedback | Polish the complete find, salvage and customize loop. | Reuse Phase 1 materials and Phase 4 UI conventions; object art can start sooner. |
 | 6 | Advanced skill spectacle | Apply proven class identities to complex effects and movement. | Corresponding elemental/melee/boundary families. |
-| 7 | Hunter's Pet | Prove custom entity scale, animation and lifecycle with the existing wolf. | Companion gameplay decisions and native entity integration. |
-| 8 | Elemental Golem | Reuse the companion pipeline for a more ambitious four-form summon. | Phase 7 pipeline; golem gameplay dimensions and form rules. |
+| 7 — complete | Hunter's Pet | Existing wolf, companion integration and animations accepted by the user on 2026-11-10. | Retain the accepted pet. |
+| 8 — full skill implemented; client review pending | Elemental Golem | Approved assets, native companion behavior, five body clips, dynamic cores, form particles, manual cycling, owner benefits and persistence. | Client animation/gameplay and multiplayer review pending. |
 | 9 | Cohesion and crowded-scene review | Assess the combined result across combat, menus and progression. | Review each shipped slice continuously; final pass uses the combined set. |
 
 ### Phase 1: Frost Trap
@@ -318,28 +317,117 @@ Deliver these as separate skill groups after their base visual families exist:
 rhythm where the mechanics provide it; no invented cast delay; multiple classes
 remain readable together. Pair original icons with the same visual identities.
 
-### Phase 7: Hunter's Pet
+### Phase 7: Hunter's Pet — complete
 
-Reuse the existing wolf rather than redesigning it. First settle in-game scale,
-rig needs and the minimum companion gameplay/lifecycle contract. The current
-source has no animation clips or native playback integration.
-
-Deliver scale/model integration, then idle/head tracking/locomotion, then attack,
-hurt/death and summon/dismiss presentation. A short summoning seal can carry the
-occult identity while the living animal stays natural. Optional collar/token
-detail should follow the successful base integration.
-
-**Completion evidence:** feet and joints behave through intermediate poses,
-attack presentation matches actual contact, and summon/death/dismiss/owner
-lifecycle transitions leave no stale effects. Full playable delivery depends on
-the separate companion implementation; model exports alone are not completion.
+The user confirmed on 2026-11-10 that Hunter's Pet is already good and requested
+this phase be marked done. Retain the accepted wolf model, texture, animations
+and companion implementation. This records user acceptance; it does not claim
+an additional automated or Minecraft client validation run in this task.
 
 ### Phase 8: Elemental Golem
 
-Resolve gameplay size/reach, form-selection timing and nearby-benefit rules before
-finalizing the asset. Proposed form: old stone guardian, iron bindings and a
-recessed elemental core. Author one base body/rig, integrate one working form,
-then extend to fire, ice, lightning and arcane with shared proportions.
+**Current scope — 2026-11-10:** the user approved the model/textures and requested
+implementation of movement, following and attacks, reusing existing companion
+logic for predictable behavior. After that slice, they requested Idle, Walk,
+Attack, Hurt and Death, dynamic cores and minor particles for all four forms.
+The subsequent full-skill design and implementation now add manual cycling,
+owner-only benefits, costs/cooldown, iron repair and companion persistence.
+
+Full-skill implementation (2026-11-10): activate the skill to cycle an
+existing golem's form; remove its last slot assignment to dismiss it. Other spell
+casts do not select the form. This supersedes the earlier last-cast proposal.
+Summoning starts in Arcane; subsequent activations cycle Arcane → Fire → Ice →
+Lightning → Arcane.
+Cycling costs no Mana; summoning costs 40 base Mana with normal cost modifiers.
+Form changes have a fixed five-tick delay (0.25 seconds at 20 TPS), unaffected
+by cooldown modifiers and separate from the resummon cooldown.
+Defeat or dismissal through unslotting starts a 30-second base resummon cooldown;
+summoning and cycling do not start that cooldown.
+All forms retain the same basic melee attack; form changes affect the nearby
+owner benefit and visuals, with no elemental attack damage conversion or riders.
+Owner-only benefit range is 12 blocks in 3D: Arcane +20% Mana regeneration /
+10% lower costs; Fire +10% spell damage; Ice 20% shorter casts / 10% shorter
+cooldowns; Lightning +20% duration / max Mana. Capacity grants no Mana and loss
+permanently clamps excess. Rank 1 uses 60 HP, 3 melee damage every 40 ticks,
+25-HP iron-ingot repairs, and Hunter's Pet native snapshot persistence across
+logout/restart/dimension travel. Class change/owner death dismisses with cooldown.
+See [skill contract](../docs/RPG_SKILLS.md#elemental-golem) for tuning and lifecycle.
+
+Full-skill verification: `scripts/Dev.ps1 verify` passes **All 202 required tests
+passed :)** and **BUILD SUCCESSFUL**, including four new skill/benefit/persistence/
+repair-defeat cases and the existing native companion/animation regressions.
+The packaged JAR audit matches all eleven golem resources and the original skill
+icon. Minecraft gameplay, rendered form feedback and real multiplayer/restart
+review remain pending; Phase 8 is implemented and awaits that review.
+
+Original asset brief (now fulfilled): an old stone guardian, iron bindings and
+a recessed elemental core, with one shared body/rig and four form studies.
+Static asset approval was separate from the later gameplay decisions above.
+
+**First asset study delivered:** original shared stone/iron body and four static
+textured form studies, with furnace vents, ice plates, conductor prongs and
+suspended arcane seal fragments. Each form has 34 cubes, 17 bones and one
+128×128 albedo atlas at one texel per model unit. Editable sources and recipes
+are local-only in `models/elemental_golem/`;
+[all-sides model/texture review](../.local/blockbench/elemental_golem/review.html).
+The user approved these model/texture studies on 2026-11-10. This does not complete
+the broader four-form gameplay phase.
+
+Geometry/GeckoLib source gates and the pixel/UV/embedded-PNG audit passed, with
+18 documented intentional joint-overlap warnings per model. The project build
+passed. The subsequent implementation adds explicit checked static export support:
+geometry plus PNG, no animation file or placeholder clip. The actual pinned
+GeckoLib parser bakes the approved 17-bone/34-cube asset.
+
+The behavior slice uses the approved arcane form with native tameable ownership,
+floating, ground navigation, `FollowOwnerGoal`, `MeleeAttackGoal`, wandering and
+look goals. Hunter's Pet now shares landed-damage target selection, ally/PvP
+validation, loaded-body-safe placement and recall through `Companions`; its wolf
+goals and persistent lifecycle stay in place. Golem attacks use native reach,
+line of sight, damage and hostile retaliation. It has no wolf leap or panic.
+
+Historical behavior prototype (superseded by the full skill above) used operator
+summon/dismiss commands. Its test defaults were:
+1.4×2.7-block collision, 40 health, 3 damage, 30 ticks between attack attempts,
+follow start/stop at 10/2 blocks and native far-owner recall. This is one unsaved
+test companion per owner; logout, dimension/class change, confirmed owner death,
+unload and dismissal clear it. Full skill purchasing, costs/cooldowns, persistence,
+form switching, nearby benefits and animation remain deferred. Minecraft rendering
+and client movement/combat feel still need manual review.
+
+Behavior-slice validation: `scripts/Dev.ps1 verify` passed **All 197 required
+tests passed :)** and **BUILD SUCCESSFUL**, including four new golem tests and
+the existing pet regressions. Pinned-runtime model baking and packaged asset
+checks passed; the local exporter smoke passes seven checks. See
+[validation evidence](../docs/VALIDATION.md). No Minecraft client appearance,
+multiplayer feel or performance acceptance is claimed.
+
+**First animation set delivered:** Idle (4-second loop), Walk (1-second loop),
+Attack (0.6-second once), Hurt (0.35-second once), Death (0.9-second held clip).
+Short opposed steps and arm swings keep movement simple; foot compensation
+maintains planted soles. Attack starts at contact and recovers, without adding
+a gameplay wind-up. Death folds to the knees and settles before native removal.
+A separate 20-second core loop adds a slow turn/tilt at a stable per-entity rate,
+freezing on death. Body/core controllers own separate bones; action recovery
+reuses the pinned wolf-controller fix rather than leaving completed triggers active.
+
+All four appearances render in the full skill. Operator summon now respects skill
+access, cost and cooldown; `/covenant golem form <form>` remains an explicit
+review override. Ordinary skill presses cycle forms and apply their owner benefits. Two client-local motes every eight entity
+ticks reuse crimson embers, pale-blue flecks, electric sparks and violet energy.
+Dead/invisible golems emit none; native limiting applies. No new custom packet,
+particle texture, server emitter, gameplay scan or combat rule.
+
+Original static sources/textures remain intact. Animated copies live in ignored
+`models/elemental_golem_animated/`. A half-unit core recess adjustment provides
+full rotation clearance without changing cube dimensions, UVs or texture pixels.
+[Animation review](../.local/blockbench/golem-animations/review.html) supplies
+fixed-camera two-view playback/scrubbing; headless previews do not show Minecraft
+particles or establish client blending. All six clips per form pass dense
+headless pose checks with no errors/warnings/skips. Pinned-runtime baking,
+source/export/package audits and `scripts/Dev.ps1 verify` passed **All 198 required
+tests passed :)** and **BUILD SUCCESSFUL**. Minecraft playback, form particles,
+real multiplayer/latency and comparative performance still need review.
 
 Distinguish forms through small silhouette changes, core motion and effects;
 preserve the golem's identity across transitions. Scale spectacle alongside the
@@ -512,7 +600,8 @@ rise versus ice fracture, near/steep/vertical Lightning and cover-clipped chains
 real Aimed wind-up/cancellation, Arcane collision versus damage, whole-volley
 brightness/sound, immune/blocked arrow contact, and quiet Rend/bleed pulses.
 Phase 6 movement delivery and Phase 5 delivery are recorded below;
-Phase 6's final aura group is recorded below; Phases 7-9 remain pending in this polish sequence.
+Phase 6's final aura group is recorded below; Phase 7 is user-accepted and complete,
+Phase 8 begins with asset review, and Phase 9 remains pending.
 
 Final complete Phase 3 automated validation: `scripts/Dev.ps1 build` and
 `scripts/Dev.ps1 verify` passed, including **All 178 required tests passed :)**
@@ -767,9 +856,8 @@ Phase 6 aura client review: first/third-person aim, all eleven identities, pet
 scale, allies/observers, overlapping sources, shield absorption/depletion versus
 replacement, natural expiry versus cleanup, Minimal, terrain contrast and
 resource reload. Minecraft rendering, real multiplayer/latency and performance
-acceptance remain pending. Phase 7 Hunter's Pet is next in this sequence; audit
-its existing gameplay/model/animations before treating older planning text as
-unimplemented work.
+acceptance remain pending. Phase 7 Hunter's Pet is now user-accepted and complete;
+Phase 8 proceeds through model/texture approval, implementation, then animation.
 
 Phase 6 aura automated validation: `scripts/Dev.ps1 build` passed; final
 `scripts/Dev.ps1 verify` reported **All 193 required tests passed :)**. Three new

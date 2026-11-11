@@ -188,6 +188,7 @@ final class StatsScreen extends Screen {
             case "aura_dodge" -> "dodge_aura";
             case "aura_mana" -> "enchanting_aura";
             case "aura_cooldown" -> "icy_veins";
+            case "elemental_golem" -> "elemental_golem";
             case "blood_fever_movement", "blood_fever_attack" -> "blood_fever";
             default -> null;
         };

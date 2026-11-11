@@ -1,0 +1,15 @@
+{
+  "cost": 40,
+  "cooldown_ticks": 600,
+  "health": 60,
+  "damage": 3,
+  "attack_interval_ticks": 40,
+  "owner_range": 12,
+  "fire_spell_damage": 0.1,
+  "ice_cast_reduction": 0.2,
+  "ice_cooldown_reduction": 0.1,
+  "lightning_duration": 0.2,
+  "lightning_max_mana": 0.2,
+  "arcane_mana_regeneration": 0.2,
+  "arcane_cost_reduction": 0.1
+}

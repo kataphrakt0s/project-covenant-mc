@@ -300,7 +300,7 @@ Minecraft client playtest.
 | AoE and auras | Supported depth-tested trap squares/patch circles and one broken owner-only aura footprint, including on Minimal. | Review terrain gaps, overlap readability and renderer cost in Minecraft. |
 | Projectiles | Original pale/violet Arcane, ember Fire and fractured Ice cores; bounded jagged Lightning links; precise/magical/fan arrow streaks. | Review first/third-person aim visibility, real links and collision versus damage feedback. |
 | Original assets | Packaged logo, original wolf and the four trap models/atlases/icons demonstrate the pixel/model direction. | Review Minecraft appearance before expanding the combat family. |
-| Summons | Hunter's Pet and Elemental Golem remain planned skills. The wolf has geometry, UVs and texture, but no animation clips or runtime integration. | Plan assets now; companion gameplay and entity integration are separate implementation work. |
+| Summons | Hunter's Pet is implemented, animated and user-accepted; Phase 7 is complete. Elemental Golem has approved model/textures, basic companion behavior, five body clips, a slow core tumble and minor particles across four forms, plus the level-25 full skill with cycling, nearby owner benefits and persistence. | Golem animations and full-skill gameplay await client review. |
 
 Current consumers: [TrapRenderer](../src/main/java/dev/covenant/client/TrapRenderer.java),
 [SkillVisuals](../src/main/java/dev/covenant/rpg/skills/SkillVisuals.java),
@@ -401,18 +401,11 @@ support and must not delay damage or extend gameplay lifetime.
 
 ## Summon asset planning
 
-**Hunter's Pet:** reuse the existing natural gray/cream wolf with amber eyes.
-Its model has 20 cuboids, eight bones and a 128x64 atlas at one texel per model
-unit. At nominal scale it is about 1.375 blocks to the ears; choose final scale
-in the actual consumer. Preserve the animal's readable silhouette. A small
-collar or oath-token is optional, not a required redesign. Summoning can supply
-the occult moment through a brief ground seal and gathering motes.
-
-Plan idle/head tracking, locomotion, attack, hurt/death and summon/dismiss
-presentation against the eventual gameplay states. There are currently no clips.
-The existing leg bones support a simple rigid gait; an articulated bite needs a
-separate jaw pivot. Poses require joint-clearance review before animation approval.
-See the local `models/original_wolf/BRIEF.md` for source and preview details.
+**Hunter's Pet:** the existing natural gray/cream wolf with amber eyes is
+implemented and animated. The user accepted it on 2026-11-10 and marked Phase 7
+complete. Retain its current model, texture, animation and companion behavior.
+The current animated source is local `models/original_wolf_animated/`;
+`docs/GECKOLIB.md` and `docs/RPG_SKILLS.md` describe the integrated consumer.
 
 **Elemental Golem:** proposed weathered stone guardian, with broad shoulders,
 simple heavy limbs, iron bindings and a chest recess containing an elemental
@@ -427,11 +420,22 @@ accents, distinct motion and core effects:
 | Lightning | Forked conductors and brief connecting arcs. |
 | Arcane | Ordered seal fragments around a suspended pale core; violet accent under review. |
 
-The existing design selects form from the player's last cast and gives each form
-a nearby benefit. Exactly when form changes are evaluated remains gameplay work;
-visual planning must not decide it implicitly. Both summons follow the lasting
-companion rules in [[Skill Trees Brainstorm]]. Final size, combat reach, benefit
-range and movement behavior must inform the asset brief before production.
+The agreed skill design cycles the active golem's form when its skill is
+activated, with a different nearby benefit per form. Other spell casts do not
+select its form; removing its last slot assignment dismisses it. This implemented
+control rule supersedes last-cast selection. Both summons follow the lasting
+companion rules in [[Skill Trees Brainstorm]]. The user now requests model/texture
+approval first, implementation second and animation third. The static golem
+study uses provisional visual scale; runtime size is 1.4×2.7 blocks, attacks use native melee reach,
+owner benefits reach 12 blocks and movement uses shared native companion rules. Review the first
+[four-form asset study](../.local/blockbench/elemental_golem/review.html);
+its materials and silhouettes were approved by the user on 2026-11-10. This is
+asset approval; actual Minecraft appearance and the movement/melee test still
+need client review. The full skill now supports four elemental appearances,
+sharing the first body/core animation set and restrained family particles. See
+the [motion review](../.local/blockbench/golem-animations/review.html). This is
+animation delivery for review; user approval of the static assets does not
+automatically approve playback or particle appearance.
 
 ## Feasible production path
 

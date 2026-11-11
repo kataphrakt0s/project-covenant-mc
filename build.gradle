@@ -191,3 +191,12 @@ tasks.register('wolfAnimationAssetTest', JavaExec) {
     javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
 }
 tasks.named('check') { dependsOn wolfAnimationAssetTest }
+
+tasks.register('golemAssetTest', JavaExec) {
+    group = 'verification'
+    description = 'Bakes four golem forms and samples the shared body/core animations with GeckoLib.'
+    classpath = sourceSets.geckoExample.runtimeClasspath
+    mainClass = 'dev.covenant.example.gecko.GolemAssetTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+tasks.named('check') { dependsOn golemAssetTest }

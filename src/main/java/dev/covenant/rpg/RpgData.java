@@ -62,6 +62,10 @@ public final class RpgData {
     public static final Supplier<AttachmentType<dev.covenant.rpg.skills.HunterPets.State>> HUNTER_PET = ATTACHMENTS.register(
             "hunters_pet", () -> AttachmentType.builder(dev.covenant.rpg.skills.HunterPets.State::new)
                     .serialize(dev.covenant.rpg.skills.HunterPets.State.CODEC.fieldOf("companion")).build());
+    /** Owner-saved native golem snapshot; runtime entity is unsaved and never copied on death. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.ElementalGolems.State>> ELEMENTAL_GOLEM = ATTACHMENTS.register(
+            "elemental_golem", () -> AttachmentType.builder(dev.covenant.rpg.skills.ElementalGolems.State::new)
+                    .serialize(dev.covenant.rpg.skills.ElementalGolems.State.CODEC.fieldOf("companion")).build());
     /** Unsaved owner-only elemental charge/reserve view; authority remains in SkillRuntime. */
     public static final Supplier<AttachmentType<dev.covenant.rpg.skills.WeaverDisplay>> WEAVER_DISPLAY = ATTACHMENTS.register(
             "weaver_display", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.WeaverDisplay.EMPTY)

@@ -41,7 +41,7 @@ public final class StatusHud {
 
     /** Same original identity as the skill tree and assignment picker. */
     private enum Icon {
-        LUNGE("lunging_combo"), RUSH("rip_and_rush"), DISCHARGE("discharge"), THREEFOLD("threefold_system"),
+        LUNGE("lunging_combo"), RUSH("rip_and_rush"), DISCHARGE("discharge"), THREEFOLD("threefold_system"), GOLEM("elemental_golem"),
         FIRE("fire_bolt"), ICE("ice_bolt"), LIGHTNING("lightning_bolt"), DODGE("dodge_aura"), SPEED("swiftness_aura"),
         RIPPING("ripping_aura"), FORTITUDE("fortitude_aura"), SHIELD("shield", true), RAGE("raging_aura"),
         ICY_VEINS("icy_veins"), FIRE_CLOAK("flame_cloak"), FREEZING("freezing_aura"), FROZEN("frozen", true),
@@ -198,6 +198,13 @@ public final class StatusHud {
             String footer = active ? seconds(row.expiresAt() - buffNow) : "";
             String badge = row.stacks() > 0 ? Integer.toString(row.stacks()) : "";
             var tooltip = new ArrayList<Component>(4);
+            if (skill.startsWith("elemental_golem_")) {
+                tooltip.add(skillName("elemental_golem"));
+                tooltip.add(Component.translatable("entity.covenant.elemental_golem.form."+skill.substring("elemental_golem_".length())));
+                tooltip.add(Component.translatable("skill.covenant."+skill+".description"));
+                buffs.add(new Tile(Icon.GOLEM,"","",PASSIVE,false,List.copyOf(tooltip)));
+                continue;
+            }
             tooltip.add(skill.equals("discharge_freeze") ? Component.translatable("hud.covenant.status.discharge_freeze") : skillName(skill));
             if (row.passive()) { tooltip.add(Component.translatable("hud.covenant.status.passive")); }
             if (active) {

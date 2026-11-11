@@ -1,7 +1,7 @@
 # Skills, class resources, and skill trees
 
 This foundation shares the existing class/profile and native stat/Affix Page systems.
-It adds 35 code-backed skills, persistent skill resources/cooldowns, and an
+It adds 36 code-backed skills, persistent skill resources/cooldowns, and an
 unsaved entity-local cast/combat/combo attachment. The Skills window presents
 the current class's tree with staged point/rank purchases and eight saved
 assignments. Unimplemented nodes remain visible but unavailable. Piercing Shot
@@ -50,6 +50,109 @@ uses the existing playable roster; further skill content follows this order.
 This is a dependency guide rather than a promise to implement an entire stage in
 one pass. Rend and the bleed foundation were prioritized next for Reaver's
 dependent skills. Skills whose requirements span stages follow their latest dependency.
+
+## Elemental Golem
+
+Weaver level 25, Rank 1, purchasable and assignable through the ordinary skill
+tree. Activate to summon Arcane for 40 base Mana (normal cost modifiers). Active
+presses cycle the same golem Arcane → Fire → Ice → Lightning → Arcane for free;
+there must be five game ticks between accepted switches, including after summon
+or restore. That fixed delay ignores cooldown scaling/debug bypass. Other spell
+casts do not choose the form. Cycling preserves health/status and attack timing.
+Unslotting the final assignment dismisses immediately, including during combat.
+
+Defeat or dismissal starts a 600-tick base resummon cooldown, scaled and captured
+at summon as for Hunter's Pet. Summon/cycling/restoration do not start it. Failed
+placement or native entity addition spends nothing; the existing executing guard
+blocks recursive activation. Operator self-only `/covenant golem summon [form]`
+now uses this skill boundary; it requires learned/assigned Weaver access, Mana,
+and a ready cooldown. `/covenant golem form <form>` is an explicit operator
+override for review; `/covenant golem dismiss` uses ordinary dismissal/cooldown.
+
+| Form | Owner benefit within 12 blocks |
+| --- | --- |
+| Arcane | +20% Mana regeneration, 10% lower Mana costs |
+| Fire | +10% spell damage across Arcane, Fire, Ice and Lightning |
+| Ice | 20% shorter cast times, 10% shorter cooldowns |
+| Lightning | +20% skill-effect duration and maximum Mana |
+
+Range is spherical feet-position distance, inclusive at exactly 12 blocks, with
+no line-of-sight requirement. Benefits affect only the owner. A direct owner-local
+check each player tick updates native transient stat modifiers and the existing
+owner-only buff HUD only on transitions/reload. Fire joins the existing spell
+damage snapshot pipeline, including Discharge; it does not increase melee or
+ordinary bow damage. Native stat stacking/caps and cast/projectile snapshots are
+unchanged. Existing casts/projectiles retain their firing/activation snapshots.
+Lightning capacity never increases current Mana. Loss through switching, leaving
+range, storing or dismissing immediately writes the clamped balance; returning
+cannot recover hidden excess. Lightning duration uses the normal skill-duration
+attribute and does not extend the permanent companion's lifetime.
+
+The companion has 60 HP, 3 native physical melee damage, and at least 40 ticks
+between attempts. Form changes add no elemental attack riders. It shares
+Hunter's Pet landed-damage target selection, ally/PvP checks, native hostile
+retaliation and owner combat/XP credit. No independent hostile hunting, wolf leap
+or panic. Native goals provide floating, melee, following, wandering and looking.
+Follow starts at 10 blocks and stops within 2; native far-owner recall uses the
+shared bounded loaded-ground search. Collision remains 1.4×2.7 blocks and has
+whole-body clearance checks. Repair by right-clicking an iron ingot: up to 25 HP,
+one native item consumption only when healing succeeds, native repair sound.
+No passive regeneration, sitting, breeding, leashing or equipment interaction.
+
+Lifecycle matches Hunter's Pet. One native snapshot in the owner's saved
+`covenant:elemental_golem` attachment preserves health, effects, fire, selected
+form and remaining attack delay across logout/restart/dimension travel and chunk
+unload. The entity itself has no world-saved copy. Safe restoration beside the
+owner retries at most once per second on the existing player cadence, without
+offline ticking, chunk forcing, payment or healing. Confirmed owner death/class
+change and unslotting clear live/stored state and start the captured cooldown.
+Native cancelled death preserves the living companion. IDs remain stable; the
+old operator prototype was unsaved and needs no data migration.
+
+`data/covenant/skills/elemental_golem.json` owns cost, cooldown, health, damage,
+attack interval, range and six stat bonuses plus Fire damage. Bounds/defaults
+are documented in `ElementalGolemData.Balance`; invalid reloads retain the live
+balance. Combat attributes/interval and scaled dismissal cooldown snapshot at
+summon, while range/benefits adopt retained reload data. The source for the
+original 16×16 stone/violet-core skill icon is local `.local/paint-golem-skill.py`.
+
+`ElementalGolemRenderer` is physical-client-only and uses the existing GeckoLib
+5.5.2 renderer, four geometries/atlases and one shared animation file. Render state
+captures appearance; common code has no physical-client dependency. Five body
+clips supply Idle (4s loop), Walk (1s loop), Attack (0.6s once), Hurt (0.35s once)
+and Death (0.9s held). Two-tick blending and the existing wolf action-release
+pattern preserve recovery to idle/walk after triggered attacks/hurt. Actual native
+melee attempts and successful nonlethal hurt trigger presentation; no keyframe
+authorizes damage or changes native reach, cover, cadence or lifecycle. Death
+folds to the knees instead of adding the native whole-body roll.
+
+An independent `core` controller owns only that bone: a 20-second numeric turn
+with small gyroscopic tilt, at a stable per-entity 0.85–1.15 rate, frozen on death.
+Body clips exclude it. Moving the core half a model unit forward (Z -1 to -1.5)
+keeps the whole rotating cube inside the cavity; all other approved geometry,
+UVs, texture pixels and pivots are preserved in separate animated sources.
+
+Two local motes near the chest every eight entity ticks use existing ember,
+ice-fleck, electric and arcane providers. Native particle limiting applies;
+dead/invisible golems emit none. The budget is five children/second and at most
+two alive from this emitter with the existing short lifetimes. No new particle
+textures, providers, server emitter, custom payload or world scan.
+
+`golemAssetTest` bakes all four 17-bone/34-cube models and densely samples the
+six shared clips. `golem_animations` exercises the actual registered controllers,
+including action recovery, held death, and core rate/death stop. The shared
+`CompanionAnimationFixture` retains the wolf regressions. Headless
+[motion review](../.local/blockbench/golem-animations/review.html) has fixed-camera
+playback and scrubbing; it shows body/core separately and does not render particles.
+Manual review: model scale/lighting, open ground and steps, wider/tight passages,
+following versus recall, actual attacks/retaliation, animation transitions and
+death, all four form particles, particle settings, resource reload, allies and observers.
+Full-skill automation passes all 202 required GameTests and the build; see
+[validation evidence](VALIDATION.md#elemental-golem-full-rank-1-skill-2026-11-10).
+For gameplay review, buy the level-25 Weaver skill, assign it, summon/cycle,
+leave/return to the 12-block range with Lightning Mana above normal capacity,
+repair with iron, unslot/rebind during cooldown, then check real reconnect,
+restart and dimension travel. Client and multiplayer acceptance remain pending.
 
 ## Hunter's Pet
 

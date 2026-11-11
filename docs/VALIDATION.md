@@ -2,6 +2,121 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Elemental Golem full Rank 1 skill (2026-11-10)
+
+- `scripts/Dev.ps1 verify`: **All 202 required tests passed :)** and
+  **BUILD SUCCESSFUL**. Four new skill cases join the five existing golem cases
+  and the Hunter's Pet/other gameplay regressions. The skill is now available
+  through the ordinary Weaver level-25 tree/assignment path.
+- `golem_skill`: paid summon, initial Arcane, free same-entity cycling at zero
+  Mana, the fixed five-tick switch delay despite cooldown scaling, last-slot
+  dismissal, duplicate assignments and summon-time dismissal cooldown snapshots.
+- `golem_benefits`: all form stat transitions, owner-only spell power, actual
+  Arcane spell release/impact retaining exactly one Fire bonus after switching,
+  no physical-attack bonus, spherical 12-block boundary, Lightning capacity
+  without Mana gain, permanent excess clamping, no healing on switches and
+  the existing owner-only buff display.
+- `golem_persistence`: native player attachment save/load with registry-aware
+  problem reporting, wounded health, selected form, effects and UUID retention,
+  no duplicate pre-spawn or summon payment/cooldown, plus a stored attachment
+  codec round trip and safe restoration through the real player cadence.
+- `golem_repair_defeat`: 25-HP native ingot repair/cap, no item consumption at
+  full health or on cancelled healing, cancelled death preservation, confirmed
+  defeat/cooldown/benefit removal, owner XP credit and owner combat marking.
+- Existing golem cases now exercise the 60-HP / 3-damage / 40-tick profile,
+  shared native navigation/retaliation, tall-body placement rejection, unload
+  storage, lifecycle boundaries and existing body/core animation controllers.
+  Fixture-only tickets wait for actual entity readiness, allow a bounded
+  1000-tick setup/execution window and clean up on timeout. Production does not
+  force chunks or scan world entities.
+- `golemAssetTest` and the wolf asset/runtime tests pass. The local JAR audit
+  (`.local/audit-golem-skill.py`) byte-matches eleven golem resources, checks
+  balance/form labels and the original 16×16 binary-alpha skill icon, and
+  excludes all test fixtures. `git diff --check` passes.
+- Pending user playtest: buy/slot/use at Weaver level 25; form feedback, status
+  tooltips and range feel; walk/attack/hurt/death playback; iron repair; actual
+  reconnect, fresh-server restart, dimension travel and multiplayer observers.
+  Native serialization automation does not establish those client/live-server
+  scenarios. No client launch, deployment or remote publication was performed.
+
+## Elemental Golem first animation set and form accents (2026-11-10)
+
+- Integrated Idle/Walk/Attack/Hurt/Death plus an independent slow core loop, with
+  four cosmetic appearances and minor family particles. `/covenant golem summon
+  <form>` and `/covenant golem form <form>` are operator-only appearance controls.
+  Automatic form mechanics, benefits, full skill and persistence remain deferred.
+- `scripts/Dev.ps1 verify` passed **All 198 required tests passed :)** and
+  **BUILD SUCCESSFUL**. The new `golem_animations` test exercises registered
+  body/core controllers, idle/walk selection, completed attack/hurt release,
+  negative-finished-timeline recovery, death interruption/hold, bounded core
+  speed/death stop and appearance-only attribute preservation. It reuses the
+  generic companion fixture and keeps the existing wolf regressions. Native
+  movement/melee/targeting/placement/lifecycle tests remain passing.
+- All six clips in each animated source pass 60 Hz headless checks: zero
+  errors/warnings, skipped channels, Bezier approximations or capped clips.
+  Ground tolerance is 0.05 model units; detachment tolerance is 0.5. Static
+  geometry retains eighteen documented intentional rigid-joint overlap warnings.
+- `golemAssetTest` bakes all four 17-bone/34-cube geometries and native PNGs with
+  GeckoLib 5.5.2. Dense runtime samples cover finite motion, body/core bone
+  ownership, loop seams, opposed stride, contact-first/recovering attack,
+  kneeling death and slow turn/tilt. Core corner-radius bounds prove full depth
+  clearance after the half-unit pivot/geometry adjustment; no texture changes.
+- Source/export audit passes: all approved static sources are unchanged, PNG
+  pixels and UVs match, only the explicit core clearance adjustment differs in
+  animated copies, four exports agree on one shared animation file, and staged
+  runtime resources match. The packaged JAR audit passes all nine resources,
+  appearance localization, common/client separation and exclusion of test fixtures.
+- Fixed-camera preview uses the pinned headless render engine, nearest texture
+  sampling and the same camera/floor across clips: 486 frames, two views,
+  play/pause, replay, scrubbing and slow motion. Representative stride, strike,
+  kneel and core poses were visually inspected. Body/core are shown separately;
+  runtime combines them. Minecraft particles are not rendered by this preview.
+- Evidence: ignored `.local/blockbench/golem-animations/{verify.log,preview.json,
+  source-audit.json,*-animation-validation.json,export-*-report.json,render-review.log,
+  audit_runtime.py,review.html}`; recipes/sources in `models/elemental_golem_animated/`.
+  The original static sources remain in `models/elemental_golem/`.
+- Particle limits are code bounds: two locally requested children per eight entity
+  ticks, existing two-to-six-tick lifetimes, native limiting, no server packets or
+  global scan. This does not measure GPU/CPU performance or establish appearance.
+  Minecraft playback/blending, all four particle families, particle settings,
+  resource reload, actual multiplayer/latency and crowded scenes remain unverified.
+  No Minecraft client launch or deployment was performed.
+
+## Elemental Golem movement/follow/melee slice (2026-11-10)
+
+- User-approved model/textures; scope is the static arcane golem with movement,
+  following and native melee. Operators use `/covenant golem summon` and
+  `/covenant golem dismiss`. Full skill, elemental benefits/form switching,
+  persistence and animation remain deferred. See `docs/RPG_SKILLS.md`.
+- `scripts/Dev.ps1 verify` passed **All 197 required tests passed :)** and
+  **BUILD SUCCESSFUL**. Four new native tests cover canceled/reentrant/duplicate
+  summons, full-body low-ceiling rejection, shared landed-damage/retaliation
+  targeting and ally protection, walking follow, pursuit and repeated native
+  melee with attack spacing, hostile retaliation, far-owner recall, dismissal,
+  owner lifecycle cancellation and chunk-unload reference cleanup. Fixtures
+  wait for entity-ticking chunks and release their own temporary tickets.
+- Existing Hunter's Pet tests pass after extracting shared targeting, placement
+  and recall into `Companions`. The wolf keeps its native goals, animation
+  controllers, balance and saved lifecycle. The full existing suite also passes.
+- `golemAssetTest` bakes the shipped geometry through GeckoLib 5.5.2: 17 bones,
+  34 cubes and the 128×128 PNG. There are zero animation controllers and no
+  animation resource. Pinned source inspection established that the runtime
+  skips controller evaluation when none exist, but rejects empty animation files
+  in development. No dummy clip was authored.
+- Local `gecko-smoke` passed seven checks, including explicit static-export
+  behavior and preservation of animated/unsupported-feature rejection checks.
+  Static mode exports geometry/PNG only. The packaged JAR audit confirms source
+  geometry/PNG equality, the approved arcane atlas, common/client class separation,
+  localized commands, and absence of placeholder animations/test fixtures.
+- Evidence: `.local/blockbench/elemental_golem/implementation-verify.log`,
+  `static-mode-smoke.log`, `static-export-report.json`, `audit_runtime.py`, and
+  `runs/gametest/logs/latest.log`. Sources/preview studies remain ignored in
+  `models/elemental_golem/` and `.local/blockbench/elemental_golem/`.
+- Not performed: Minecraft client appearance, actual walk/attack readability,
+  tight passages, real multiplayer/latency or comparative performance checks.
+  This testing golem is deliberately unsaved; retained-world golem restoration
+  is not implemented or claimed. No deployment or client launch was performed.
+
 ## Hunter's Pet walking after combat (2026-11-10)
 
 - Fixed a pinned GeckoLib 5.5.2 controller lockout: completed triggered bite/hurt

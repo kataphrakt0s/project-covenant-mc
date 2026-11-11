@@ -32,6 +32,27 @@ public final class SkillVisuals {
 
     private SkillVisuals() {}
 
+    /** Two local decorative motes every eight entity ticks; native limiting applies, with no server packets. */
+    static void golemAmbient(ElementalGolem golem) {
+        if (!golem.level().isClientSide() || !golem.isAlive() || golem.isInvisible()
+                || (golem.tickCount & 7) != (golem.getId() & 7)) { return; }
+        var particle = switch (golem.form()) {
+            case FIRE -> CombatParticles.EMBER.get();
+            case ICE -> CombatParticles.ICE_SHARD.get();
+            case LIGHTNING -> CombatParticles.ELECTRIC_ENERGY.get();
+            case ARCANE -> CombatParticles.ARCANE_ENERGY.get();
+        };
+        double yaw = Math.toRadians(golem.yBodyRot);
+        double forwardX = -Math.sin(yaw), forwardZ = Math.cos(yaw);
+        for (int i = 0; i < 2; i++) {
+            double side = (golem.getRandom().nextDouble() - .5) * .3;
+            golem.level().addParticle(particle, golem.getX() + forwardX * .32 + forwardZ * side,
+                    golem.getY() + 1.8125 + (golem.getRandom().nextDouble() - .5) * .2,
+                    golem.getZ() + forwardZ * .32 - forwardX * side,
+                    forwardX * .008, golem.form() == ElementalGolem.Form.FIRE ? .018 : -.004, forwardZ * .008);
+        }
+    }
+
     static void elementalTrail(ElementalBolt bolt) {
         boolean fire = bolt.skill() == SkillDefinition.FIRE_BOLT;
         energyTrail(bolt, fire ? CombatParticles.FIRE_ENERGY.get() : CombatParticles.ICE_ENERGY.get(), fire);

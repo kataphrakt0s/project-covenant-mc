@@ -1663,27 +1663,61 @@ deferred.
 #### Elemental Golem
 Minimum character level: 25.
 
-Planned behavior: the golem has 4 forms: fire, ice, lightning, and arcane. Its form
-is selected according to the player's last cast. Each form grants a different
-benefit while nearby. Proximity range, benefit strengths, Mana cost, and cooldown
-are deferred.
+Implemented Rank 1 behavior: the golem has four forms: fire, ice, lightning and arcane. While
+the golem is active, activating Elemental Golem cycles its form. Other spell
+casts do not select its form. Removing the skill's last slot assignment dismisses
+the golem; activating the skill while it is active cycles rather than dismisses.
+This control rule was agreed and implemented on 2026-11-10. Summoning starts in
+Arcane; subsequent activations cycle
+Arcane → Fire → Ice → Lightning → Arcane. Each form grants a different benefit while nearby.
+Form cycling costs no Mana; Mana is charged only when summoning. Form changes
+have a fixed five-game-tick delay (0.25 seconds at 20 TPS), independent of the
+resummon cooldown and unaffected by cooldown modifiers. Form benefits apply only
+to the owner within 12 blocks of the golem, measured as three-dimensional distance
+between their positions. Rank 1 summoning costs 40 base Mana, scaled by the
+owner's normal Mana-cost modifiers. Defeat or dismissal through unslotting starts
+a 30-second base resummon cooldown. Summoning and form cycling do not start it.
+
+All four forms retain the same basic melee attack. Changing form changes the
+nearby owner benefit and visual presentation; it does not change the golem's
+attack damage type or add elemental attack riders.
+
+Rank 1 combat profile: 60 health points (30 hearts), 3 native melee damage and
+at least 40 game ticks (2 seconds at 20 TPS) between attack attempts. These
+replace the operator prototype's 40 health / 30-tick interval.
+
+Healing follows native iron-golem repair: right-click with an iron ingot to
+restore up to 25 health, capped at maximum health. A successful repair consumes
+one ingot through native item-consumption rules; a full-health golem does not
+consume it. There is no passive regeneration.
 
 Companion rules match Hunter's Pet: one lasting golem follows and assists the
 player, remaining until defeated or dismissed. It attacks enemies the player
-damages and retaliates against enemies that damage the player. Defeat starts
-its resummon cooldown; it can be summoned again after that cooldown expires.
+damages and retaliates against enemies that damage the player. It can be summoned
+again after its defeat/dismissal cooldown expires.
+
+Persistence matches Hunter's Pet: preserve the living golem's health, status
+effects and selected form across logout, server restart and dimension travel.
+Store it while the owner is offline and restore it beside the owner when safe,
+without healing, a summon cost or offline ticking. No chunk forcing. Confirmed
+owner death or class change dismisses it and starts the normal resummon cooldown.
 
 | Form | Benefit to the player while nearby |
 | --- | --- |
-| Fire | Increase all spell damage. |
-| Ice | Increase armor and armor toughness. |
-| Lightning | Reduce spell cast times and extend the duration of the player's spell effects. |
-| Arcane | Increase Mana regeneration and reduce Mana costs. |
+| Fire | Rank 1: +10% spell damage across all elements while the owner is within range. |
+| Ice | Rank 1: 20% shorter cast times and 10% shorter skill cooldowns while the owner is within range. |
+| Lightning | Rank 1: +20% owner spell-effect duration and +20% maximum Mana while within range. |
+| Arcane | Rank 1: +20% Mana regeneration and 10% lower Mana costs while the owner is within range. |
+
+Lightning's maximum-Mana benefit raises capacity without increasing current Mana.
+When that benefit ends, including switching away or leaving range, current Mana
+above the normal cap is discarded. Re-entering Lightning does not restore that
+discarded excess or grant Mana merely for increasing capacity.
 
 #### Arcane Explosion
 Minimum character level: 30.
 
-Planned behavior: after a wind-up, release one large magic-damage burst centered
+Implemented Rank 1 behavior: after a wind-up, release one large magic-damage burst centered
 on the player. No elemental charges are required. Wind-up duration, area radius,
 damage, Mana cost, and cooldown are deferred.
 

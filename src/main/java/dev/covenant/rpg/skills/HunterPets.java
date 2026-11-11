@@ -7,8 +7,6 @@ import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
 import dev.covenant.rpg.stats.RpgStats;
 import java.util.Optional;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,12 +15,10 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 
 /** One owner-local companion. No entity index, offline tick, world-saved copy or chunk tickets. */
 public final class HunterPets {
@@ -49,7 +45,6 @@ public final class HunterPets {
     public static void register(IEventBus bus) {
         bus.addListener((EntityAttributeCreationEvent event) -> event.put(Skills.HUNTER_PET.get(), HunterPet.createAttributes().build()));
         NeoForge.EVENT_BUS.addListener(HunterPetData::register);
-        NeoForge.EVENT_BUS.addListener(HunterPets::damaged);
     }
     public static boolean assigned(ServerPlayer player) {
         var loadout = player.getData(RpgData.SKILL_LOADOUT);
@@ -159,51 +154,13 @@ public final class HunterPets {
     }
 
     private static CompoundTag capture(HunterPet pet) {
-        var output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, pet.registryAccess());
-        pet.saveWithoutId(output);
-        return output.buildResult();
+        return Companions.capture(pet);
     }
     /** At most 75 already-loaded candidates within two blocks horizontally and one vertically. */
     static boolean place(ServerPlayer owner, HunterPet pet) {
-        var center = owner.blockPosition();
-        for (int dy : new int[] {0, 1, -1}) {
-            for (int dx = -2; dx <= 2; dx++) {
-                for (int dz = -2; dz <= 2; dz++) {
-                    if (dx == 0 && dz == 0) { continue; }
-                    var pos = center.offset(dx, dy, dz);
-                    if (safe(owner, pet, pos)) {
-                        pet.snapTo(pos.getX() + .5, pos.getY(), pos.getZ() + .5, owner.getYRot(), 0);
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-    private static boolean safe(ServerPlayer owner, HunterPet pet, BlockPos pos) {
-        var level = owner.level();
-        var box = pet.getDimensions(pet.getPose()).makeBoundingBox(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
-        if (!level.hasChunksAt(BlockPos.containing(box.minX, box.minY - 1, box.minZ), BlockPos.containing(box.maxX, box.maxY, box.maxZ))
-                || !level.getWorldBorder().isWithinBounds(box) || !level.isInWorldBounds(pos)) { return false; }
-        return level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
-                && !level.containsAnyLiquid(box) && level.noCollision(pet, box);
+        return Companions.place(owner, pet);
     }
     static void teleportToOwner(HunterPet pet) {
-        if (pet.getOwner() instanceof ServerPlayer player && place(player, pet)) {
-            pet.getNavigation().stop(); pet.setTarget(null); pet.setDeltaMovement(Vec3.ZERO); pet.fallDistance = 0;
-        }
-    }
-    private static void damaged(LivingDamageEvent.Post event) {
-        if (AuraDamage.landedDamage(event) <= 0) { return; }
-        var source = event.getSource().getEntity();
-        var target = event.getEntity();
-        if (source instanceof ServerPlayer owner) {
-            var pet = current(owner);
-            if (pet != null && pet.canAttack(target)) { pet.setTarget(target); }
-        }
-        if (source instanceof net.minecraft.world.entity.LivingEntity attacker) {
-            var pet = target instanceof ServerPlayer owner ? current(owner) : target instanceof HunterPet companion ? companion : null;
-            if (pet != null && pet.canAttack(attacker)) { pet.setTarget(attacker); }
-        }
+        Companions.teleportToOwner(pet);
     }
 }

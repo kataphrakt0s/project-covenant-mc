@@ -28,9 +28,12 @@ migration from earlier prototype save formats is unsupported.
 | **Weaver** | Elemental spellcasting and control | Mana |
 
 Each class has its own skill tree, with active attacks and auras available now.
-Stalker has bow skills, four traps, and Disengage; Reaver has bleeds, movement
+Stalker has bow skills, four traps, Disengage and Hunter's Pet; Reaver has bleeds, movement
 combos, Battle Cry, and Rage Storm; Weaver has elemental bolts, Discharge,
-Threefold System, and Teleport.
+Threefold System, Teleport and Elemental Golem. The golem follows and fights
+beside its owner; press its skill to cycle forms for different nearby benefits,
+or remove its final skill assignment to dismiss it. Both companions retain
+injuries through logout and dimension travel.
 Earn skill points through character levels, learn up to eight distinct skills,
 and assign them to eight combat bindings. Prerequisites and level requirements
 shape each build; crafted respec items let you reallocate points. Planned skills

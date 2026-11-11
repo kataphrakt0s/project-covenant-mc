@@ -80,7 +80,7 @@ public final class AuraDamage {
     }
     /** Elemental buff joins outgoing bonuses additively, captured once at spell/projectile creation. */
     public static double elementalMultiplier(LivingEntity source, WeaverPower.Element element) {
-        return multiplier(source, element == WeaverPower.Element.FIRE) + WeaverPower.bonus(source, element);
+        return multiplier(source, element == WeaverPower.Element.FIRE) + WeaverPower.bonus(source, element) + ElementalGolems.spellBonus(source);
     }
     /** Bleed power captures outgoing and bleed bonuses additively once; pulses never reapply them. */
     public static float bleedPower(LivingEntity source) {

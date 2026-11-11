@@ -36,6 +36,7 @@ final class SkillSounds {
                         : skill == SkillDefinition.MULTISHOT ? 1.0f : 1.2f;
             }
             case ARCANE_BOLT -> { sound = SoundEvents.AMETHYST_BLOCK_CHIME; pitch = 1.4f; }
+            case ELEMENTAL_GOLEM -> { sound = SoundEvents.AMETHYST_BLOCK_CHIME; volume = .4f; pitch = .8f; }
             case ELEMENTAL_BOLT -> {
                 sound = skill == SkillDefinition.FIRE_BOLT ? SoundEvents.FIRECHARGE_USE : SoundEvents.SNOWBALL_THROW;
                 pitch = skill == SkillDefinition.FIRE_BOLT ? 1.15f : 0.8f;

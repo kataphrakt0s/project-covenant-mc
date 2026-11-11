@@ -1,5 +1,41 @@
 # Project Covenant context
 
+## Summon polish acceptance and current scope
+
+Hunter's Pet is user-accepted and Phase 7 complete. Elemental Golem now has its
+Weaver level-25 Rank 1 skill, approved four-form assets, five body animations,
+slow dynamic cores and restrained form particles. The skill summons Arcane for
+40 base Mana; active presses cycle Arcane → Fire → Ice → Lightning → Arcane for
+free, with a fixed five-tick switch delay. Other spells do not select the form.
+Remove its final slot assignment to dismiss. Defeat/dismissal starts a 30-second
+base cooldown, scaled and captured at summon. All forms share 60 HP, 3 native
+physical melee damage and a 40-tick attack interval. Iron ingots repair 25 HP.
+
+Owner-only benefits use a 12-block spherical range: Fire +10% spell damage,
+Ice 20% shorter cast times / 10% shorter cooldowns, Lightning +20% duration /
+maximum Mana, Arcane +20% Mana regeneration / 10% lower costs. Capacity never
+grants Mana; losing Lightning permanently clamps excess. Native transient
+attributes, spell snapshots and the existing owner-only status HUD provide
+integration; the fixed cycle delay is separate from skill cooldown modifiers.
+
+The golem reuses Hunter's Pet targeting, native movement/follow/melee, loaded
+body-safe placement/recall and owner-saved native snapshot policy. Injuries,
+status, form and remaining attack delay survive logout/restart/dimension travel;
+no offline ticking, chunk forcing, summon payment or healing on restore. Owner
+death/class change dismisses and starts cooldown. Datapack tuning lives in
+`data/covenant/skills/elemental_golem.json`; combat/cooldown snapshot at summon,
+benefits/range update on reload. Registry IDs are unchanged; the former unsaved
+operator prototype has no saved data to migrate. Operator summon now respects
+skill ownership, assignment, Mana and cooldown; explicit form overrides remain
+for testing.
+
+Animated sources remain local in `models/elemental_golem_animated/`, with approved
+static sources preserved in `models/elemental_golem/`. [Motion review](.local/blockbench/golem-animations/review.html)
+provides fixed-camera playback/scrubbing. Client playback, form-change feedback,
+range feel, reconnect/restart and multiplayer still need manual playtesting.
+See the [roadmap](<Project-Covenant/Visual Polish Roadmap.md>) and
+[skill notes](docs/RPG_SKILLS.md) for details and validation boundaries.
+
 ## Promotional art benchmark
 
 The user approved the final lit, halo-free hybrid combat-class banner on 2026-11-10.

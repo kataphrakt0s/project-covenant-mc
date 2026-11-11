@@ -61,6 +61,7 @@ public final class CovenantClient {
 
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(Skills.HUNTER_PET.get(), HunterPetRenderer::new);
+        event.registerEntityRenderer(Skills.ELEMENTAL_GOLEM.get(), ElementalGolemRenderer::new);
         event.registerEntityRenderer(Skills.ARCANE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.ARCANE));
         event.registerEntityRenderer(Skills.FIRE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.FIRE));
         event.registerEntityRenderer(Skills.ICE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.ICE));

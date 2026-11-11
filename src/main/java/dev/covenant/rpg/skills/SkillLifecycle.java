@@ -22,6 +22,7 @@ public final class SkillLifecycle {
         ClassResources.requireServer(player);
         Combos.clear(player);
         HunterPets.lifecycle(player, reason);
+        ElementalGolems.lifecycle(player,reason);
         player.getData(RpgData.SKILL_RUNTIME).cancelCast(player);
         Traps.clear(player, null);
         RageStorm.clear(player);
@@ -39,6 +40,7 @@ public final class SkillLifecycle {
             cancelPlayer(player, Reason.CONFIRMED_DEATH);
         } else {
             if (target instanceof HunterPet pet) { HunterPets.defeated(pet); }
+            if (target instanceof ElementalGolem golem) { ElementalGolems.defeated(golem); }
             Auras.clear(target);
             clearTargetOnDeath(target);
         }
@@ -67,6 +69,7 @@ public final class SkillLifecycle {
         }
         Auras.reconcile(player);
         HunterPets.reconcile(player);
+        ElementalGolems.reconcile(player);
         BloodFever.reconcile(player);
         WeaverPower.reconcile(player);
     }

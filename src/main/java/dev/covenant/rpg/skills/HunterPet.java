@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.profiling.Profiler;
-import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -73,9 +72,7 @@ public final class HunterPet extends Wolf implements GeoEntity {
         // Landed-damage events select targets, including projectiles/spells; no wild hunting or pack alerts.
     }
     @Override public boolean canAttack(LivingEntity target) {
-        return target != null && target.level() == level() && target.canBeSeenAsEnemy()
-                && (!(target instanceof Player) || level().getDifficulty() != Difficulty.PEACEFUL)
-                && getOwner() instanceof ServerPlayer owner && HunterPets.assigned(owner) && Skills.canHit(owner, target);
+        return Companions.canAttack(this, target) && getOwner() instanceof ServerPlayer owner && HunterPets.assigned(owner);
     }
     @Override public boolean wantsToAttack(LivingEntity target, LivingEntity owner) { return canAttack(target); }
     @Override public boolean doHurtTarget(ServerLevel level, Entity target) {

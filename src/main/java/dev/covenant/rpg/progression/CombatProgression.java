@@ -93,6 +93,10 @@ public final class CombatProgression {
             credit(owner, target); contact(owner, target);
         }
         creditOwners(attacker, target, Auras.supportOwners(attacker, false));
+        if (attacker instanceof dev.covenant.rpg.skills.ElementalGolem golem && golem.getOwner() instanceof ServerPlayer owner
+                && dev.covenant.rpg.skills.ElementalGolems.current(owner)==golem && !Auras.allied(owner,target)) {
+            credit(owner,target); contact(owner,target);
+        }
         creditOwners(target, target, Auras.supportOwners(target, true));
         var projectile = source.getDirectEntity();
         if (projectile != null && projectile.hasData(RpgData.PROJECTILE_COMBAT)) {
@@ -102,6 +106,8 @@ public final class CombatProgression {
         if (target instanceof dev.covenant.rpg.skills.HunterPet pet && pet.getOwner() instanceof ServerPlayer owner
                 && dev.covenant.rpg.skills.HunterPets.current(owner) == pet) { ClassResources.markCombat(owner); contact(owner, attacker); }
         creditOwners(target, attacker, Auras.supportOwners(target, false));
+        if (target instanceof dev.covenant.rpg.skills.ElementalGolem golem && golem.getOwner() instanceof ServerPlayer owner
+                && dev.covenant.rpg.skills.ElementalGolems.current(owner)==golem) { ClassResources.markCombat(owner); contact(owner,attacker); }
     }
     private static void damaged(LivingDamageEvent.Post event) {
         try (var zone = Profiler.get().zone("covenant:combat_credit")) {
