@@ -4,7 +4,10 @@
     "covenant:mining": 20,
     "covenant:logging": 20,
     "covenant:farming": 20,
-    "covenant:crafting": 20
+    "covenant:crafting": 20,
+    "covenant:building": 20,
+    "covenant:fishing": 20,
+    "covenant:exploration": 20
   },
   "character_requirements": [
     50,
@@ -68,8 +71,28 @@
     60000
   ],
   "_profession_note": "Provisional prototype XP requirements per transition from current level 0 through 19. Not final balance.",
-  "profession_requirements": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
-    1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000],
+  "profession_requirements": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900,
+    1000,
+    1100,
+    1200,
+    1300,
+    1400,
+    1500,
+    1600,
+    1700,
+    1800,
+    1900,
+    2000
+  ],
   "hostile_reward": 10,
   "entity_rewards": {
     "minecraft:enderman": 20,
@@ -82,7 +105,10 @@
     "covenant:mining": 20,
     "covenant:logging": 20,
     "covenant:farming": 20,
-    "covenant:crafting": 20
+    "covenant:crafting": 20,
+    "covenant:building": 20,
+    "covenant:fishing": 20,
+    "covenant:exploration": 20
   },
   "dimensions": [
     {

@@ -105,6 +105,43 @@ death/payout; changing this duration does not require recurring expiry scans.
 
 ## Profession XP rewards
 
+### Exploration exception
+
+[[Exploration]] uses discovery milestones rather than XP. Its milestone pool is
+server-datapack configurable so modpack authors can define their own progression
+through biome, structure and dimension discoveries, including modded content.
+Dimension discovery pools supply **10 Overworld, 8 Nether and 4 End level
+rewards**: 22 available toward the Level 20 cap. Players can skip two rewards;
+both Nether and End discoveries remain necessary. Author the available rewards to establish this
+route, without separate mandatory-visit gates. Each qualifying
+one-time milestone grants one level and one Exploration
+Profession Point directly up to the global cap. Dimension XP caps do not apply;
+control Exploration's route and pacing through its milestone definitions.
+Overworld definitions give Woodland Mansion and Ancient City discoveries one
+level each, aggregate village types into a shared collection goal, and require
+every eligible Overworld biome for the final biome milestone. Keep the complete
+eligible-biome target set datapack configurable for modpack world generation.
+The five Overworld biome rewards use **10%, 25%, 50%, 75% and 100%** completion
+of that set, rounding required biome counts upward. The other five Overworld
+rewards are structure milestones. The complete default discovery catalogue,
+including the accepted six-of-eleven common-landmark pool and grouped variants,
+is recorded in [[Exploration]]. The implemented replacement JSON schema is in
+[PROFESSIONS.md](../docs/PROFESSIONS.md#exploration-datapack-format), under
+`data/covenant/progression/exploration.json`.
+Exploration reloads recognize previously recorded player discoveries for new
+or changed milestones and may grant newly satisfied rewards. Preserve earned
+levels, points and claimed milestone IDs; a changed claimed ID never pays again.
+
+### XP-based professions
+
+[[Fishing]] rewards are **50 XP per successful loot-bearing reel-in**,
+including fish, junk and treasure, once per catch regardless of item count.
+Empty reels and hooking entities grant none. Keep the value in server-datapack
+activity reward tuning. The shared 21,000-XP curve makes this 420 successful
+catches from Level 0 to 20 when no XP is discarded by caps. Fishing contributes
+65% of actually credited XP to Building using the existing cap and fractional
+credit rules; Exploration contributes none.
+
 Support contextual XP definitions for activity events, identifiers, tags, recipes, blocks/items/tools, entities, workstation actions, and optional machine integrations. Reward values should distinguish meaningful activity from trivial repeat actions. Ordinary vanilla crafting is excluded from Crafting XP.
 
 Automation XP is disabled by default. Any explicitly enabled automation source should declare attribution behavior and anti-exploit controls so repeated output collection does not create unlimited XP.

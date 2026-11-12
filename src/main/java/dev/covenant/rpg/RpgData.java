@@ -77,6 +77,18 @@ public final class RpgData {
     public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ProgressionView>> PROGRESSION_VIEW = ATTACHMENTS.register(
             "progression_view", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ProgressionView.EMPTY)
                     .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.progression.ProgressionView.STREAM_CODEC).build());
+    /** Server-only saved discovery ledger and one-time claims, copied on death and End return. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ExplorationState>> EXPLORATION = ATTACHMENTS.register(
+            "exploration", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ExplorationState.EMPTY)
+                    .serialize(dev.covenant.rpg.progression.ExplorationState.CODEC.fieldOf("exploration")).copyOnDeath().build());
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.Exploration.Cursor>> EXPLORATION_CURSOR = ATTACHMENTS.register(
+            "exploration_cursor", () -> AttachmentType.builder(dev.covenant.rpg.progression.Exploration.Cursor::new).build());
+    public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ExplorationView>> EXPLORATION_VIEW = ATTACHMENTS.register(
+            "exploration_view", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ExplorationView.EMPTY)
+                    .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.progression.ExplorationView.STREAM_CODEC).build());
+    /** A single hook pays at most once; disposable and never written to disk. */
+    public static final Supplier<AttachmentType<Boolean>> FISHING_REWARDED = ATTACHMENTS.register(
+            "fishing_rewarded", () -> AttachmentType.builder(() -> false).build());
     public static final Supplier<AttachmentType<dev.covenant.rpg.progression.ProfessionView>> PROFESSION_VIEW = ATTACHMENTS.register(
             "profession_view", () -> AttachmentType.builder(() -> dev.covenant.rpg.progression.ProfessionView.EMPTY)
                     .sync((holder, recipient) -> holder == recipient, dev.covenant.rpg.progression.ProfessionView.STREAM_CODEC).build());

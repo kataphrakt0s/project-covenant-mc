@@ -56,6 +56,12 @@ final class PhaseFiveGameTests {
             Progression.awardProfession(observer, h.getLevel(), mining, d.required(mining, 0) + d.required(mining, 1));
             check(!PlayerProfiles.get(observer).created() && observer.getData(RpgData.PROFESSIONS).tracks().get(mining).level() == 2
                     && levels(observerPackets) == 1 && sounds(observerPackets, SoundEvents.PLAYER_LEVELUP) == 1, "Classless profession levels aggregate independently");
+            check(observer.getData(RpgData.PROFESSIONS).tracks().get(ProgressionData.BUILDING).level() == 1
+                    && observerPackets.stream().filter(v -> v instanceof ClientboundSystemChatPacket s && s.overlay())
+                            .map(v -> ((ClientboundSystemChatPacket)v).content()).anyMatch(content -> content.getSiblings().stream()
+                                    .anyMatch(sibling -> sibling.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t
+                                            && t.getKey().equals("progression.covenant.earned_profession"))),
+                    "One source award includes Building's level gain in the same owner cue");
             h.succeed();
         }
     }

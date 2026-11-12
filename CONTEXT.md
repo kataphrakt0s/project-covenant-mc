@@ -64,13 +64,13 @@ Server datapack balance reloads preserve earned levels, allocations and raw XP.
 Dimension grouping uses native dimension-type tags; explicit dimension IDs win.
 See [PROGRESSION.md](docs/PROGRESSION.md) for format, APIs and boundaries.
 
-All four independent, classless profession tracks initialize on login at level/XP
-zero. The first expanded foundation adds paid-cost allocations, a server-datapack
-catalogue, owner-synced four-tab Professions menu, atomic per-tab Apply, and a
-Profession Respec item. Held use for two seconds out of combat refunds all four
+Five independent activity tracks, the Building meta-profession and Exploration initialize
+on login at level/XP zero. The foundation adds paid-cost allocations, a server-datapack
+catalogue, owner-synced seven-tab Professions menu, atomic per-tab Apply, and a
+Profession Respec item. Held use for two seconds out of combat refunds all seven
 professions together while preserving XP/levels. Logging's Offensive Mastery is
 usable alongside Vein Mining, Tree Felling, Farming Scything/Automatic Replanting
-and all four Crafting nodes; eight authored nodes remain visibly planned and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
+and all four Crafting nodes; eleven authored nodes (including three Building placeholders) remain visibly planned and unavailable. Natural Mining, Logging, Farming and enchanting-table Crafting
 XP now use confirmed server outcomes, the provisional shared curve and reward
 table, persistent chunk-owned placed-ore exclusions, and bounded tree recognition.
 Vein Mining and Tree Felling use bounded native per-block harvests, sneaking to
@@ -86,7 +86,7 @@ Unbreaking-aware durability use. Learned Farming replanting spends inventory
 planting items through native placement, including the last crop when the hoe
 breaks. Crop maturity/planting items and Scything widths are datapack-defined.
 Owner-synced crop targets let the client consume the hoe action without a second
-offhand use; gameplay remains server-owned (profession protocol revision 4).
+offhand use; gameplay remains server-owned (profession protocol revision 5).
 Other gathering abilities remain deferred. The shared, persistent Covenant Workbench
 now supports Add/Upgrade/Reroll/Remove and ten-input/twelve-output salvage,
 Crafting access/XP, and Recovery/Focused Recovery. It uses an original stone
@@ -99,6 +99,37 @@ Itemization includes Covenant-owned equipment rarity with server datapack defini
 item/tag-based opt-in rules for modpack developers; see
 [Affixes and Rarity](<Project-Covenant/Affixes and Rarity.md>).
 Use fresh saves: prototype profile/loadout migration is deliberately unsupported.
+
+Building's [profession foundation](<Project-Covenant/Building.md>) is
+implemented: a fifth class-independent tab, 65% of XP actually
+credited to Mining/Logging/Farming/Crafting/Fishing, no contribution from capped sources
+or discarded overflow, shared Level 0-20 curve and one Building point per level.
+Fractional credit persists as hundredths; source and Building awards commit
+together. Dimension caps default to 20 everywhere. This work
+uses fresh saves without migration or catch-up. Reach, cosmetic wood/stone
+swapping and a further undecided skill remain unimplemented design directions.
+
+Fishing and Exploration now complete the seven-profession foundation. Fishing
+earns 50 XP once per native loot-bearing reel-in, including fish, junk and
+treasure regardless of item count. Cancelled/empty catches and entity hooks earn
+nothing; native loot, rod behavior and vanilla XP remain unchanged. Fishing uses
+the shared Level 0-20 curve and contributes 65% of accepted XP to Building.
+
+Exploration is the explicit no-XP exception: 22 one-time default milestones
+(10 Overworld, 8 Nether, 4 End) provide levels and points up to Level 20. Available
+rewards require both later dimensions without extra visit gates or dimension XP
+caps. Its paged owner checklist shows collection progress, with skills deferred.
+`data/covenant/progression/exploration.json` is a server-datapack replacement
+catalogue with biome/structure tag or ID targets and grouped structure families.
+The server-only saved `covenant:exploration` ledger retains discoveries and claims
+through native lifecycles. Reloads may reward new goals from recorded discoveries
+without revoking earned levels or repeating claims. Position changes check only
+loaded chunks and structure starts; stationary retries handle newly loaded starts.
+There is no chunk forcing or individual structure-instance tracking. Raw history
+stays on the server; the owner receives a transient checklist view. Protocol is
+`professions/6`. Both new professions' skills remain deferred, and this format
+requires fresh saves without migration. See [PROFESSIONS.md](docs/PROFESSIONS.md)
+and [Profession Progression](<Project-Covenant/Profession Progression.md>).
 
 All classes share the seven-second combat timer for damage/support, Rage grace,
 Apply and respec. Support/timer refresh alone grants no Rage. Skills use earned

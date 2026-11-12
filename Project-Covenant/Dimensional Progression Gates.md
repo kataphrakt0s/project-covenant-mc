@@ -15,10 +15,33 @@ Each dimension may define a maximum level for each track independently:
 - Logging.
 - Farming.
 - Crafting.
+- Building (meta-profession).
 
 The same dimension can have different limits for different tracks. A future profession or progression track should be addable through configuration/data definitions without redesigning the gate model.
 
+[[Building]] adds a meta-profession track,
+defaulting to a Level 20 cap in every dimension and using these same matching
+and fallback rules. First cap the source profession's XP, convert 65% of the
+accepted amount, then apply Building's independent cap for that same source
+dimension. A blocked Building award never reduces the source award; neither
+track banks discarded overflow. Building's foundation is implemented; its
+skills remain unavailable.
+
 ## Matching rules
+
+### Exploration exception
+
+[[Exploration]] advances through one-time discovery milestones, with direct
+level and point rewards. It has a global profession cap, defaulting to
+Level 20; **dimension XP caps do not apply**. Its datapack-configurable milestone
+pool controls the exploration route and pacing, including dimension-discovery
+requirements. A completed milestone is not blocked by the dimension's XP gate.
+Discovery pools supply 10 Overworld, 8 Nether and 4 End level rewards, totaling
+22 toward the Level 20 cap. Both Nether and End discoveries are necessary even
+when all Overworld rewards are completed. Available pool rewards establish
+the route; there are no separate mandatory-visit gates or XP dimension caps.
+
+### XP-based track matching
 
 A configuration entry may match:
 

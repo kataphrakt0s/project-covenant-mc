@@ -19,13 +19,15 @@ public final class ProfessionCommands {
                     for (var id : ProgressionData.PROFESSIONS) {
                         var track = state.tracks().get(id);
                         context.getSource().sendSuccess(() -> Component.literal(id + ": level " + track.level() + ", "
-                                + track.experience() + " XP; " + track.points() + " available / " + track.spentPoints() + " paid points"), false);
+                                + track.experience() + (track.experienceFraction() == 0 ? "" : "." + (track.experienceFraction() < 10 ? "0" : "") + track.experienceFraction())
+                                + (id.equals(ProgressionData.EXPLORATION) ? " (milestones; no XP); " : " XP; ")
+                                + track.points() + " available / " + track.spentPoints() + " paid points"), false);
                     }
                     return 1;
                 })
                 .then(Commands.literal("xp").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("profession", IdentifierArgument.id())
-                                .suggests((c, b) -> SharedSuggestionProvider.suggestResource(ProgressionData.PROFESSIONS, b))
+                                .suggests((c, b) -> SharedSuggestionProvider.suggestResource(ProgressionData.XP_PROFESSIONS, b))
                                 .then(Commands.argument("amount", LongArgumentType.longArg(1)).executes(context -> {
                                     var player = context.getSource().getPlayerOrException();
                                     var id = IdentifierArgument.getId(context, "profession");
@@ -42,7 +44,8 @@ public final class ProfessionCommands {
                                     int level = IntegerArgumentType.getInteger(context, "level");
                                     if (track == null || level < track.spentPoints()
                                             || level > ProgressionData.get(player.level().getServer()).maximum(id)) { return 0; }
-                                    player.setData(RpgData.PROFESSIONS, state.with(id, track.withProgression(level, 0)));
+                                    player.setData(RpgData.PROFESSIONS, state.with(id,
+                                            new ProfessionState.Track(level, 0, track.allocations())));
                                     Progression.refreshView(player);
                                     return 1;
                                 }))))));

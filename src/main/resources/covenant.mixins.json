@@ -24,7 +24,8 @@
     "ProfessionChunkMixin",
     "ProfessionPistonMixin",
     "ProfessionBreedingMixin",
-    "ProfessionEnchantingMixin"
+    "ProfessionEnchantingMixin",
+    "ProfessionFishingMixin"
   ],
   "client": [
     "client.BowUsePoseMixin",

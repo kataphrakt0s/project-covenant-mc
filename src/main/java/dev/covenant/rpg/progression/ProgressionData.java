@@ -29,7 +29,10 @@ import net.neoforged.neoforge.resource.ListenerKey;
 public final class ProgressionData extends SimplePreparableReloadListener<ProgressionData.Balance> {
     public static final Identifier FILE = Identifier.fromNamespaceAndPath("covenant", "progression/balance.json");
     public static final Identifier CHARACTER = Identifier.fromNamespaceAndPath("covenant", "character");
-    public static final List<Identifier> PROFESSIONS = List.of(id("mining"), id("logging"), id("farming"), id("crafting"));
+    public static final Identifier BUILDING = id("building");
+    public static final Identifier FISHING = id("fishing"), EXPLORATION = id("exploration");
+    public static final List<Identifier> PROFESSIONS = List.of(id("mining"), id("logging"), id("farming"), id("crafting"), BUILDING, FISHING, EXPLORATION);
+    public static final List<Identifier> XP_PROFESSIONS = PROFESSIONS.stream().filter(id -> !id.equals(EXPLORATION)).toList();
     private static final ListenerKey<ProgressionData> KEY = ListenerKey.create(id("progression"));
     private Balance balance;
 
@@ -66,12 +69,14 @@ public final class ProgressionData extends SimplePreparableReloadListener<Progre
         }
         public int maximum(Identifier track) { return caps.getOrDefault(track, 0); }
         public long required(Identifier track, int level) {
+            if (track.equals(EXPLORATION)) { return 0; }
             if (level >= maximum(track)) { return 0; }
             var requirements = track.equals(CHARACTER) ? characterRequirements : professionRequirements;
             int index = track.equals(CHARACTER) ? level - 1 : level;
             return index >= 0 && index < requirements.size() ? requirements.get(index) : 0;
         }
         public int gate(ServerLevel level, Identifier track) {
+            if (track.equals(EXPLORATION)) { return maximum(track); }
             DimensionRule chosen = null;
             for (var rule : dimensions) {
                 if (!rule.caps.containsKey(track)) { continue; }
@@ -107,12 +112,12 @@ public final class ProgressionData extends SimplePreparableReloadListener<Progre
     public static Balance parse(JsonObject json) {
         var caps = caps(json.getAsJsonObject("track_caps"));
         if (!caps.containsKey(CHARACTER) || !caps.keySet().containsAll(PROFESSIONS)) {
-            throw new IllegalArgumentException("track_caps must include character and all four professions");
+            throw new IllegalArgumentException("track_caps must include character and all professions");
         }
         var character = requirements(json.getAsJsonArray("character_requirements"));
         var profession = requirements(json.getAsJsonArray("profession_requirements"));
         if (character.size() < caps.get(CHARACTER) - 1) { throw new IllegalArgumentException("Character curve does not cover its cap"); }
-        int largestProfession = PROFESSIONS.stream().mapToInt(caps::get).max().orElseThrow();
+        int largestProfession = XP_PROFESSIONS.stream().mapToInt(caps::get).max().orElseThrow();
         if (!profession.isEmpty() && profession.size() < largestProfession) {
             throw new IllegalArgumentException("Profession curve does not cover profession caps");
         }

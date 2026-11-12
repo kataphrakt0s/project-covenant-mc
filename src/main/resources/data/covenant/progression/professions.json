@@ -310,38 +310,138 @@
         }
       ],
       "prerequisite": "covenant:crafting/salvaging"
+    },
+    {
+      "id": "covenant:building/block_reach",
+      "profession": "covenant:building",
+      "order": 0,
+      "ranks": []
+    },
+    {
+      "id": "covenant:building/material_swapping",
+      "profession": "covenant:building",
+      "order": 1,
+      "ranks": []
+    },
+    {
+      "id": "covenant:building/undecided",
+      "profession": "covenant:building",
+      "order": 2,
+      "ranks": []
     }
   ],
   "harvesting": {
     "ores": [
-      {"blocks": "#c:ores/coal", "activity": "covenant:mining/coal"},
-      {"blocks": "#c:ores/copper", "activity": "covenant:mining/copper"},
-      {"blocks": "#c:ores/quartz", "activity": "covenant:mining/quartz"},
-      {"blocks": "#c:ores/iron", "activity": "covenant:mining/iron"},
-      {"blocks": "#c:ores/gold", "activity": "covenant:mining/gold"},
-      {"blocks": "#c:ores/lapis", "activity": "covenant:mining/lapis"},
-      {"blocks": "#c:ores/redstone", "activity": "covenant:mining/redstone"},
-      {"blocks": "#c:ores/diamond", "activity": "covenant:mining/diamond"},
-      {"blocks": "#c:ores/emerald", "activity": "covenant:mining/emerald"},
-      {"blocks": "#c:ores/netherite_scrap", "activity": "covenant:mining/ancient_debris"}
+      {
+        "blocks": "#c:ores/coal",
+        "activity": "covenant:mining/coal"
+      },
+      {
+        "blocks": "#c:ores/copper",
+        "activity": "covenant:mining/copper"
+      },
+      {
+        "blocks": "#c:ores/quartz",
+        "activity": "covenant:mining/quartz"
+      },
+      {
+        "blocks": "#c:ores/iron",
+        "activity": "covenant:mining/iron"
+      },
+      {
+        "blocks": "#c:ores/gold",
+        "activity": "covenant:mining/gold"
+      },
+      {
+        "blocks": "#c:ores/lapis",
+        "activity": "covenant:mining/lapis"
+      },
+      {
+        "blocks": "#c:ores/redstone",
+        "activity": "covenant:mining/redstone"
+      },
+      {
+        "blocks": "#c:ores/diamond",
+        "activity": "covenant:mining/diamond"
+      },
+      {
+        "blocks": "#c:ores/emerald",
+        "activity": "covenant:mining/emerald"
+      },
+      {
+        "blocks": "#c:ores/netherite_scrap",
+        "activity": "covenant:mining/ancient_debris"
+      }
     ],
     "crops": [
-      {"block": "minecraft:wheat", "age_property": "age", "mature_age": 7, "planting_item": "minecraft:wheat_seeds"},
-      {"block": "minecraft:carrots", "age_property": "age", "mature_age": 7, "planting_item": "minecraft:carrot"},
-      {"block": "minecraft:potatoes", "age_property": "age", "mature_age": 7, "planting_item": "minecraft:potato"},
-      {"block": "minecraft:beetroots", "age_property": "age", "mature_age": 3, "planting_item": "minecraft:beetroot_seeds"},
-      {"block": "minecraft:nether_wart", "age_property": "age", "mature_age": 3, "planting_item": "minecraft:nether_wart"}
+      {
+        "block": "minecraft:wheat",
+        "age_property": "age",
+        "mature_age": 7,
+        "planting_item": "minecraft:wheat_seeds"
+      },
+      {
+        "block": "minecraft:carrots",
+        "age_property": "age",
+        "mature_age": 7,
+        "planting_item": "minecraft:carrot"
+      },
+      {
+        "block": "minecraft:potatoes",
+        "age_property": "age",
+        "mature_age": 7,
+        "planting_item": "minecraft:potato"
+      },
+      {
+        "block": "minecraft:beetroots",
+        "age_property": "age",
+        "mature_age": 3,
+        "planting_item": "minecraft:beetroot_seeds"
+      },
+      {
+        "block": "minecraft:nether_wart",
+        "age_property": "age",
+        "mature_age": 3,
+        "planting_item": "minecraft:nether_wart"
+      }
     ],
     "trees": [
-      {"logs": "#minecraft:oak_logs", "leaves": "minecraft:oak_leaves"},
-      {"logs": "#minecraft:spruce_logs", "leaves": "minecraft:spruce_leaves"},
-      {"logs": "#minecraft:birch_logs", "leaves": "minecraft:birch_leaves"},
-      {"logs": "#minecraft:jungle_logs", "leaves": "minecraft:jungle_leaves"},
-      {"logs": "#minecraft:acacia_logs", "leaves": "minecraft:acacia_leaves"},
-      {"logs": "#minecraft:dark_oak_logs", "leaves": "minecraft:dark_oak_leaves"},
-      {"logs": "#minecraft:mangrove_logs", "leaves": "minecraft:mangrove_leaves"},
-      {"logs": "#minecraft:cherry_logs", "leaves": "minecraft:cherry_leaves"},
-      {"logs": "#minecraft:pale_oak_logs", "leaves": "minecraft:pale_oak_leaves"}
+      {
+        "logs": "#minecraft:oak_logs",
+        "leaves": "minecraft:oak_leaves"
+      },
+      {
+        "logs": "#minecraft:spruce_logs",
+        "leaves": "minecraft:spruce_leaves"
+      },
+      {
+        "logs": "#minecraft:birch_logs",
+        "leaves": "minecraft:birch_leaves"
+      },
+      {
+        "logs": "#minecraft:jungle_logs",
+        "leaves": "minecraft:jungle_leaves"
+      },
+      {
+        "logs": "#minecraft:acacia_logs",
+        "leaves": "minecraft:acacia_leaves"
+      },
+      {
+        "logs": "#minecraft:dark_oak_logs",
+        "leaves": "minecraft:dark_oak_leaves"
+      },
+      {
+        "logs": "#minecraft:mangrove_logs",
+        "leaves": "minecraft:mangrove_leaves"
+      },
+      {
+        "logs": "#minecraft:cherry_logs",
+        "leaves": "minecraft:cherry_leaves"
+      },
+      {
+        "logs": "#minecraft:pale_oak_logs",
+        "leaves": "minecraft:pale_oak_leaves"
+      }
     ],
     "tree_ground": "#covenant:harvest_tree_ground"
   },
@@ -361,6 +461,7 @@
     "covenant:farming/breeding": 100,
     "covenant:crafting/enchant_option_1": 20,
     "covenant:crafting/enchant_option_2": 50,
-    "covenant:crafting/enchant_option_3": 100
+    "covenant:crafting/enchant_option_3": 100,
+    "covenant:fishing/catch": 50
   }
 }

@@ -1,0 +1,1 @@
+{"type": "minecraft:function", "function": "covenant_test:fishing_native", "environment": "minecraft:default", "structure": "covenant_test:empty", "max_ticks": 100, "setup_ticks": 0, "required": true}

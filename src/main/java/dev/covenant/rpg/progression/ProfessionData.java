@@ -60,7 +60,7 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
         ).apply(i, Node::new));
         public Node {
             ranks = List.copyOf(ranks);
-            if (!ProgressionData.PROFESSIONS.contains(profession) || ranks.isEmpty() || ranks.size() > 64
+            if (!ProgressionData.PROFESSIONS.contains(profession) || ranks.size() > 64 || ranks.isEmpty() && implemented(id)
                     || order < 0 || order > 127 || !id.getPath().startsWith(profession.getPath() + "/")) {
                 throw new IllegalArgumentException("Invalid profession ability: " + id);
             }
@@ -75,7 +75,8 @@ public final class ProfessionData extends SimplePreparableReloadListener<Profess
             }
         }
         /** Availability is owned by runtime code, never enabled by trusting a datapack/client flag. */
-        public boolean implemented() { return id.equals(OFFENSIVE_MASTERY) || id.equals(VEIN_MINING) || id.equals(TREE_FELLING)
+        public boolean implemented() { return implemented(id); }
+        private static boolean implemented(Identifier id) { return id.equals(OFFENSIVE_MASTERY) || id.equals(VEIN_MINING) || id.equals(TREE_FELLING)
                 || id.equals(SCYTHING) || id.equals(FARM_REPLANT)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.BASIC)
                 || id.equals(dev.covenant.rpg.equipment.WorkbenchOperations.SALVAGING)

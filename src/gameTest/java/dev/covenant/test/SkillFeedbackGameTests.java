@@ -484,7 +484,10 @@ final class SkillFeedbackGameTests {
     }
 
     static void rushFeedback(GameTestHelper helper) {
-        try (var f = new Fixture(helper, 185)) {
+        var f = new Fixture(helper, 185);
+        f.loadFeedbackArea();
+        helper.startSequence().thenWaitUntil(f::assertFeedbackReady).thenExecute(() -> {
+        try (f) {
             var p = f.player(PlayerClass.REAVER, SkillDefinition.RIP_AND_RUSH);
             var front = f.target(p.position().add(0, 0, 2));
             var rear = f.target(p.position().add(0, 0, -2));
@@ -520,6 +523,7 @@ final class SkillFeedbackGameTests {
             check(f.particles(p, CombatParticles.RUSH_FINISHER.get()).size() == 1, "Rejected repeat emits nothing");
             helper.succeed();
         }
+        });
     }
 
     private static void comboUse(ServerPlayer player, SkillDefinition skill) {

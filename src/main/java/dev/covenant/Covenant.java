@@ -40,6 +40,8 @@ public final class Covenant {
                 dev.covenant.rpg.progression.ProfessionGathering::drops);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProgressionData::register);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProfessionData::register);
+        NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ExplorationData::register);
+        NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.Exploration::reload);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProfessionEffects::incoming);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProgressionCommands::register);
         NeoForge.EVENT_BUS.addListener(dev.covenant.rpg.progression.ProfessionCommands::register);

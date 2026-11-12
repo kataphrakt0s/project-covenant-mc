@@ -32,12 +32,12 @@ final class ProgressionGameTests {
         var nether = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.NETHER);
         var end = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.END);
         check(data.gate(nether, ProgressionData.CHARACTER) == 40 && data.gate(end, ProgressionData.CHARACTER) == 60, "Vanilla dimension gates");
-        check(Progression.advance(1, 49, 1, 60, n -> data.required(ProgressionData.CHARACTER, n)).equals(new Progression.Earned(2, 0)), "Exact threshold");
-        check(Progression.advance(19, 0, Long.MAX_VALUE, 20, n -> data.required(ProgressionData.CHARACTER, n)).equals(new Progression.Earned(20, 0)), "Overflow-safe cap discards new surplus");
-        check(Progression.advance(21, 1234, 999, 20, n -> 50).equals(new Progression.Earned(21, 1234)), "Lower cap preserves earned state");
-        check(Progression.advance(1, 150, 0, 60, n -> 50).equals(new Progression.Earned(1, 150)), "Reload alone never normalizes XP");
-        check(Progression.advance(1, 150, 1, 60, n -> 50).equals(new Progression.Earned(4, 1)), "Real new award normalizes retained XP");
-        check(Progression.advance(1, Long.MAX_VALUE - 1, 10, 3, n -> Long.MAX_VALUE).equals(new Progression.Earned(2, 9)), "No addition overflow");
+        check(Progression.advance(1, 49, 1, 60, n -> data.required(ProgressionData.CHARACTER, n)).equals(new Progression.Earned(2, 0, 1)), "Exact threshold");
+        check(Progression.advance(19, 0, Long.MAX_VALUE, 20, n -> data.required(ProgressionData.CHARACTER, n)).equals(new Progression.Earned(20, 0, data.required(ProgressionData.CHARACTER, 19))), "Overflow-safe cap discards new surplus");
+        check(Progression.advance(21, 1234, 999, 20, n -> 50).equals(new Progression.Earned(21, 1234, 0)), "Lower cap preserves earned state");
+        check(Progression.advance(1, 150, 0, 60, n -> 50).equals(new Progression.Earned(1, 150, 0)), "Reload alone never normalizes XP");
+        check(Progression.advance(1, 150, 1, 60, n -> 50).equals(new Progression.Earned(4, 1, 1)), "Real new award normalizes retained XP");
+        check(Progression.advance(1, Long.MAX_VALUE - 1, 10, 3, n -> Long.MAX_VALUE).equals(new Progression.Earned(2, 9, 10)), "No addition overflow");
         try (var reader = helper.getLevel().getServer().getResourceManager().getResourceOrThrow(ProgressionData.FILE).openAsReader()) {
             var json = JsonParser.parseReader(reader).getAsJsonObject();
             var invalid = json.deepCopy(); invalid.getAsJsonArray("character_requirements").set(0, new com.google.gson.JsonPrimitive(0));
@@ -193,7 +193,7 @@ final class ProgressionGameTests {
     static void professions(GameTestHelper helper) {
         try (var f = new Fixture(helper)) {
             var player = f.player(null); var initial = player.getData(RpgData.PROFESSIONS);
-            check(initial.tracks().size() == 4 && initial.tracks().values().stream().allMatch(t -> t.level() == 0 && t.experience() == 0), "Four independent classless profession tracks initialized");
+            check(initial.tracks().size() == 7 && initial.tracks().values().stream().allMatch(t -> t.level() == 0 && t.experience() == 0), "Seven classless profession tracks initialized");
             var mining = ProgressionData.PROFESSIONS.getFirst();
             check(Progression.awardProfession(player, helper.getLevel(), mining, 20), "Provisional shared profession curve accepts trusted classless awards");
             check(player.getData(RpgData.PROFESSIONS).tracks().get(mining).experience() == 20, "Profession XP is independent of class creation");

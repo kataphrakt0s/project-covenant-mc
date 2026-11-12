@@ -1,0 +1,319 @@
+{
+  "milestones": [
+    {
+      "id": "covenant:overworld/biomes_10",
+      "title": "Overworld biomes: 10%",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "biome",
+      "targets": [
+        "#minecraft:is_overworld"
+      ],
+      "percent": 10
+    },
+    {
+      "id": "covenant:overworld/biomes_25",
+      "title": "Overworld biomes: 25%",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "biome",
+      "targets": [
+        "#minecraft:is_overworld"
+      ],
+      "percent": 25
+    },
+    {
+      "id": "covenant:overworld/biomes_50",
+      "title": "Overworld biomes: 50%",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "biome",
+      "targets": [
+        "#minecraft:is_overworld"
+      ],
+      "percent": 50
+    },
+    {
+      "id": "covenant:overworld/biomes_75",
+      "title": "Overworld biomes: 75%",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "biome",
+      "targets": [
+        "#minecraft:is_overworld"
+      ],
+      "percent": 75
+    },
+    {
+      "id": "covenant:overworld/biomes_100",
+      "title": "Overworld biomes: 100%",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "biome",
+      "targets": [
+        "#minecraft:is_overworld"
+      ],
+      "percent": 100
+    },
+    {
+      "id": "covenant:overworld/woodland_mansion",
+      "title": "Woodland Mansion",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "structure",
+      "families": {
+        "covenant:woodland_mansion": [
+          "minecraft:mansion"
+        ]
+      },
+      "all": true
+    },
+    {
+      "id": "covenant:overworld/ancient_city",
+      "title": "Ancient City",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "structure",
+      "families": {
+        "covenant:ancient_city": [
+          "minecraft:ancient_city"
+        ]
+      },
+      "all": true
+    },
+    {
+      "id": "covenant:overworld/ocean_monument",
+      "title": "Ocean Monument",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "structure",
+      "families": {
+        "covenant:ocean_monument": [
+          "minecraft:monument"
+        ]
+      },
+      "all": true
+    },
+    {
+      "id": "covenant:overworld/villages",
+      "title": "Every village variant",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "structure",
+      "families": {
+        "covenant:village_plains": [
+          "minecraft:village_plains"
+        ],
+        "covenant:village_desert": [
+          "minecraft:village_desert"
+        ],
+        "covenant:village_savanna": [
+          "minecraft:village_savanna"
+        ],
+        "covenant:village_snowy": [
+          "minecraft:village_snowy"
+        ],
+        "covenant:village_taiga": [
+          "minecraft:village_taiga"
+        ]
+      },
+      "all": true
+    },
+    {
+      "id": "covenant:overworld/landmarks",
+      "title": "Six landmark families",
+      "pool": "Overworld",
+      "dimension": "minecraft:overworld",
+      "kind": "structure",
+      "families": {
+        "covenant:mineshafts": [
+          "minecraft:mineshaft",
+          "minecraft:mineshaft_mesa"
+        ],
+        "covenant:shipwrecks": [
+          "minecraft:shipwreck",
+          "minecraft:shipwreck_beached"
+        ],
+        "covenant:ocean_ruins": [
+          "minecraft:ocean_ruin_cold",
+          "minecraft:ocean_ruin_warm"
+        ],
+        "covenant:ruined_portals": [
+          "minecraft:ruined_portal",
+          "minecraft:ruined_portal_desert",
+          "minecraft:ruined_portal_jungle",
+          "minecraft:ruined_portal_mountain",
+          "minecraft:ruined_portal_ocean",
+          "minecraft:ruined_portal_swamp"
+        ],
+        "covenant:desert_pyramids": [
+          "minecraft:desert_pyramid"
+        ],
+        "covenant:jungle_temples": [
+          "minecraft:jungle_pyramid"
+        ],
+        "covenant:swamp_huts": [
+          "minecraft:swamp_hut"
+        ],
+        "covenant:pillager_outposts": [
+          "minecraft:pillager_outpost"
+        ],
+        "covenant:trail_ruins": [
+          "minecraft:trail_ruins"
+        ],
+        "covenant:trial_chambers": [
+          "minecraft:trial_chambers"
+        ],
+        "covenant:strongholds": [
+          "minecraft:stronghold"
+        ]
+      },
+      "count": 6
+    },
+    {
+      "id": "covenant:nether/nether_wastes",
+      "title": "Nether Wastes",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "biome",
+      "targets": [
+        "minecraft:nether_wastes"
+      ],
+      "count": 1
+    },
+    {
+      "id": "covenant:nether/soul_sand_valley",
+      "title": "Soul Sand Valley",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "biome",
+      "targets": [
+        "minecraft:soul_sand_valley"
+      ],
+      "count": 1
+    },
+    {
+      "id": "covenant:nether/crimson_forest",
+      "title": "Crimson Forest",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "biome",
+      "targets": [
+        "minecraft:crimson_forest"
+      ],
+      "count": 1
+    },
+    {
+      "id": "covenant:nether/warped_forest",
+      "title": "Warped Forest",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "biome",
+      "targets": [
+        "minecraft:warped_forest"
+      ],
+      "count": 1
+    },
+    {
+      "id": "covenant:nether/basalt_deltas",
+      "title": "Basalt Deltas",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "biome",
+      "targets": [
+        "minecraft:basalt_deltas"
+      ],
+      "count": 1
+    },
+    {
+      "id": "covenant:nether/fortress",
+      "title": "Nether Fortress",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "structure",
+      "families": {
+        "covenant:fortress": [
+          "minecraft:fortress"
+        ]
+      },
+      "count": 1
+    },
+    {
+      "id": "covenant:nether/bastion",
+      "title": "Bastion Remnant",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "structure",
+      "families": {
+        "covenant:bastion": [
+          "minecraft:bastion_remnant"
+        ]
+      },
+      "count": 1
+    },
+    {
+      "id": "covenant:nether/all_biomes",
+      "title": "Every Nether biome",
+      "pool": "Nether",
+      "dimension": "minecraft:the_nether",
+      "kind": "biome",
+      "targets": [
+        "minecraft:nether_wastes",
+        "minecraft:soul_sand_valley",
+        "minecraft:crimson_forest",
+        "minecraft:warped_forest",
+        "minecraft:basalt_deltas"
+      ],
+      "all": true
+    },
+    {
+      "id": "covenant:end/entry",
+      "title": "Enter the End",
+      "pool": "End",
+      "dimension": "minecraft:the_end",
+      "kind": "dimension"
+    },
+    {
+      "id": "covenant:end/outer_islands",
+      "title": "Reach the outer islands",
+      "pool": "End",
+      "dimension": "minecraft:the_end",
+      "kind": "biome",
+      "targets": [
+        "minecraft:small_end_islands",
+        "minecraft:end_midlands",
+        "minecraft:end_highlands",
+        "minecraft:end_barrens"
+      ],
+      "count": 1
+    },
+    {
+      "id": "covenant:end/city",
+      "title": "End City",
+      "pool": "End",
+      "dimension": "minecraft:the_end",
+      "kind": "structure",
+      "families": {
+        "covenant:end_city": [
+          "minecraft:end_city"
+        ]
+      },
+      "count": 1
+    },
+    {
+      "id": "covenant:end/all_biomes",
+      "title": "Every End biome",
+      "pool": "End",
+      "dimension": "minecraft:the_end",
+      "kind": "biome",
+      "targets": [
+        "minecraft:the_end",
+        "minecraft:small_end_islands",
+        "minecraft:end_midlands",
+        "minecraft:end_highlands",
+        "minecraft:end_barrens"
+      ],
+      "all": true
+    }
+  ]
+}

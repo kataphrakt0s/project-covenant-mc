@@ -45,7 +45,7 @@ public final class ProfessionAllocations {
                 allocations.put(node.id(), new ProfessionState.Allocation(rank, (int) paid));
             }
             player.setData(RpgData.PROFESSIONS, state.with(profession,
-                    new ProfessionState.Track(previous.level(), previous.experience(), allocations)));
+                    new ProfessionState.Track(previous.level(), previous.experience(), allocations, previous.experienceFraction())));
             return message("applied");
         }
     }
@@ -59,7 +59,8 @@ public final class ProfessionAllocations {
         ClassResources.requireServer(player);
         if (!canRespec(player)) { return false; }
         var tracks = new HashMap<Identifier, ProfessionState.Track>();
-        player.getData(RpgData.PROFESSIONS).tracks().forEach((id, track) -> tracks.put(id, new ProfessionState.Track(track.level(), track.experience())));
+        player.getData(RpgData.PROFESSIONS).tracks().forEach((id, track) -> tracks.put(id,
+                new ProfessionState.Track(track.level(), track.experience(), Map.of(), track.experienceFraction())));
         player.setData(RpgData.PROFESSIONS, new ProfessionState(tracks));
         return true;
     }

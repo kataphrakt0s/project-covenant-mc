@@ -25,6 +25,9 @@ final class SkillIcons {
         for (String name : new String[] {"rooted", "chilled"}) {
             icons.put(ui(name), Identifier.fromNamespaceAndPath("covenant", "textures/mob_effect/" + name + ".png"));
         }
+        icons.put(ui("building"), texture("emblems/professions"));
+        icons.put(ui("fishing"), texture("emblems/professions"));
+        icons.put(ui("exploration"), texture("emblems/professions"));
         return java.util.Map.copyOf(icons);
     }
 

@@ -29,7 +29,7 @@ public final class ProfessionHarvesting {
 
     public record Award(Identifier profession, Identifier activity) {}
 
-    private static boolean participant(ServerPlayer player) {
+    public static boolean participant(ServerPlayer player) {
         return player.isAlive() && !player.isSpectator() && !player.isCreative() && !(player instanceof FakePlayer);
     }
 

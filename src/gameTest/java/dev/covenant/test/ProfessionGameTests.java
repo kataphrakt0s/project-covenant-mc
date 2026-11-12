@@ -155,7 +155,8 @@ final class ProfessionGameTests {
             var combat = player.getData(RpgData.SKILL_LOADOUT); var profile = PlayerProfiles.get(player);
             var tracks = new HashMap<Identifier, ProfessionState.Track>();
             for (var id : ProgressionData.PROFESSIONS) {
-                tracks.put(id, new ProfessionState.Track(10, 37, Map.of(ProfessionData.id(id.getPath() + "/saved_ability"), new ProfessionState.Allocation(1, 2))));
+                tracks.put(id, new ProfessionState.Track(10, id.equals(ProgressionData.EXPLORATION) ? 0 : 37,
+                        Map.of(ProfessionData.id(id.getPath() + "/saved_ability"), new ProfessionState.Allocation(1, 2))));
             }
             var original = new ProfessionState(tracks); player.setData(RpgData.PROFESSIONS, original);
             var stack = new ItemStack(ProfessionRespecItem.ITEM.get(), 2); player.setItemInHand(InteractionHand.MAIN_HAND, stack);
@@ -170,9 +171,9 @@ final class ProfessionGameTests {
             helper.runAfterDelay(42, () -> {
                 try {
                     check(stack.getCount() == 1, "Native two-second held use consumes exactly one item");
-                    for (var track : player.getData(RpgData.PROFESSIONS).tracks().values()) {
-                        check(track.level() == 10 && track.experience() == 37 && track.allocations().isEmpty() && track.points() == 10, "All four tracks refund paid points and retain level/XP");
-                    }
+                    player.getData(RpgData.PROFESSIONS).tracks().forEach((id, track) ->
+                        check(track.level() == 10 && track.experience() == (id.equals(ProgressionData.EXPLORATION) ? 0 : 37)
+                                && track.allocations().isEmpty() && track.points() == 10, "All seven tracks refund paid points and retain progression"));
                     check(player.getData(RpgData.SKILL_LOADOUT).equals(combat) && PlayerProfiles.get(player).equals(profile), "Combat progression/loadout unaffected");
                     stack.getItem().finishUsingItem(stack, player.level(), player);
                     check(stack.getCount() == 1, "Empty/reset replay cannot consume another item");
@@ -185,7 +186,7 @@ final class ProfessionGameTests {
         try (var reader = helper.getLevel().getServer().getResourceManager().getResourceOrThrow(ProfessionData.FILE).openAsReader()) {
             var original = JsonParser.parseReader(reader).getAsJsonObject();
             var data = ProfessionData.parse(original);
-            check(data.abilities().size() == 17 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 9, "Seventeen authored nodes; four gathering abilities, Logging mastery and four Crafting nodes can be purchased");
+            check(data.abilities().size() == 20 && data.abilities().values().stream().filter(ProfessionData.Node::implemented).count() == 9, "Twenty authored nodes; Building's three placeholders remain unavailable");
             for (double value : new double[] {0, -1, 2, 11, 3.5}) {
                 var badArea = original.deepCopy();
                 badArea.getAsJsonArray("abilities").get(8).getAsJsonObject().getAsJsonArray("ranks").get(0).getAsJsonObject().addProperty("area", value);

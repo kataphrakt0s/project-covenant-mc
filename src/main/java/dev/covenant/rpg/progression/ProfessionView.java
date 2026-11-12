@@ -48,7 +48,7 @@ public record ProfessionView(long revision, Map<Identifier, ProfessionData.Node>
     public static final StreamCodec<ByteBuf, ProfessionView> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
     public ProfessionView {
         abilities = Map.copyOf(abilities); tracks = Map.copyOf(tracks); crops = List.copyOf(crops);
-        if (revision < 0 || abilities.size() > 128 || tracks.size() > 4 || crops.size() > 256) { throw new IllegalArgumentException("Invalid profession view"); }
+        if (revision < 0 || abilities.size() > 128 || !ProgressionData.PROFESSIONS.containsAll(tracks.keySet()) || crops.size() > 256) { throw new IllegalArgumentException("Invalid profession view"); }
     }
     public List<ProfessionData.Node> nodes(Identifier profession) {
         return abilities.values().stream().filter(n -> n.profession().equals(profession))

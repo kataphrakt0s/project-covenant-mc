@@ -50,11 +50,19 @@ currently support rank 1; further rank upgrades remain planned.
   40 in the Nether, and 60 in the End. Dimension caps govern XP gains; all
   dimensions remain open to exploration. Each eligible contributor's first
   Wither kill grants one full level past dimension caps, up to the global cap.
-- **Four independent professions:** Mining, Logging, Farming, and Crafting can
+- **Five activity professions:** Mining, Logging, Farming, Crafting and Fishing can
   progress before class selection, each with a default level cap of 20. Eligible
   ore and tree harvesting, mature crops, breeding, and enchanting-table use
   award profession XP, as do successful Workbench affix operations and salvaging
   affixed gear. Ordinary vanilla crafting does not award Crafting XP.
+- **Building meta-profession:** a fifth tab gains 65% of XP accepted by the five
+  activity professions, with exact fractional credit, a level-20 cap and saved
+  points. Capped sources stop contributing. Its building skills remain planned
+  and unavailable.
+- **Fishing and Exploration:** Fishing earns 50 XP per successful loot-bearing
+  catch, with fish, junk and treasure treated equally. Exploration instead earns
+  levels from a datapack-defined discovery checklist: 10 Overworld, 8 Nether and
+  4 End rewards toward Level 20. Both tabs retain points for future skills.
 - **Gathering abilities:** Vein Mining and Tree Felling harvest bounded groups
   with normal tool costs, drops, and XP; sneak to harvest one block. Farming
   Scything expands hoe right-click harvesting to 3×3, 5×5, or 9×9 mature-crop
@@ -63,7 +71,7 @@ currently support rank 1; further rank upgrades remain planned.
 - **Crafting abilities:** Basic Affix Crafting, Salvaging, Recovery, and Focused
   Recovery are purchasable and drive Workbench access and material returns.
   Other profession abilities remain visible as planned. Profession Respec
-  refunds all four tracks' allocations together while preserving XP and levels.
+  refunds all seven tracks' allocations together while preserving XP and levels.
 - **Shared foundations:** Progression is saved and controlled by the server.
   Datapacks configure progression balance, activity rewards, gathering targets,
   and itemization. Equipment bonuses stay on items, separate from character

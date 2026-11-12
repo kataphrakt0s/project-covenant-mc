@@ -13,13 +13,31 @@ enemy progression scans.
 ## Profession state
 
 `covenant:profession_progression` remains the persistent owner-synced attachment
-with death/End copying. Its four classless tracks each save level, raw XP and
+with death/End copying. Its seven classless tracks each save level, XP (always zero for Exploration) and
 an optional allocation map (`rank`, historical `paid_points`). Missing allocations
 decode as empty. Available points are derived from level minus actual saved
 spending, so cost reloads or removed definitions never silently refund or charge
 past purchases. Unknown allocations remain reserved until respec. XP awards
 preserve allocations. `covenant:profession_view` is unsaved owner-only catalogue
 and cap/requirement presentation; it is rebuilt after lifecycle transitions.
+
+The required fifth track, `covenant:building`, receives 65% of new accepted
+source-profession XP. It additionally saves `experience_fraction`, hundredths
+of one XP (0–99, default 0). Only Building may hold nonzero fractional credit.
+Source and Building awards commit in one snapshot. Reloads never reconstruct
+Building from source levels. The seven-track format requires fresh saves without
+older-format migration or catch-up; ordinary native persistence/copying preserves
+Building credit and its point entitlement.
+
+`covenant:exploration` is a separate persistent server-only player attachment,
+copied on death/End return. It maps dimension IDs to unique observed biome and
+structure IDs, plus one-time claimed milestone IDs. The existing profession
+track holds its direct levels and point entitlement, with zero XP. Saved claims
+survive definition changes/removal; reloads may grant new claims from recorded
+discoveries without revisiting. `covenant:exploration_view` is an unsaved owner
+checklist with counts/titles, while the raw ledger remains on the server.
+`covenant:exploration_cursor` and `covenant:fishing_rewarded` are disposable,
+unsaved observation/catch guards. Details and datapack schema: [PROFESSIONS.md](PROFESSIONS.md).
 
 `covenant:placed_ores` is a new persistent, server-only chunk attachment storing
 placed-ore positions. Mutable edits mark the chunk unsaved; native piston moves

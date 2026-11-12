@@ -79,8 +79,12 @@ The initial profession roster is:
 - **Logging**
 - **Farming**
 - **Crafting** (with Enchanting as a subset, not a separate profession)
+- **Building** (meta-profession)
+- **Fishing**
+- **Exploration** (discovery milestones instead of XP)
 
-Every character can develop every profession, independently of class. Each profession begins at level 0, uses the shared profession XP curve, and has a default maximum level of **20**. Each level gained awards one Profession Point, for 20 points at level 20. Points purchase level-gated abilities and interactions, generally at variable costs of 1–3 points. Most profession abilities should eventually be obtainable; only genuine alternative specializations should lock one another out.
+Every character can develop every profession, independently of class. Each profession begins at level 0; XP-based professions use the shared curve,
+while Exploration uses discovery milestones. Every profession has a default maximum level of **20**. Each level gained awards one Profession Point, for 20 points at level 20. Points purchase level-gated abilities and interactions, generally at variable costs of 1–3 points. Most profession abilities should eventually be obtainable; only genuine alternative specializations should lock one another out.
 
 Profession levels automatically grant core recipe unlocks at selected milestones.
 These recipe rewards are a future direction: additional profession-level
@@ -89,7 +93,7 @@ initial milestones use purchased abilities and automatic Crafting affix-tier
 access; Workbench and respec recipes remain ungated.
 New abilities and interactions require deliberate Profession Point investment.
 Profession abilities do not consume combat keybinds. For the prototype, one
-Profession Respec resets **all four professions' allocations together**, refunds
+Profession Respec resets **all seven professions' allocations together**, refunds
 each track's spent points, and preserves every track's XP and level. Its item
 is more expensive than Combat Respec and uses the same two-second held-item
 interaction out of combat. See [[Profession Progression]].
@@ -97,6 +101,24 @@ interaction out of combat. See [[Profession Progression]].
 Profession XP comes from meaningful activity-specific actions, not vanilla XP orbs. Ordinary vanilla crafting does not award Crafting XP. Automation grants no profession XP by default; explicitly configured automation exceptions must have attribution and anti-exploit safeguards.
 
 See [[Profession Progression]], [[Mining]], [[Logging]], [[Farming]], and [[Crafting Profession]].
+
+[[Building]] is the fifth, class-independent meta-profession. It receives
+65% of XP actually credited to Mining, Logging, Farming, Crafting and Fishing, excluding capped
+awards and overflow. It uses the shared Level 0-20 curve, one separate point
+per level, a fifth Professions tab, and configurable dimension caps defaulting
+to 20 everywhere. It targets fresh saves without migration or catch-up. Its
+foundation is implemented; its reach, cosmetic material-swapping and undecided
+skill entries remain unavailable for purchase.
+
+The implemented roster expands to **seven professions** with [[Fishing]] and
+[[Exploration]]. Fishing earns XP from successful fishing. Exploration is an
+explicit exception to the shared XP progression model: achievements and unlocks
+drive its progression instead. It retains Level 0-20: each qualifying one-time
+milestone grants one level and one Exploration Profession Point directly, up to
+the cap, with unspent points retained for future skills. Its menu shows milestone
+completion instead of an XP bar. Both professions' skills are deferred to a
+future update; both profession foundations are implemented. This expansion targets
+fresh saves without older-save compatibility or migration.
 
 ## Experience and dimensional progression
 
@@ -154,6 +176,6 @@ See [[Technical Architecture]], [[Player Profiles]], [[Item Data and Persistence
 
 ## Development sequence
 
-The vertical slice includes the complete progression framework and a modest, playable first content selection for all four professions. It does not require fully populated profession trees or final XP tuning. See [[Progression Vertical Slice]], [[Development Roadmap]], and [[Implementation Priorities]].
+The vertical slice includes the complete progression framework and a modest, playable first content selection for the four activity professions. Building now adds its meta-profession foundation with skills deferred. Fully populated profession trees and final XP tuning are not required. See [[Progression Vertical Slice]], [[Development Roadmap]], and [[Implementation Priorities]].
 
 The existing milestone sequence remains: [[Milestone 1 - RPG Foundation]] → [[Milestone 2 - Character Gameplay]] → [[Milestone 3 - Itemization and Crafting]] → [[Milestone 4 - World Progression]] → [[Milestone 5 - Class Depth and Content]] → [[Milestone 6 - Endgame]].

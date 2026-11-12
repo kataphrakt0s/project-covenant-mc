@@ -2,6 +2,68 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Fishing and Exploration profession foundations (2026-11-12)
+
+- `scripts/Dev.ps1 verify`: **BUILD SUCCESSFUL**, **All 216 required tests passed :)**. Evidence:
+  `.local/fishing-exploration-verify-final.log`. The build's geometry and pinned
+  wolf/golem asset checks also pass.
+- Eight new server cases cover the resolved 22-goal catalogue, 10/8/4 pool
+  allocation, full-biome percentage thresholds, grouped village/landmark
+  collections, direct levels/points, cap/replay behavior and absence of XP or
+  Building rewards from Exploration. The checklist codec round-trips counts
+  and claims while raw discovery history stays server-only.
+- Native fishing retrieval confirms 50 XP and exact 32.5 Building XP per catch,
+  no cancellation/empty/replayed-hook payout, equal fish/junk/treasure rewards,
+  and source-cap/overflow behavior. Native structure-reference fixtures check
+  bounds-based loaded-chunk entry, Creative exclusion and airborne dimension
+  teleport discovery. Production does not request or ticket chunks.
+- Player ledger tests exercise its codec, native saved player data restoration,
+  death copying and shared respec preservation. A real server resource reload
+  adds a custom milestone over recorded discoveries; changed claimed IDs do not
+  repay/revoke levels, and an invalid target retains the previous live snapshot.
+- The expanded suite exposed two existing fixture-readiness assumptions in pet
+  native AI and Rip and Rush feedback. Both fixtures now wait for entity-ticking
+  chunks using temporary test-only tickets. Gameplay timing/assertions remain
+  intact; the final complete run passes.
+- Production audit `.local/seven-professions-jar-audit.json` confirms the new
+  classes, byte-matching packaged data/language, 22 default goals and protocol
+  `professions/6`, with test/local content excluded. Older profession save formats
+  remain unsupported. SHA256:
+  `0D5B2C4515C01EC02AC28441B74FDBF68DC23B6F43E3C9E6BDED1FE98E12A981`.
+- Pending user playtest on a fresh save: seven tabs at normal/small GUI scales,
+  checklist paging/tooltips and saved unspent points; real fishing/native drops
+  and XP; village/family grouping and biome progress; flight/teleport arrivals;
+  ordinary reconnect/server restart and live multiplayer. No client launch,
+  screenshots, deployment or performance benchmark was performed.
+
+## Building meta-profession foundation (2026-11-12)
+
+- `scripts/Dev.ps1 verify`: **All 208 required tests passed :)** and
+  **BUILD SUCCESSFUL**. Final evidence: `.local/building-verify-final.log`.
+  The build includes the existing geometry and pinned-runtime asset checks.
+- Six new dedicated cases cover four-source 65% conversion, independent
+  source/Building caps and overflow, batch-invariant fractional credit, native
+  save/load, owner codecs, death copying, dimension transfer and respec.
+  Real coal harvesting contributes once; placed ore contributes nothing.
+  Planned skills reject forged purchases without spending points, and direct
+  operator level edits cannot create Building XP.
+- The isolated Building reload case verifies default/fallback and independent
+  source-dimension gates, retained credit when a lower gate blocks new awards,
+  no replay of old XP normalized after a curve change, and exact conversion of
+  a fully accepted `Long.MAX_VALUE` award. The progression-feedback regression
+  now checks that simultaneous source/Building levels share one owner notice
+  and sound.
+- Production JAR audit byte-matches balance/catalogue/language resources,
+  confirms production progression classes, and excludes test/local artifacts.
+  `git diff --check` passes. Protocol is `professions/5`; old four-track saves
+  are intentionally unsupported.
+- Pending user playtest on a fresh save: fifth-tab layout at normal/small GUI
+  scales, readable fractional XP and progression explanation, real gathering,
+  enchanting and Workbench contributions, combined level-up notice, and visibly
+  unavailable Building skills. Rendered UI, real-client reconnect/server
+  restart and live multiplayer remain manual checks. No client launch or
+  deployment was performed.
+
 ## Elemental Golem full Rank 1 skill (2026-11-10)
 
 - `scripts/Dev.ps1 verify`: **All 202 required tests passed :)** and

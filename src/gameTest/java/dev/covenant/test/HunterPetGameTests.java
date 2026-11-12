@@ -159,7 +159,12 @@ final class HunterPetGameTests {
         }
     }
     static void nativeAi(GameTestHelper helper) {
-        var f = new Fixture(helper, 190); var p = f.ready(); f.use(p); var pet = HunterPets.current(p);
+        var f = new Fixture(helper, 190);
+        f.loadArea();
+        helper.startSequence().thenWaitUntil(f::assertReady).thenExecute(() -> nativeAiReady(helper, f));
+    }
+    private static void nativeAiReady(GameTestHelper helper, Fixture f) {
+        var p = f.ready(); f.use(p); var pet = HunterPets.current(p);
         var enemy = f.mob(EntityType.HUSK, -1, -2); enemy.setNoAi(false); enemy.setTarget(p);
         enemy.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(0); pet.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
         var attacks = new ArrayList<Long>();
@@ -173,7 +178,7 @@ final class HunterPetGameTests {
         enemy.hurtServer(helper.getLevel(), p.damageSources().playerAttack(p), 1);
         enemy.invulnerableTime = 0;
         helper.onEachTick(f::tick);
-        helper.runAtTickTime(65, () -> {
+        helper.runAfterDelay(65, () -> {
             check(attacks.size() >= 2, "Native melee goal repeatedly bites engaged enemy: " + attacks);
             amounts.forEach(amount -> near(amount, 3, "Native pet bite damage"));
             for (int i = 1; i < attacks.size(); i++) { check(attacks.get(i) - attacks.get(i - 1) >= 30, "Configured attack interval enforced"); }
@@ -182,7 +187,7 @@ final class HunterPetGameTests {
             pet.setTarget(null); enemy.setNoAi(true); enemy.setTarget(null);
             p.setPos(f.origin.add(15, 0, 0));
         });
-        helper.runAtTickTime(88, () -> {
+        helper.runAfterDelay(88, () -> {
             try {
                 check(pet.distanceToSqr(p) < 100, "Native follow/teleport catches owner without forced chunks");
                 helper.succeed();
@@ -397,6 +402,10 @@ final class HunterPetGameTests {
         final Map<BlockPos, net.minecraft.world.level.block.state.BlockState> blocks = new HashMap<>();
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
         final List<Runnable> cleanups = new ArrayList<>();
+        final net.minecraft.server.level.TicketType ticket = new net.minecraft.server.level.TicketType(
+                net.minecraft.server.level.TicketType.NO_TIMEOUT, net.minecraft.server.level.TicketType.FLAG_LOADING
+                | net.minecraft.server.level.TicketType.FLAG_SIMULATION | net.minecraft.server.level.TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        final Set<net.minecraft.world.level.ChunkPos> chunks = new HashSet<>();
         Fixture(GameTestHelper helper, int height) {
             this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, height, 1)));
             for (int x = -4; x <= 19; x++) { for (int z = -4; z <= 4; z++) { block(x, -1, z, Blocks.STONE); } }
@@ -420,6 +429,17 @@ final class HunterPetGameTests {
             p.getAttribute(RpgStats.FOCUS_REGENERATION).setBaseValue(0);
             return p;
         }
+        void loadArea() {
+            for (int x = net.minecraft.util.Mth.floor(origin.x - 5) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 20) >> 4; x++) {
+                for (int z = net.minecraft.util.Mth.floor(origin.z - 5) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 5) >> 4; z++) {
+                    var chunk = new net.minecraft.world.level.ChunkPos(x, z); chunks.add(chunk);
+                    helper.getLevel().getChunkSource().addTicketWithRadius(ticket, chunk, 2);
+                }
+            }
+        }
+        void assertReady() {
+            for (var chunk : chunks) { helper.assertTrue(helper.getLevel().areEntitiesActuallyLoadedAndTicking(chunk), "Pet AI fixture must be entity-ticking"); }
+        }
         ServerPlayer ready() { var p = player(); FixtureSkills.learn(p, SkillDefinition.HUNTERS_PET.id(), true); SkillLoadouts.bind(p, 0, SkillDefinition.HUNTERS_PET.id()); return p; }
         void use(ServerPlayer p) { resetThrottle(p); check(key(Skills.activate(p, SkillDefinition.HUNTERS_PET), "used"), "Summon accepted"); }
         <T extends Mob> T mob(EntityType<T> type, double x, double z) {
@@ -439,6 +459,7 @@ final class HunterPetGameTests {
             entities.forEach(Entity::discard); blocks.forEach((pos, state) -> helper.getLevel().setBlockAndUpdate(pos, state));
             teams.forEach(helper.getLevel().getScoreboard()::removePlayerTeam);
             cleanups.forEach(Runnable::run);
+            chunks.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(ticket, chunk, 2));
         }
     }
     private static void resetThrottle(ServerPlayer p) {

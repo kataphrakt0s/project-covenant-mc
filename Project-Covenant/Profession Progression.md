@@ -4,22 +4,99 @@
 
 Professions reward mastery of Minecraft activities. They add capabilities, interactions, and selected recipes without gating baseline vanilla gameplay or recreating systems already handled well by other mods.
 
-The four initial professions are:
+The seven professions are:
 
 1. [[Mining]]
 2. [[Logging]]
 3. [[Farming]]
 4. [[Crafting Profession]]
+5. [[Building]]
+6. [[Fishing]]
+7. [[Exploration]]
 
-All characters can develop all four professions simultaneously. Professions are not class-restricted, there are no profession slots, and each profession has its own XP, level, and Profession Point balance.
+All characters can develop all seven professions simultaneously. Professions are
+not class-restricted and have no profession slots. Each has its own level and
+Profession Points; Exploration earns those through milestones instead of XP.
+
+[[Building]] is an implemented meta-profession that receives a flat **65% of raw XP**
+actually credited to Mining, Logging, Farming, Crafting and Fishing, in addition to their own rewards.
+Capped source professions and discarded overflow do not contribute. The original
+40-combined-level pacing target is approximate and depends on how those levels
+are distributed. Building will use the shared Level 0-20 curve and earn one
+Building Profession Point per level, retaining unspent points for its future
+skills. Building defaults to Level 20 in every dimension and supports the same
+configurable dimension caps. Its profession foundation is implemented; its
+three planned skill entries remain unavailable.
+
+Building targets fresh saves; older-save compatibility, migration and
+retroactive Building XP are out of scope.
+
+## Seven-profession foundation
+
+[[Fishing]] and [[Exploration]] join Mining, Logging, Farming, Crafting and
+Building in the implemented **seven-profession foundation**. Their skills remain
+deferred; rendered behavior still needs user playtesting.
+Fishing is Building's fifth XP source at the existing **65% of actually
+credited XP**, retaining fractional credit and all source/Building cap rules.
+Exploration contributes no Building XP.
+
+Fishing earns **50 profession XP per successful loot-bearing reel-in**, including
+fish, junk and treasure, regardless of item count. Empty reels and hooking
+entities grant none. It uses the shared Level 0-20 curve: **420 catches** reach
+Level 20 when no XP is discarded by caps. Exploration is an explicit
+exception to XP-based profession progression: it advances through achievements
+and unlocks, rather than XP. It retains **Level 0-20**, with each qualifying
+one-time milestone granting one level and one Exploration Profession Point
+directly, up to the cap. Unspent points are retained for future skills. Its menu
+shows completed and outstanding milestones instead of an XP bar. Milestones
+focus on discovering **biomes, structures and dimensions**. Dimension discovery
+pools supply **10 Overworld, 8 Nether and 4 End level rewards**: 22 available
+rewards toward the Level 20 cap. Players can skip two rewards, but both Nether
+and End discoveries are needed to reach maximum level. Progression follows the available pool rewards,
+without separate mandatory-visit gates. The pools are **server-datapack configurable** so modpack authors can
+define their own Exploration progression. Definitions support individual
+discoveries and collection goals over distinct targets, with partial collection
+progress visible in the Exploration tab. Discovery counts immediately on
+server-confirmed entry into the relevant biome, dimension or structure bounds,
+including arrival by flight or teleport. Each discovery advances every matching
+milestone; simultaneous completions can grant multiple levels and points up to
+the cap. The default milestones and foundation acceptance criteria are detailed
+in [[Exploration]]. The implemented JSON schema is documented in [PROFESSIONS.md](../docs/PROFESSIONS.md).
+Overworld structure rewards are uneven: Woodland Mansion and Ancient City
+discoveries each award one full level, while village types contribute to a
+shared collection goal. The final Overworld biome milestone requires every
+eligible Overworld biome; its target set is datapack configurable.
+Five Overworld levels come from biome completion milestones at **10%, 25%, 50%,
+75% and 100%** of that set, with whole-biome requirements rounded upward. Five
+Overworld levels come from discovering a Woodland Mansion, Ancient City and
+Ocean Monument, all configured village variants, and six distinct structure
+families from a configured common-landmark pool (one level per milestone).
+That pool contains eleven families: mineshafts, shipwrecks, ocean ruins, ruined
+portals, desert pyramids, jungle temples, swamp huts, pillager outposts, trail
+ruins, trial chambers and strongholds. Variants count together within a family.
+The provisional Nether pool awards one level for each of its five biomes,
+one for a Nether Fortress, one for a Bastion Remnant, and one for completing
+the configured Nether biome collection. The final biome can therefore award
+two levels together, up to the cap.
+The End awards one level each for entering the dimension, discovering an
+outer-island biome, finding an End City, and completing the configured End
+biome collection (including the central-island biome).
+Exploration records player discoveries persistently. New or changed datapack
+milestones recognize recorded discoveries on reload and can grant new rewards;
+earned levels, points and completed milestone claims remain intact. A claimed
+milestone ID never pays again merely because its definition changes.
+Exploration has a global Level 20 default cap; dimension XP gates do
+not apply. Modpacks control its route and pacing through the milestone pool.
+Skills for both professions are deferred to a future update. This expansion
+targets fresh saves; older-save compatibility and migration are out of scope.
 
 ## First implementation chunk
 
-The shared foundation now includes the four-tab menu, saved paid-cost
+The shared foundation now includes the seven-tab menu, saved paid-cost
 allocations, atomic per-tab Apply, server-datapack catalogue and the held-use
 all-profession respec. Logging's Offensive Mastery, Vein Mining, Tree Felling,
 Farming Scything/Automatic Replanting and all four Crafting nodes are usable;
-eight authored nodes remain planned and unavailable. Automatic
+eleven authored nodes (including Building's three entries) remain planned and unavailable. Automatic
 activity XP is now implemented for ore/log/crop harvests, breeding and enchanting;
 the Workbench/itemization loop and these four gathering abilities are implemented.
 Other gathering abilities remain deferred. Runtime format
@@ -30,7 +107,9 @@ All balance values remain provisional during implementation and playtesting.
 
 Radial slot **3** opens a dedicated **Professions** window, separate from
 the combat **Skills** option in slot 1 and **Stats** in slot 2. The window has
-four tabs: **Mining**, **Logging**, **Farming**, and **Crafting**. Show one
+seven tabs: **Mining**, **Logging**, **Farming**, **Crafting**, **Building**,
+**Fishing**, and **Exploration**. Narrow windows use two tab rows. Exploration
+shows a paged discovery checklist instead of an XP bar/tree. Show one
 complete profession tree at a time, with its level, XP, and available Profession
 Points above the tree. The complete selected tree fits on one page without
 panning or scrolling.
@@ -38,6 +117,11 @@ panning or scrolling.
 This entry is available before combat class selection, matching profession
 progression's class-independent access. Rendered UI and input feel still require
 manual client playtesting.
+
+[[Building]] is the fifth tab, visible immediately and before class selection.
+It shows level, XP including fractional credit, saved Building Profession
+Points and the 65% source-XP explanation. Planned skills are visibly unavailable
+for purchases. Players retain points for future skills.
 
 ### Point allocation
 
@@ -60,10 +144,10 @@ window remains open; it does not queue an automatic purchase for later.
 
 - Each profession starts at **Level 0** and has a default maximum of **Level 20**.
 - Each level gained awards **1 Profession Point**. Reaching Level 20 therefore provides 20 points for that profession.
-- All professions use a shared XP curve, but their XP and points are tracked independently.
+- All XP-based professions use a shared curve, with independent XP and points. Exploration instead earns levels directly from milestone claims.
 - The **provisional shared curve is 100 times the target level per transition**:
   100 XP from Level 0 to 1, 200 more from 1 to 2, through 2,000 from 19 to 20.
-  All four tracks use this curve independently; reaching Level 20 takes
+  The six XP-based tracks use this curve; reaching Level 20 takes
   **21,000 total profession XP**. The larger units leave room for widely
   differing activity rewards. Activity values and final pacing remain to be tuned.
 - Unspent Profession Points are retained.
@@ -134,7 +218,7 @@ tuning. See [[Experience and Reward Systems]].
 ## Respec
 
 For the **prototype, one Profession Respec resets purchased abilities and
-specialization ranks across all four professions together**, refunding each
+specialization ranks across all seven professions together**, refunding each
 profession's spent points to that profession. Preserve every profession's XP
 and level. Combat allocations and progression are unaffected.
 
@@ -150,7 +234,7 @@ Use it **the same way as Combat Respec**: hold right-click with the item for
 **seven-second combat timer**. There is no profession selector or respec button
 in the Professions GUI. At least one profession must have committed allocations
 to refund. The logical server validates eligibility when use starts, during
-the hold, and at completion, then resets all four professions atomically and
+the hold, and at completion, then resets all seven professions atomically and
 consumes **one item only on success**. Early release, combat interruption,
 or a rejected/invalid completion spends nothing.
 
@@ -174,6 +258,9 @@ These totals cover only the abilities and ranks currently defined. They are not 
 - [[Logging]] — tree felling, offensive mastery, and automatic replanting.
 - [[Farming]] — cultivation, crop harvesting, animal husbandry, and vitality.
 - [[Crafting Profession]] — equipment customization and salvaging.
+- [[Building]] — implemented meta-profession foundation; reach and cosmetic material skills remain planned.
+- [[Fishing]] — implemented profession foundation; successful fishing awards XP; skills deferred.
+- [[Exploration]] — implemented achievement/unlock-based foundation; no XP; skills deferred.
 - [[Affix System and Equipment Customization]] — item-bound Covenant affixes and crafting rules.
 - [[Salvaging]] — Covenant's chance-based equipment recovery system.
 

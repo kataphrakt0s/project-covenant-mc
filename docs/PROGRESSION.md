@@ -14,9 +14,11 @@ earns nothing and queues nothing. Character levels award one point each, up to
 60 by default. Available points are derived from earned level minus committed
 ranks, never maintained as a second balance. Covenant XP is separate from orbs.
 
-The four profession tracks (`mining`, `logging`, `farming`, `crafting`) start at
+The seven profession tracks (`mining`, `logging`, `farming`, `crafting`,
+`building`, `fishing`, `exploration`) start at
 0/0 on login, without requiring a class. Their default cap is 20. Each level
-earns one point; availability subtracts the historical costs of committed
+earns one point; Exploration gains levels directly from discovery milestones
+and accepts no XP. Availability subtracts the historical costs of committed
 allocations. The shipped provisional curve is 100 times the target level per
 transition (21,000 total from Level 0 to 20). Natural ore/log/crop harvests,
 credited breeding and enchanting-table completion award XP through
@@ -117,7 +119,7 @@ discarded, while pre-existing stored XP is retained.
 
 | Field | Units / default / constraints |
 | --- | --- |
-| `track_caps` | All five namespaced track IDs required. Character 60 (1–1000); professions 20 (0–1000). |
+| `track_caps` | All six namespaced track IDs required: character plus Mining, Logging, Farming, Crafting and Building. Character 60 (1–1000); professions 20 (0–1000). |
 | `character_requirements` | Positive whole XP per transition, indexed by current level minus 1. Must cover the cap. Default `round(50 * 1200^((L-1)/58))`, 50 through 60,000. |
 | `profession_requirements` | Positive whole XP indexed by current profession level, starting 0. Provisional default 100–2,000 in steps of 100. A nonempty curve must cover every profession cap; empty explicitly disables awards. |
 | `hostile_reward` | Whole XP, default 10, nonnegative signed long. Applies to `Enemy` actors except neutrals, with no spawn-origin penalty. |

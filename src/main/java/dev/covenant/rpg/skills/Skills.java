@@ -246,6 +246,7 @@ public final class Skills {
             long now = ClassResources.now(player);
             if (runtime.lastTick == now) { return; }
             runtime.lastTick = now;
+            dev.covenant.rpg.progression.Exploration.tick(player);
             if (now % 5 == 0) { HunterPets.tick(player); }
             if (now % 5 == 0) { ElementalGolems.tick(player); }
             ElementalGolems.refresh(player);
