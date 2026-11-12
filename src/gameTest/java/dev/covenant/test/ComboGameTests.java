@@ -1,6 +1,9 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestChunks;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -15,11 +18,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -609,10 +609,10 @@ final class ComboGameTests {
     private static void check(boolean condition, String message) { if (!condition) { throw new IllegalStateException(message); } }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         // TicketStorage compares type identity: each fixture owns independent, unsaved
         // entity-ticking tickets even when its lanes overlap another fixture's lanes.
-        final TicketType laneTicket = new TicketType(TicketType.NO_TIMEOUT,
-                TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION | TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        final TestChunks laneTicket;
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<LivingEntity> mobs = new ArrayList<>();
@@ -622,6 +622,8 @@ final class ComboGameTests {
         int laneWidth = 160;
         int laneLength = 12;
         Fixture(GameTestHelper helper, int height) {
+            laneTicket = new TestChunks(helper);
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper;
             var pos = helper.absolutePos(new BlockPos(2, height, 2));
             origin = new Vec3(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
@@ -637,7 +639,7 @@ final class ComboGameTests {
                 for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + laneLength) >> 4; z++) {
                     var chunk = new net.minecraft.world.level.ChunkPos(x, z);
                     if (forced.add(chunk)) {
-                        helper.getLevel().getChunkSource().addTicketWithRadius(laneTicket, chunk, 2);
+                        laneTicket.load(chunk);
                     }
                 }
             }
@@ -652,10 +654,7 @@ final class ComboGameTests {
             }
         }
         ServerPlayer player() {
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "combo-test-player"), false);
-            var p = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new Connection(PacketFlow.SERVERBOUND); new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, p, cookie);
+            var p = TestPlayers.create(helper);
             p.connection.handleAcceptTeleportPacket(new net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket((int) get(p.connection, "awaitingTeleport")));
             p.setPos(origin.add(players.size() * 12, 0, 0)); players.add(p);
             p.connection.resetPosition();
@@ -695,13 +694,15 @@ final class ComboGameTests {
         }
         void at(int tick, Runnable action) { helper.runAtTickTime(tick, () -> { try { action.run(); } catch (RuntimeException e) { close(); throw e; } }); }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             mobs.forEach(Entity::discard); mobs.clear();
             for (var player : players) {
                 Combos.clear(player);
                 if (helper.getLevel().getServer().getPlayerList().getPlayer(player.getUUID()) == player) { helper.getLevel().getServer().getPlayerList().remove(player); }
             }
             players.clear(); blocks.forEach(p -> helper.getLevel().setBlockAndUpdate(p, Blocks.AIR.defaultBlockState())); blocks.clear();
-            forced.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(laneTicket, chunk, 2));
+            laneTicket.close();
             forced.clear();
         }
     }

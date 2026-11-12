@@ -2,10 +2,10 @@ license="MIT"
 [[mods]]
 modId="covenant_test"
 version="1"
-displayName="Covenant lifecycle tests"
+displayName="Covenant GameTests"
 [[dependencies.covenant_test]]
 modId="covenant"
 type="required"
-versionRange="[0.1.0-dev]"
+versionRange="[${mod_version}]"
 ordering="AFTER"
 side="BOTH"

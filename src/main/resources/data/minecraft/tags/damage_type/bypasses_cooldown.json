@@ -9,6 +9,7 @@
     "covenant:discharge_fire",
     "covenant:discharge_ice",
     "covenant:discharge_lightning",
-    "covenant:discharge_explosion"
+    "covenant:discharge_explosion",
+    "covenant:firestorm"
   ]
 }

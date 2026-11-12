@@ -1,6 +1,7 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -18,11 +19,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -295,11 +293,7 @@ final class BleedGameTests {
 
     private static ServerPlayer player(GameTestHelper helper, List<ServerPlayer> players, int x, int height) {
         // The deprecated helper forces gameMode() to Creative, invalidating defense and reach checks.
-        var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "bleed-test-player"), false);
-        var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-        var connection = new Connection(PacketFlow.SERVERBOUND);
-        new io.netty.channel.embedded.EmbeddedChannel(connection);
-        helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        var player = TestPlayers.create(helper);
         players.add(player);
         // Wide fixtures can overlap adjacent GameTest structures; separate each test vertically.
         var origin = helper.absolutePos(new BlockPos(2 + x, height, 2));

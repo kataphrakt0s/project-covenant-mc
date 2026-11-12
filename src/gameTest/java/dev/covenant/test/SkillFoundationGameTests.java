@@ -1,5 +1,6 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;

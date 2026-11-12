@@ -84,6 +84,7 @@ public final class Combos {
         double baseCost = kind == Kind.LUNGING ? (stage == 1 ? 10 : 20) : (stage == 0 ? 30 : 20);
         double cost = RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, baseCost);
         if (!ClassResources.consume(player, cost)) { return Skills.message("resource"); }
+        Barrage.stop(player);
         long now = ClassResources.now(player);
         if (progress == null) {
             progress = new Progress(kind, (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, skill.cooldownTicks())));

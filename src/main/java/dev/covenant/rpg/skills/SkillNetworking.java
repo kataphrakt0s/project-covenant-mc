@@ -15,7 +15,10 @@ public final class SkillNetworking {
     private SkillNetworking() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar(dev.covenant.CovenantNetwork.version("skills/6"));
+        var registrar = event.registrar(dev.covenant.CovenantNetwork.version("skills/7"));
+        registrar.playToServer(ChannelInput.TYPE, ChannelInput.STREAM_CODEC, (request, context) -> {
+            if (context.player() instanceof ServerPlayer player && (!request.start() || accept(player, request))) { Barrage.input(player,request); }
+        });
         registrar.playToServer(Apply.TYPE, Apply.STREAM_CODEC, (request, context) -> {
             if (context.player() instanceof ServerPlayer player && accept(player, request)) {
                 player.sendOverlayMessage(SkillLoadouts.apply(player, request.expected(), request.desired()));
@@ -89,6 +92,15 @@ public final class SkillNetworking {
         public static final StreamCodec<FriendlyByteBuf, Use> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, Use::slot, Use::new);
         @Override public Type<Use> type() { return TYPE; }
+    }
+
+    /** Only start intent can activate. Releases and lease refreshes are cheap, sequence-matched cancellation traffic. */
+    public record ChannelInput(int slot, long sequence, boolean start, boolean held) implements CustomPacketPayload {
+        public static final Type<ChannelInput> TYPE = SkillNetworking.type("channel_input");
+        public static final StreamCodec<FriendlyByteBuf, ChannelInput> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT,ChannelInput::slot,ByteBufCodecs.VAR_LONG,ChannelInput::sequence,
+                ByteBufCodecs.BOOL,ChannelInput::start,ByteBufCodecs.BOOL,ChannelInput::held,ChannelInput::new);
+        @Override public Type<ChannelInput> type() { return TYPE; }
     }
 
     /** Acknowledges an already-ended server movement; reported position can only trigger a correction. */

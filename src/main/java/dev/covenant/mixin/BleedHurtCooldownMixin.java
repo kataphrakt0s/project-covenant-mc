@@ -21,6 +21,7 @@ abstract class BleedHurtCooldownMixin {
         var target = (LivingEntity) (Object) this;
         var hit = dev.covenant.rpg.skills.AuraDamage.begin(target, source);
         boolean preserve = source.is(Bleeding.DAMAGE_TYPE) || source.is(TrapKind.FLAME.damageType)
+                || source.is(dev.covenant.rpg.skills.GroundSkillEntity.FIRE_DAMAGE)
                 || source.is(dev.covenant.rpg.skills.RageStorm.DAMAGE_TYPE)
                 || source.is(dev.covenant.rpg.skills.AuraDamage.IMMOLATION) || source.is(dev.covenant.rpg.skills.AuraDamage.ENCHANTING)
                 || dev.covenant.rpg.skills.Discharge.damage(source);

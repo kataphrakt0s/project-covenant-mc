@@ -16,7 +16,6 @@ import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -41,238 +40,11 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /** Runs only in runGameTestServer; no test classes, fixtures, or test mod ship in the production JAR. */
-@Mod("covenant_test")
 public final class RpgGameTests {
-    private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS =
-            DeferredRegister.create(Registries.TEST_FUNCTION, "covenant_test");
-
-    static {
-        FUNCTIONS.register("golem_spawning", () -> ElementalGolemGameTests::spawning);
-        FUNCTIONS.register("golem_skill", () -> ElementalGolemGameTests::skill);
-        FUNCTIONS.register("golem_benefits", () -> ElementalGolemGameTests::benefits);
-        FUNCTIONS.register("golem_persistence", () -> ElementalGolemGameTests::persistence);
-        FUNCTIONS.register("golem_repair_defeat", () -> ElementalGolemGameTests::repairAndDefeat);
-        FUNCTIONS.register("golem_targeting", () -> ElementalGolemGameTests::targeting);
-        FUNCTIONS.register("golem_native_ai", () -> ElementalGolemGameTests::nativeAi);
-        FUNCTIONS.register("golem_cleanup", () -> ElementalGolemGameTests::cleanup);
-        FUNCTIONS.register("golem_animations", () -> ElementalGolemGameTests::animations);
-        FUNCTIONS.register("pet_activation", () -> HunterPetGameTests::activation);
-        FUNCTIONS.register("pet_rejected_spawn", () -> HunterPetGameTests::rejectedSpawn);
-        FUNCTIONS.register("pet_lifecycle", () -> HunterPetGameTests::lifecycle);
-        FUNCTIONS.register("pet_persistence", () -> HunterPetGameTests::persistence);
-        FUNCTIONS.register("pet_targeting", () -> HunterPetGameTests::targeting);
-        FUNCTIONS.register("pet_native_ai", () -> HunterPetGameTests::nativeAi);
-        FUNCTIONS.register("pet_death_feeding", () -> HunterPetGameTests::deathAndFeeding);
-        FUNCTIONS.register("pet_config", () -> HunterPetGameTests::config);
-        FUNCTIONS.register("pet_locomotion", () -> HunterPetGameTests::locomotion);
-        FUNCTIONS.register("pet_stored_safety", () -> HunterPetGameTests::storedSafety);
-        FUNCTIONS.register("pet_travel", () -> HunterPetGameTests::travel);
-        FUNCTIONS.register("pet_reload", () -> HunterPetGameTests::reload);
-        FUNCTIONS.register("pet_restart", () -> HunterPetGameTests::restart);
-        FUNCTIONS.register("feedback_volley", () -> SkillFeedbackGameTests::volley);
-        FUNCTIONS.register("feedback_casting", () -> SkillFeedbackGameTests::casting);
-        FUNCTIONS.register("feedback_impacts", () -> SkillFeedbackGameTests::impacts);
-        FUNCTIONS.register("feedback_melee", () -> SkillFeedbackGameTests::melee);
-        FUNCTIONS.register("feedback_projectile_contacts", () -> SkillFeedbackGameTests::projectileContacts);
-        FUNCTIONS.register("feedback_elemental_contacts", () -> SkillFeedbackGameTests::elementalContacts);
-        FUNCTIONS.register("feedback_lightning_links", () -> SkillFeedbackGameTests::lightningLinks);
-        FUNCTIONS.register("feedback_bow_contacts", () -> SkillFeedbackGameTests::bowContacts);
-        FUNCTIONS.register("feedback_bleed", () -> SkillFeedbackGameTests::bleedFeedback);
-        FUNCTIONS.register("feedback_disengage", () -> SkillFeedbackGameTests::disengageFeedback);
-        FUNCTIONS.register("feedback_teleport", () -> SkillFeedbackGameTests::teleportFeedback);
-        FUNCTIONS.register("feedback_lunging_combo", () -> SkillFeedbackGameTests::lungingFeedback);
-        FUNCTIONS.register("feedback_rip_and_rush", () -> SkillFeedbackGameTests::rushFeedback);
-        FUNCTIONS.register("feedback_battle_cry", () -> SkillFeedbackGameTests::cryFeedback);
-        FUNCTIONS.register("feedback_rage_storm", () -> SkillFeedbackGameTests::stormFeedback);
-        FUNCTIONS.register("feedback_blood_fever", () -> SkillFeedbackGameTests::feverFeedback);
-        FUNCTIONS.register("feedback_discharge", () -> SkillFeedbackGameTests::dischargeFeedback);
-        FUNCTIONS.register("feedback_threefold", () -> SkillFeedbackGameTests::threefoldFeedback);
-        FUNCTIONS.register("feedback_aura_activations", () -> SkillFeedbackGameTests::auraActivations);
-        FUNCTIONS.register("feedback_aura_overlap", () -> SkillFeedbackGameTests::auraOverlap);
-        FUNCTIONS.register("feedback_aura_defenses", () -> SkillFeedbackGameTests::auraDefenses);
-        FUNCTIONS.register("weaver_activation", () -> WeaverGameTests::activation);
-        FUNCTIONS.register("weaver_discharge_cast", () -> WeaverGameTests::dischargeCast);
-        FUNCTIONS.register("weaver_discharge_mixed", () -> WeaverGameTests::dischargeMixed);
-        FUNCTIONS.register("weaver_discharge_defenses", () -> WeaverGameTests::dischargeDefenses);
-        FUNCTIONS.register("weaver_threefold_damage", () -> WeaverGameTests::threefoldDamage);
-        FUNCTIONS.register("weaver_threefold_accounting", () -> WeaverGameTests::threefoldAccounting);
-        FUNCTIONS.register("weaver_threefold_expiry", () -> WeaverGameTests::threefoldExpiry);
-        FUNCTIONS.register("weaver_threefold_snapshots", () -> WeaverGameTests::threefoldSnapshots);
-        FUNCTIONS.register("weaver_teleport_geometry", () -> WeaverGameTests::teleportGeometry);
-        FUNCTIONS.register("weaver_teleport_blocked", () -> WeaverGameTests::teleportBlocked);
-        FUNCTIONS.register("weaver_teleport_terrain", () -> WeaverGameTests::teleportTerrain);
-        FUNCTIONS.register("weaver_lifecycle", () -> WeaverGameTests::lifecycle);
-        FUNCTIONS.register("weaver_config", () -> WeaverGameTests::config);
-        FUNCTIONS.register("weaver_discharge_threefold", () -> WeaverGameTests::dischargeThreefold);
-        FUNCTIONS.register("weaver_reload", () -> WeaverGameTests::reload);
-        FUNCTIONS.register("reaver_cry", () -> ReaverGameTests::cry);
-        FUNCTIONS.register("reaver_cry_duration", () -> ReaverGameTests::cryDuration);
-        FUNCTIONS.register("reaver_fever", () -> ReaverGameTests::fever);
-        FUNCTIONS.register("reaver_fever_updates", () -> ReaverGameTests::feverUpdates);
-        FUNCTIONS.register("reaver_storm_cast", () -> ReaverGameTests::stormCast);
-        FUNCTIONS.register("reaver_storm_pulses", () -> ReaverGameTests::stormPulses);
-        FUNCTIONS.register("reaver_storm_terrain", () -> ReaverGameTests::stormTerrain);
-        FUNCTIONS.register("reaver_storm_safety", () -> ReaverGameTests::stormSafety);
-        FUNCTIONS.register("reaver_config", () -> ReaverGameTests::config);
-        FUNCTIONS.register("reaver_reload", () -> ReaverGameTests::reload);
-        FUNCTIONS.register("itemization_rules", () -> ItemizationGameTests::rules);
-        FUNCTIONS.register("itemization_reload", () -> ItemizationReloadGameTests::run);
-        FUNCTIONS.register("workbench_common", () -> ItemizationGameTests::common);
-        FUNCTIONS.register("workbench_upgrades", () -> ItemizationGameTests::upgrades);
-        FUNCTIONS.register("workbench_salvage", () -> ItemizationGameTests::salvageBatch);
-        FUNCTIONS.register("workbench_menus", () -> ItemizationGameTests::menus);
-        FUNCTIONS.register("polish_workbench", () -> PhaseFiveGameTests::workbench);
-        FUNCTIONS.register("polish_progression", () -> PhaseFiveGameTests::progression);
-        FUNCTIONS.register("polish_replant", () -> FarmingGameTests::feedback);
-        FUNCTIONS.register("workbench_storage", () -> ItemizationGameTests::storage);
-        FUNCTIONS.register("itemization_loot", () -> ItemizationGameTests::loot);
-        FUNCTIONS.register("stalker_activation", () -> StalkerGameTests::activation);
-        FUNCTIONS.register("stalker_disengage", () -> StalkerGameTests::disengage);
-        FUNCTIONS.register("stalker_movement_lifecycle", () -> StalkerGameTests::movementLifecycle);
-        FUNCTIONS.register("stalker_collision_prediction", () -> StalkerGameTests::collisionAndPrediction);
-        FUNCTIONS.register("stalker_arcane", () -> StalkerGameTests::arcane);
-        FUNCTIONS.register("stalker_ammunition", () -> StalkerGameTests::ammunition);
-        FUNCTIONS.register("stalker_multishot", () -> StalkerGameTests::multishot);
-        FUNCTIONS.register("stalker_persistence", () -> StalkerGameTests::persistence);
-        FUNCTIONS.register("stalker_flight", () -> StalkerGameTests::flight);
-        FUNCTIONS.register("stalker_defenses", () -> StalkerGameTests::defenses);
-        FUNCTIONS.register("profile_lifecycle", () -> RpgGameTests::profileLifecycle);
-        FUNCTIONS.register("item_lifecycle", () -> RpgGameTests::itemLifecycle);
-        FUNCTIONS.register("stack_safety", () -> RpgGameTests::stackSafety);
-        FUNCTIONS.register("data_validation", () -> RpgGameTests::dataValidation);
-        FUNCTIONS.register("stat_equipment", () -> RpgGameTests::statEquipment);
-        FUNCTIONS.register("skill_stats", () -> RpgGameTests::skillStats);
-        FUNCTIONS.register("stat_persistence", () -> RpgGameTests::statPersistence);
-        FUNCTIONS.register("dodge", () -> RpgGameTests::dodge);
-        FUNCTIONS.register("class_foundation", () -> ClassGameTests::run);
-        FUNCTIONS.register("stat_commands", () -> StatCommandGameTests::run);
-        FUNCTIONS.register("affix_commands", () -> AffixCommandGameTests::run);
-        FUNCTIONS.register("affix_restart", () -> AffixCommandGameTests::restart);
-        FUNCTIONS.register("skill_lifecycle", () -> SkillGameTests::lifecycle);
-        FUNCTIONS.register("lifecycle_death_decision", () -> LifecycleHardeningGameTests::deathDecision);
-        FUNCTIONS.register("lifecycle_cancellation_routes", () -> LifecycleHardeningGameTests::cancellationRoutes);
-        FUNCTIONS.register("control_movement", () -> ControlGameTests::movement);
-        FUNCTIONS.register("control_actions", () -> ControlGameTests::actions);
-        FUNCTIONS.register("control_dash_handoff", () -> ControlGameTests::dashHandoff);
-        FUNCTIONS.register("projectile_persistence", () -> ProjectilePersistenceGameTests::run);
-        FUNCTIONS.register("skill_network_ingress", () -> SkillNetworkingGameTests::ingress);
-        FUNCTIONS.register("connection_versions", () -> SkillNetworkingGameTests::connectionVersions);
-        FUNCTIONS.register("lightning_visual_codec", () -> SkillNetworkingGameTests::lightningCodec);
-        FUNCTIONS.register("infinite_resource", () -> SkillGameTests::infiniteResource);
-        FUNCTIONS.register("ignore_cooldowns", () -> SkillGameTests::ignoreCooldowns);
-        FUNCTIONS.register("skill_recovery", () -> SkillGameTests::recovery);
-        FUNCTIONS.register("rage_damage", () -> RageGameTests::run);
-        FUNCTIONS.register("skill_effects", () -> SkillGameTests::effects);
-        FUNCTIONS.register("skill_foundations", () -> SkillFoundationGameTests::run);
-        FUNCTIONS.register("rend", () -> BleedGameTests::rend);
-        FUNCTIONS.register("combo_progression", () -> ComboGameTests::progression);
-        FUNCTIONS.register("combo_movement", () -> ComboGameTests::movement);
-        FUNCTIONS.register("combo_effects", () -> ComboGameTests::effects);
-        FUNCTIONS.register("combo_lifecycle", () -> ComboGameTests::lifecycle);
-        FUNCTIONS.register("combo_persistence", () -> ComboGameTests::persistence);
-        FUNCTIONS.register("combo_deadlines", () -> ComboGameTests::deadlines);
-        FUNCTIONS.register("combo_interactions", () -> ComboGameTests::interactions);
-        FUNCTIONS.register("combo_prediction", () -> ComboGameTests::prediction);
-        FUNCTIONS.register("combo_connection_movement", () -> ComboGameTests::connectionMovement);
-        FUNCTIONS.register("combo_sliding", () -> ComboGameTests::sliding);
-        FUNCTIONS.register("elemental_statuses", () -> ElementalBoltGameTests::statuses);
-        FUNCTIONS.register("elemental_collision", () -> ElementalBoltGameTests::collision);
-        FUNCTIONS.register("elemental_lightning", () -> ElementalBoltGameTests::lightning);
-        FUNCTIONS.register("bleed_pulses", () -> BleedGameTests::pulses);
-        FUNCTIONS.register("bleed_persistence", () -> BleedGameTests::persistence);
-        FUNCTIONS.register("skill_loadout", () -> SkillLoadoutGameTests::run);
-        FUNCTIONS.register("trap_deployment", () -> TrapGameTests::deployment);
-        FUNCTIONS.register("trap_terrain", () -> TrapGameTests::terrain);
-        FUNCTIONS.register("trap_bear", () -> TrapGameTests::bear);
-        FUNCTIONS.register("trap_root_persistence", () -> TrapGameTests::rootPersistence);
-        FUNCTIONS.register("trap_frost", () -> TrapGameTests::frost);
-        FUNCTIONS.register("trap_flame", () -> TrapGameTests::flame);
-        FUNCTIONS.register("trap_flame_defenses", () -> TrapGameTests::flameDefenses);
-        FUNCTIONS.register("trap_blast", () -> TrapGameTests::blast);
-        FUNCTIONS.register("trap_lifecycle", () -> TrapGameTests::lifecycle);
-        FUNCTIONS.register("trap_targeting", () -> TrapGameTests::targeting);
-        FUNCTIONS.register("trap_activation", () -> TrapGameTests::activation);
-        FUNCTIONS.register("aura_ownership", () -> AuraGameTests::ownership);
-        FUNCTIONS.register("status_transitions", () -> StatusDisplayGameTests::transitions);
-        FUNCTIONS.register("status_consumption", () -> StatusDisplayGameTests::consumption);
-        FUNCTIONS.register("status_storage", () -> StatusDisplayGameTests::storage);
-        FUNCTIONS.register("aura_coverage", () -> AuraGameTests::coverage);
-        FUNCTIONS.register("aura_dodge", () -> AuraGameTests::dodge);
-        FUNCTIONS.register("aura_fortitude", () -> AuraGameTests::fortitude);
-        FUNCTIONS.register("aura_ripping", () -> AuraGameTests::ripping);
-        FUNCTIONS.register("aura_slows", () -> AuraGameTests::slows);
-        FUNCTIONS.register("aura_casting", () -> AuraGameTests::casting);
-        FUNCTIONS.register("aura_fireandshock", () -> AuraGameTests::fireAndShock);
-        FUNCTIONS.register("aura_chain", () -> AuraGameTests::chain);
-        FUNCTIONS.register("aura_enchanting", () -> AuraGameTests::enchanting);
-        FUNCTIONS.register("aura_lifecycle", () -> AuraGameTests::lifecycle);
-        FUNCTIONS.register("aura_rage", () -> AuraGameTests::rage);
-        FUNCTIONS.register("aura_projectiles", () -> AuraGameTests::projectiles);
-        FUNCTIONS.register("aura_expiries", () -> AuraGameTests::expiries);
-        FUNCTIONS.register("skill_tree", () -> SkillTreeGameTests::run);
-        FUNCTIONS.register("progression_engine", () -> ProgressionGameTests::engine);
-        FUNCTIONS.register("progression_rewards", () -> ProgressionGameTests::rewards);
-        FUNCTIONS.register("progression_support", () -> ProgressionGameTests::support);
-        FUNCTIONS.register("progression_wither", () -> ProgressionGameTests::wither);
-        FUNCTIONS.register("progression_death", () -> ProgressionGameTests::deathDecision);
-        FUNCTIONS.register("progression_timer", () -> ProgressionGameTests::timer);
-        FUNCTIONS.register("progression_professions", () -> ProgressionGameTests::professions);
-        FUNCTIONS.register("progression_respec", () -> ProgressionGameTests::respec);
-        FUNCTIONS.register("progression_arrow_ranks", () -> ProgressionGameTests::arrowRanks);
-        FUNCTIONS.register("progression_reload", () -> ProgressionReloadGameTests::run);
-        FUNCTIONS.register("progression_defenses", () -> ProgressionGameTests::defenses);
-        FUNCTIONS.register("profession_storage", () -> ProfessionGameTests::storage);
-        FUNCTIONS.register("profession_validation", () -> ProfessionGameTests::validation);
-        FUNCTIONS.register("profession_packets", () -> ProfessionGameTests::packets);
-        FUNCTIONS.register("profession_damage", () -> ProfessionGameTests::damage);
-        FUNCTIONS.register("profession_respec", () -> ProfessionGameTests::respec);
-        FUNCTIONS.register("profession_catalogue", () -> ProfessionGameTests::catalogue);
-        FUNCTIONS.register("profession_reload", () -> ProfessionReloadGameTests::run);
-        FUNCTIONS.register("building_awards", () -> BuildingGameTests::awards);
-        FUNCTIONS.register("building_caps", () -> BuildingGameTests::caps);
-        FUNCTIONS.register("building_storage", () -> BuildingGameTests::storage);
-        FUNCTIONS.register("building_planned", () -> BuildingGameTests::planned);
-        FUNCTIONS.register("building_activity", () -> BuildingGameTests::activity);
-        FUNCTIONS.register("building_reload", () -> BuildingGameTests::reload);
-        FUNCTIONS.register("exploration_catalogue", () -> ExplorationGameTests::catalogue);
-        FUNCTIONS.register("exploration_progression", () -> ExplorationGameTests::progression);
-        FUNCTIONS.register("exploration_collections", () -> ExplorationGameTests::collections);
-        FUNCTIONS.register("exploration_observations", () -> ExplorationGameTests::observations);
-        FUNCTIONS.register("exploration_storage", () -> ExplorationGameTests::storage);
-        FUNCTIONS.register("exploration_reload", () -> ExplorationGameTests::reload);
-        FUNCTIONS.register("fishing_native", () -> FishingGameTests::nativeCatch);
-        FUNCTIONS.register("fishing_rewards", () -> FishingGameTests::rewards);
-        FUNCTIONS.register("activity_mining", () -> ProfessionActivityGameTests::mining);
-        FUNCTIONS.register("activity_placement", () -> ProfessionActivityGameTests::placement);
-        FUNCTIONS.register("activity_piston", () -> ProfessionActivityGameTests::piston);
-        FUNCTIONS.register("activity_crops", () -> ProfessionActivityGameTests::crops);
-        FUNCTIONS.register("activity_logging", () -> ProfessionActivityGameTests::logging);
-        FUNCTIONS.register("activity_breeding", () -> ProfessionActivityGameTests::breeding);
-        FUNCTIONS.register("activity_enchanting", () -> ProfessionActivityGameTests::enchanting);
-        FUNCTIONS.register("farming_ranks", () -> FarmingGameTests::ranks);
-        FUNCTIONS.register("farming_rules", () -> FarmingGameTests::rules);
-        FUNCTIONS.register("farming_replant", () -> FarmingGameTests::replant);
-        FUNCTIONS.register("farming_protection", () -> FarmingGameTests::protection);
-        FUNCTIONS.register("farming_breakage", () -> FarmingGameTests::breakage);
-        FUNCTIONS.register("gathering_vein_ranks", () -> GatheringGameTests::veinRanks);
-        FUNCTIONS.register("gathering_vein_rules", () -> GatheringGameTests::veinRules);
-        FUNCTIONS.register("gathering_failures", () -> GatheringGameTests::failures);
-        FUNCTIONS.register("gathering_tree_ranks", () -> GatheringGameTests::treeRanks);
-        FUNCTIONS.register("gathering_tree_continuation", () -> GatheringGameTests::treeContinuation);
-        FUNCTIONS.register("gathering_tree_rules", () -> GatheringGameTests::treeRules);
-        FUNCTIONS.register("gathering_drop_rules", () -> GatheringGameTests::dropRules);
-        FUNCTIONS.register("profiler_activity", () -> GatheringGameTests::profiler);
-    }
-
-    public RpgGameTests(IEventBus modBus) { FUNCTIONS.register(modBus); }
-
     @SuppressWarnings("removal") // Pinned vanilla helper supplies an embedded connection for server-player lifecycles.
-    private static void profileLifecycle(GameTestHelper helper) {
+    static void profileLifecycle(GameTestHelper helper) {
         List<ServerPlayer> players = new ArrayList<>();
         try {
             ServerPlayer original = helper.makeMockServerPlayerInLevel();
@@ -326,7 +98,7 @@ public final class RpgGameTests {
         }
     }
 
-    private static void itemLifecycle(GameTestHelper helper) {
+    static void itemLifecycle(GameTestHelper helper) {
         var level = helper.getLevel();
         ItemStack first = new ItemStack(Items.IRON_CHESTPLATE);
         ItemStack second = new ItemStack(Items.IRON_CHESTPLATE);
@@ -374,7 +146,7 @@ public final class RpgGameTests {
         helper.succeed();
     }
 
-    private static void stackSafety(GameTestHelper helper) {
+    static void stackSafety(GameTestHelper helper) {
         var level = helper.getLevel();
         // Test-only tag opts a naturally stackable item into a custom category, like a modded ring.
         var custom = new EquipmentCategory(Identifier.fromNamespaceAndPath("covenant_test", "charm"));
@@ -408,7 +180,7 @@ public final class RpgGameTests {
         helper.succeed();
     }
 
-    private static void dataValidation(GameTestHelper helper) {
+    static void dataValidation(GameTestHelper helper) {
         expectFailure(() -> new CharacterProfile(true, 0, 0, Optional.of(id("mage")), Optional.empty(), Optional.empty(), 0, 0));
         expectFailure(() -> new CharacterProfile(false, 1, 0, Optional.empty(), Optional.empty(), Optional.empty(), 0, 0));
         expectFailure(() -> CharacterProfile.create(id("mage"), Optional.of(id("mana")), Double.NaN));
@@ -432,7 +204,7 @@ public final class RpgGameTests {
         helper.succeed();
     }
 
-    private static void statEquipment(GameTestHelper helper) {
+    static void statEquipment(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
         near(player.getAttributeValue(RpgStats.HEALTH), 20, "Base health");
         near(player.getAttributeValue(RpgStats.DAMAGE), 1, "Base attack damage");
@@ -519,7 +291,7 @@ public final class RpgGameTests {
         helper.succeed();
     }
 
-    private static void skillStats(GameTestHelper helper) {
+    static void skillStats(GameTestHelper helper) {
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
         for (var coefficient : List.of(RpgStats.RESOURCE_COST, RpgStats.COOLDOWN,
                 RpgStats.CAST_TIME, RpgStats.SKILL_DURATION)) {
@@ -559,7 +331,7 @@ public final class RpgGameTests {
     }
 
     @SuppressWarnings("removal")
-    private static void statPersistence(GameTestHelper helper) {
+    static void statPersistence(GameTestHelper helper) {
         List<ServerPlayer> players = new ArrayList<>();
         try {
             var source = helper.makeMockServerPlayerInLevel();
@@ -632,7 +404,7 @@ public final class RpgGameTests {
         }
     }
 
-    private static void dodge(GameTestHelper helper) {
+    static void dodge(GameTestHelper helper) {
         var level = helper.getLevel();
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
         var attacker = helper.makeMockPlayer(GameType.SURVIVAL);

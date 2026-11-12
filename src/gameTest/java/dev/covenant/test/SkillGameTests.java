@@ -1,5 +1,6 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.FixtureSkills;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.covenant.rpg.CharacterProfile;
 import dev.covenant.rpg.PlayerProfiles;

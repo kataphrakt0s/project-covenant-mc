@@ -48,7 +48,7 @@ public final class ProjectileCombat {
         this.supportOwners = new HashSet<>(supportOwners);
     }
     public Set<UUID> supportOwners() { return Set.copyOf(supportOwners); }
-    public static void captureSupport(Projectile projectile, LivingEntity source) {
+    public static void captureSupport(Entity projectile, LivingEntity source) {
         projectile.getData(RpgData.PROJECTILE_COMBAT).supportOwners.addAll(Auras.supportOwners(source, false));
     }
 

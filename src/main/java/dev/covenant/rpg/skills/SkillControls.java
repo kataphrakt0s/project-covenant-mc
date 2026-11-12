@@ -134,6 +134,7 @@ public final class SkillControls {
     }
 
     private static void useItem(PlayerInteractEvent.RightClickItem event) {
+        if (event.getEntity() instanceof ServerPlayer player && canAct(player)) { Barrage.stop(player); }
         if (!canAct(event.getEntity())) { event.setCancellationResult(InteractionResult.FAIL); event.setCanceled(true); }
     }
 

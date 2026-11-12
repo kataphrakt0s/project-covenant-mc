@@ -1,7 +1,7 @@
 # Skills, class resources, and skill trees
 
 This foundation shares the existing class/profile and native stat/Affix Page systems.
-It adds 36 code-backed skills, persistent skill resources/cooldowns, and an
+It adds 39 code-backed skills, persistent skill resources/cooldowns, and an
 unsaved entity-local cast/combat/combo attachment. The Skills window presents
 the current class's tree with staged point/rank purchases and eight saved
 assignments. Unimplemented nodes remain visible but unavailable. Piercing Shot
@@ -50,6 +50,102 @@ uses the existing playable roster; further skill content follows this order.
 This is a dependency guide rather than a promise to implement an entire stage in
 one pass. Rend and the bleed foundation were prioritized next for Reaver's
 dependent skills. Skills whose requirements span stages follow their latest dependency.
+
+## Barrage, Firestorm and War Banner
+
+Rank 1 is implemented for these three skills; the executable roster now has 39
+skills. Higher ranks remain unavailable until upgrades are authored. All three
+use ordinary tree purchase and binding. War Banner has no prerequisite.
+The full agreed behavior and initial numbers are in
+[Skill Trees Brainstorm](<../Project-Covenant/Skill Trees Brainstorm.md>).
+
+| Skill | Rank 1 behavior |
+|---|---|
+| Barrage (Stalker level 5) | Hold to fire three arrows/second at native coefficient 2.0; six Focus per arrow, paused Focus recovery, bow-draw movement speed; no skill cooldown. |
+| Firestorm (Weaver level 20) | 40 Mana, twelve-second cooldown, fifteen-tick cast; completion-time ground aim within 24 blocks, four-block radius, six-second lifetime. Six random impacts/second across the whole area: three fire damage, one-block splash, ten-tick per-enemy interval and four seconds of native burning. |
+| War Banner (Reaver level 25) | Instant supported placement at the owner's feet; 35 Rage, 35-second cooldown, twelve-second lifetime, six-block spherical ally coverage, one HP/second and exhaustion protection. |
+
+Barrage uses the existing native bow-skill ammunition, Infinity/exemption,
+durability, projectile attribution and damage path per fired arrow. Fractional
+deadlines retain the three-per-second cadence across releases and restarts;
+missed shots never catch up in a burst. It spends at firing, not up front.
+Ordinary damage and knockback do not interrupt; root permits firing, while
+freezing/action prevention ends the channel. Another accepted combat skill or
+ordinary item/bow use ends it. Rejected skill requests leave it running.
+Starting Barrage cancels an ordinary bow draw without releasing that arrow.
+Every interruption requires a fresh press to restart.
+
+Channel input is intent-only on `skills/7`: an initial slot/sequence start,
+five-client-tick lease refreshes and a matching release. Fifteen server ticks
+without refresh ends the channel. Old releases/refreshes cannot cancel or resume
+a newer channel; release traffic is independent of the ordinary request budget.
+Menus, focus loss, remapping and binding changes end held input. Commands can
+start a short channel, but it expires without held-key lease refreshes.
+
+Firestorm remains fixed while the owner moves or casts. It works indoors and
+underground; each sampled falling path is clipped to solid terrain and needs
+support near the selected elevation. Unsupported samples are skipped; impacts
+do not destroy terrain or place fire blocks. Damage uses captured elemental
+power and native fire defenses; accepted damage starts native burning, while
+actual health/absorption/Fortitude loss feeds Threefold once. Each completed
+Firestorm grants one Fire charge for learned Discharge, including misses, up to
+its existing cap; impacts and burning do not grant charges. Different storms
+have independent target intervals, preserving unrelated native hurt timers.
+
+War Banner uses aura allies: its owner, scoreboard teammates and their owned
+pets, with spherical coverage through walls. Coverage uses the existing aura
+refresh/grace timings: refresh every ten ticks, grants last twenty ticks.
+Regeneration includes eligible pets. Multiple covering banners retain all
+support suppliers but share one target healing clock; switching coverage cannot
+generate extra pulses. Healing uses the strongest current supplier's configured
+rate, one HP/second at defaults. Hunger protection suppresses both player-action
+and internal native regeneration exhaustion, without restoring food/saturation,
+clearing pre-existing exhaustion, or creating deferred debt. It is indestructible
+by damage and does not obstruct movement.
+
+Firestorm and War Banner each have one owner-local deployment slot. A successful
+recast replaces the previous deployment; invalid placement/native entity-add
+failure leaves the previous one and balances/cooldowns intact. Ground effects
+end on expiry, lost support, owner death/logout/dimension or class change,
+unlearning or containing-chunk unload. They never force chunks or resume after
+loading. Barrage ends on the same owner interruptions. Cleanup refunds nothing
+and preserves committed cooldowns; banner cleanup removes only that supplier.
+
+Tuning uses **class files**, not a separate roster file:
+
+- `data/covenant/skills/stalker.json`: `barrage` (cost, arrows/second, coefficient).
+  This initially covers Barrage only; other Stalker skills retain their existing
+  tuning sources, including Hunter's Pet's separate file.
+- `data/covenant/skills/weaver.json`: adds `firestorm` alongside existing entries.
+  Its fields include cost/cooldown/cast, range/radius/lifetime, impact rate/damage,
+  splash radius, target interval, burn duration and maximum falling height.
+- `data/covenant/skills/reaver.json`: adds `war_banner` alongside existing entries
+  (cost/cooldown/lifetime, range and healing/second).
+
+`CombatSkillData` validates those sections as one immutable reload snapshot;
+invalid values retain the live balance. Its record JavaDoc and parser define
+units/bounds. New activations adopt reloads; deployed effects and an active
+channel's base rate/cost/coefficient retain their snapshots. Existing native
+cost, cooldown, cast and duration modifiers still apply; Barrage snapshots native
+outgoing bonuses and checks current effective per-arrow cost when firing.
+
+The user approved the three original 16px icons before runtime export. Sources
+remain in ignored `models/gothic_rework/next_skill_icons.py`, review in ignored
+`.local/icon-review/next-skills/`. The native red-banner model is created lazily
+during active-world render extraction. Supported area footprints and tracked
+impact fall/splash markers use depth-tested geometry and survive Minimal;
+crimson particles are decoration. No client rendering authorizes gameplay.
+
+Automated cases are `roster_channel`, `roster_interruptions`,
+`roster_firestorm_cast`, `roster_firestorm_damage`, `roster_banner`,
+`roster_banner_food`, `roster_replacement`, `roster_config` and `roster_reload`.
+They cover activation/spending, cadence, stale input, interruption and cleanup,
+completion aim, damage/cover/Threefold, overlapping suppliers, food ticking,
+replacement, bounds and real resource reloads with retained snapshots.
+See [VALIDATION.md](VALIDATION.md) for actual results. Manual client checks:
+held/released/remapped/Shift/mouse input, menus and focus loss; first/third-person
+bow poses; banner model/range/HUD; indoor Firestorm falling/splash cues on Minimal;
+real multiplayer, reconnects and retained-world restart behavior.
 
 ## Elemental Golem
 
@@ -260,7 +356,8 @@ numbers explicitly describe shipped defaults.
 | Teleport | Instant eight-block aimed blink for 25 Mana, 200-tick cooldown; no damage |
 
 Discharge stores one charge per successfully completed Fire/Ice/Lightning Bolt
-cast, even when it misses, while Discharge is learned. Counters are independent
+cast, plus one Fire charge per completed Firestorm, even when they miss, while
+Discharge is learned. Counters are independent
 and capped at five each. Aura ticks, secondary hits, arcane spells and Discharge
 itself grant none. Empty reserves reject activation without spending. All charges
 are consumed at successful cast completion, before damage callbacks, including

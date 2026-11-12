@@ -1,4 +1,7 @@
 {
   "replace": false,
-  "values": ["covenant:bleed"]
+  "values": [
+    "covenant:bleed",
+    "covenant:firestorm"
+  ]
 }

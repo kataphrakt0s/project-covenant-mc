@@ -79,6 +79,7 @@ public final class HunterPets {
                 pet.discard(); return Skills.message("unavailable");
             }
             if (!ClassResources.consume(player, cost)) { pet.discard(); return Skills.message("resource"); }
+            Barrage.stop(player);
             state.pet = pet;
             state.cooldown = Math.max(1, (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, skill.cooldownTicks())));
             runtime.nextActivation = ClassResources.now(player) + 1;

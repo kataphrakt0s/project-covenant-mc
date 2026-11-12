@@ -2,6 +2,70 @@
 
 Verified on **2026-11-03**, America/Winnipeg, on Windows 11 x64.
 
+## Test workflow and fixture consolidation (2026-11-12)
+
+- The existing catalogue is preserved: **224 required GameTests passed** via
+  `scripts/Dev.ps1 verify`, with a successful production build, standalone
+  checks and production-JAR audit. The archived XML contains each registered
+  ID exactly once, with no failures/errors/skips. Evidence:
+  `.local/test-retool-verify.log` and `.local/test-retool-full-results.xml`.
+- Focused native runs passed `roster_config` (1 test) and `pet_*` (13 tests),
+  including the final exact-ID XML check and test-mod version expansion.
+  Evidence: `.local/test-retool-focused.log`, `.local/test-retool-pet.log`.
+- `fast` passed all standalone checks. An unchanged repeat reused the Gradle
+  configuration cache and all 16 tasks, completing in 9 seconds on this machine.
+  This is an observed warm run, not a general performance guarantee.
+  Evidence: `.local/test-retool-fast.log`, `.local/test-retool-fast-repeat.log`.
+- Workflow rejection checks passed for an unknown selector, empty argument,
+  filtered `verify` through both PowerShell and Gradle, and an orphan instance
+  JSON. The temporary probe was removed; filtered listing and `build` then
+  passed. Evidence: `.local/test-retool-negative-*.log`,
+  `.local/test-retool-list.log`, `.local/test-retool-build.log`.
+- Shared player setup is used by 18 suites, bounded chunk loading by 9, and
+  completion cleanup by 16 local fixture owners. The test catalogue and shipped
+  asset tests have separate ownership from RPG assertions/integration examples.
+  See [TESTING.md](TESTING.md) for configuration and authoring conventions.
+- `git diff --check` and VS Code task JSON parsing passed. No client launch,
+  multiplayer, retained-world restart or rendered acceptance is claimed.
+  Native GameTest shutdown still saves its disposable world; wait for the final
+  Gradle result, not just the server's test pass line.
+
+## Barrage, Firestorm and War Banner (2026-11-12)
+
+- `scripts/Dev.ps1 verify`: production build/checks passed and **All 225 required
+  tests passed :)**. Evidence: `.local/combat-slice-verify-release.log`. This
+  includes the geometry/Apply checks and pinned wolf/golem asset validation.
+- Nine new dedicated-server cases cover held-channel spending and native ammo,
+  preserved firing intervals, stale releases, rejected/accepted interruption,
+  root/freeze/damage behavior, ordinary bow-use cancellation and lifecycle cleanup;
+  completion-time ground aim, Firestorm damage/cover/ignition, independent caster
+  hit intervals and Threefold accounting; banner overlap/support ownership,
+  shared healing and both action/internal-regeneration exhaustion protection;
+  placement failure/replacement/unlearning, configuration bounds, and real
+  datapack reloads retaining deployed snapshots and rejecting invalid tuning.
+- Fixture fixes keep their original gameplay assertions: Discharge's chain lane
+  now waits for entity-ticking chunks; golem, pet and new slice fixtures use the
+  pinned native ticket-loading future before timed work. The banner healing
+  measurement begins after readiness. Tickets remain test-only and are released;
+  production skills do not force chunks. See `docs/DEVELOPMENT.md`.
+- The user approved all three 16px icon drafts before runtime export. The runtime
+  PNGs match the approved ignored preview exports byte for byte. Native banner
+  render-stack creation is deferred until active-world extraction. Area and
+  per-impact fall/splash markers use tracked positions and depth-tested geometry
+  independently of particle settings; rendered appearance remains manual.
+- Production audit `.local/combat-slice-jar-audit.json` confirms the new runtime
+  classes, native food hooks, matching class tuning/language/icons, valid JSON,
+  and exclusion of test/local content. There is no `combat_roster.json` in the
+  source resources or JAR. Tuning is in `stalker.json`, `weaver.json` and
+  `reaver.json`; older skills retain their existing tuning sources. Skills input
+  protocol is `skills/7`. JAR SHA256:
+  `FE68F4BCBEFD2C1DC6260A02244E6E889B601CE1C6BA37F8912C2AA8A36F96F3`.
+- Pending user client checks: held/released keyboard, Shift and mouse bindings;
+  ordinary bow switching, menus and focus loss; first/third-person bow poses;
+  banner model, ally/pet coverage and HUD; Firestorm indoors and on Minimal;
+  real multiplayer/latency, reconnects and retained-world restart behavior.
+  Automated server fixtures do not establish those client/lifecycle observations.
+
 ## Fishing and Exploration profession foundations (2026-11-12)
 
 - `scripts/Dev.ps1 verify`: **BUILD SUCCESSFUL**, **All 216 required tests passed :)**. Evidence:

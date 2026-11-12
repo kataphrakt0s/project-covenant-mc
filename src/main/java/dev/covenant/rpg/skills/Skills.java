@@ -60,6 +60,10 @@ public final class Skills {
                     .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Covenant.MOD_ID, "rage_storm"))));
 
     private Skills() {}
+    public static final DeferredHolder<EntityType<?>, EntityType<GroundSkillEntity>> GROUND_SKILL = ENTITIES.register("ground_skill", () ->
+            EntityType.Builder.<GroundSkillEntity>of(GroundSkillEntity::new, MobCategory.MISC).sized(.4f,1.8f)
+                    .clientTrackingRange(8).updateInterval(1).noSave().noSummon().fireImmune()
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath("covenant", "ground_skill"))));
 
     public static void register(IEventBus modBus) {
         ENTITIES.register(modBus);
@@ -78,6 +82,8 @@ public final class Skills {
         BloodFever.register();
         NeoForge.EVENT_BUS.addListener(ReaverSkillData::register);
         NeoForge.EVENT_BUS.addListener(WeaverSkillData::register);
+        NeoForge.EVENT_BUS.addListener(CombatSkillData::register);
+        NeoForge.EVENT_BUS.addListener(WarBanners::tick);
         SkillControls.register();
         SkillLifecycle.register();
         NeoForge.EVENT_BUS.addListener(Skills::tick);
@@ -96,6 +102,7 @@ public final class Skills {
             skill = WeaverSkillData.resolve(player, skill);
             skill = HunterPetData.resolve(player, skill);
             skill = ElementalGolemData.resolve(player, skill);
+            skill = CombatSkillData.resolve(player, skill);
             var runtime = player.getData(RpgData.SKILL_RUNTIME);
             if (runtime.executing) { return message("busy"); }
             Auras.reconcile(player);
@@ -111,9 +118,11 @@ public final class Skills {
             if (skill.effect() == SkillDefinition.Effect.COMBO) { return Combos.activate(player, skill); }
             double cost = RpgStats.scaleSkillValue(player, RpgStats.RESOURCE_COST, skill.cost());
             if (!ClassResources.canAfford(player, cost)) { return message("resource"); }
+            if (skill.effect() == SkillDefinition.Effect.CHANNEL) { return Barrage.start(player,skill); }
             long cast = Auras.active(player, Auras.Kind.ICY_VEINS) && SpellSkills.isSpell(skill) ? 0 : (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.CAST_TIME, skill.castTicks()));
             long cooldown = (long) Math.ceil(RpgStats.scaleSkillValue(player, RpgStats.COOLDOWN, skill.cooldownTicks()));
             if (cast == 0) { return execute(player, skill, cost, cooldown); }
+            Barrage.stop(player);
             runtime.cast = new PendingCast(skill, PlayerProfiles.getSelectedClass(player).orElseThrow(),
                     ClassResources.now(player) + cast, cost, cooldown);
             runtime.cast.begin(player, cast);
@@ -142,7 +151,7 @@ public final class Skills {
             if (Rooted.contains(player)) { return message("rooted"); }
             if (player.getData(RpgData.SKILL_RUNTIME).movement != null || player.isPassenger() || player.isSleeping()) { return message("busy"); }
         }
-        if (skill.effect() == SkillDefinition.Effect.BOW_SHOT) {
+        if (skill.effect() == SkillDefinition.Effect.BOW_SHOT || skill.effect() == SkillDefinition.Effect.CHANNEL) {
             var weapon = player.getMainHandItem();
             if (!(weapon.getItem() instanceof BowItem)) { return message("bow"); }
             if (!(player.getProjectile(weapon).getItem() instanceof ArrowItem)) { return message("arrow"); }
@@ -194,13 +203,19 @@ public final class Skills {
             }
             var destination = skill.effect() == SkillDefinition.Effect.TELEPORT ? Teleport.destination(player, skill.range()) : null;
             if (skill.effect() == SkillDefinition.Effect.TELEPORT && destination == null) { return message("destination"); }
+            var ground = skill.effect() == SkillDefinition.Effect.FIRESTORM || skill.effect() == SkillDefinition.Effect.WAR_BANNER
+                    ? GroundSkillEntity.prepare(player,skill) : null;
+            if ((skill.effect() == SkillDefinition.Effect.FIRESTORM || skill.effect() == SkillDefinition.Effect.WAR_BANNER) && ground == null) { return message("invalid_targeting"); }
+            if (ground != null && (ground.isRemoved() || validate(player,skill) != null)) { ground.discard(); return message("unavailable"); }
             // Commit before any damaging effect. A rejected entity add never replaces the previous trap.
             if (!ClassResources.consume(player, cost)) {
                 if (trap != null) { trap.discard(); }
                 if (storm != null) { storm.discard(); }
+                if (ground != null) { ground.discard(); }
                 return message("resource");
             }
             long now = ClassResources.now(player);
+            Barrage.stop(player);
             player.setData(RpgData.SKILLS, player.getData(RpgData.SKILLS).withCooldown(skill.id(), now + Math.max(1, cooldown)));
             player.getData(RpgData.SKILL_RUNTIME).nextActivation = now + 1;
             // Bow/spell execution and teleport endpoints own their release cue; other skills share this commit boundary.
@@ -214,6 +229,8 @@ public final class Skills {
                 case PASSIVE -> throw new IllegalStateException("Passives do not activate");
                 case BATTLE_CRY -> Auras.battleCry(player);
                 case RAGE_STORM -> storm.release();
+                case FIRESTORM, WAR_BANNER -> ground.release();
+                case CHANNEL -> throw new IllegalStateException("Channels use per-arrow commitment");
                 case AURA -> Auras.activate(player, skill);
                 case ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT -> SpellSkills.execute(player, skill);
                 case TRAP -> Traps.accept(player, trap);
@@ -252,6 +269,7 @@ public final class Skills {
             ElementalGolems.refresh(player);
             if (now % 5 == 0) { dev.covenant.rpg.progression.Progression.refreshView(player); }
             var type = PlayerProfiles.getSelectedClass(player).orElse(null);
+            Barrage.tick(player);
             var cast = runtime.cast;
             if (cast != null) {
                 if (!player.isAlive() || player.isSpectator() || type != cast.playerClass() || !SkillControls.canAct(player)

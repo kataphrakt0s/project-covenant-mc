@@ -1,5 +1,11 @@
 # Testing Strategy
 
+Implementation workflow and fixture/configuration standards live in
+[docs/TESTING.md](../docs/TESTING.md). Use `fast`, focused `test -Tests` runs and
+the final unfiltered `verify` gate. The design coverage below is a checklist,
+not a statement that automation or manual playtesting has passed; current
+evidence lives in [docs/VALIDATION.md](../docs/VALIDATION.md).
+
 High-value coverage: profile serialization/persistence; XP and level bounds; resource bounds; Affix Page serialization; item transfer/save-reload; safe copy/split; category resolution; stat aggregation/recalculation; dedicated-server classloading and multiplayer.
 
 For the planned progression slice, verify the integer XP curve's 50-XP opening

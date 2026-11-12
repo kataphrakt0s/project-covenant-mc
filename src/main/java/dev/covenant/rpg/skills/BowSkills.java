@@ -36,7 +36,7 @@ final class BowSkills {
             // Match NeoForge's weapon customization hook before applying the skill's explicit tuning.
             arrow = ((BowItem) bow.getItem()).customArrow(arrow, ammo, bow);
             double multiplier = AuraDamage.multiplier(player, false);
-            arrow.setBaseDamage((skill == SkillDefinition.ARCANE_ARROW ? 2 : 2 * skill.power()) * multiplier);
+            arrow.setBaseDamage((skill.id().equals(SkillDefinition.ARCANE_ARROW.id()) ? 2 : 2 * skill.power()) * multiplier);
             arrow.setData(RpgData.AURA_PROJECTILE_POWER, multiplier);
             ((ArrowPiercingAccessor) arrow).covenant$setPierceLevel((byte) (skill == SkillDefinition.PIERCING_SHOT ? 2 : 0));
             arrow.pickup = shot.ammunitionCost() == 0 || (multishot && index != 2)

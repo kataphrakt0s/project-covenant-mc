@@ -25,7 +25,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 public final class AuraDamage {
     public static final ResourceKey<DamageType> IMMOLATION = type("immolation"), ENCHANTING = type("enchanting");
     private static final List<ResourceKey<DamageType>> CALCULATED_TYPES = List.of(Bleeding.DAMAGE_TYPE, RageStorm.DAMAGE_TYPE, IMMOLATION, ENCHANTING,
-            type("fire_bolt"), type("ice_bolt"), type("lightning_bolt"),
+            type("fire_bolt"), type("firestorm"), type("ice_bolt"), type("lightning_bolt"),
             TrapKind.BEAR.damageType, TrapKind.FROST.damageType, TrapKind.FLAME.damageType, TrapKind.BLAST.damageType);
     private static ResourceKey<DamageType> type(String id) { return ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath("covenant", id)); }
     private static final ThreadLocal<Hit> HIT = new ThreadLocal<>();

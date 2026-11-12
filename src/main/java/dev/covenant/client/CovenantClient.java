@@ -50,6 +50,8 @@ public final class CovenantClient {
         NeoForge.EVENT_BUS.addListener(this::onKey);
         NeoForge.EVENT_BUS.addListener(this::onMouseButton);
         NeoForge.EVENT_BUS.addListener(SkillKeyMappings::started);
+        NeoForge.EVENT_BUS.addListener(SkillKeyMappings::tick);
+        NeoForge.EVENT_BUS.addListener(SkillKeyMappings::interaction);
         NeoForge.EVENT_BUS.addListener(SkillVisuals::arrowTick);
         NeoForge.EVENT_BUS.addListener(TrapVisuals::tick);
         NeoForge.EVENT_BUS.addListener(ControlVisuals::tick);
@@ -67,6 +69,7 @@ public final class CovenantClient {
         event.registerEntityRenderer(Skills.ICE_BOLT.get(), context -> new BoltRenderer<>(context, BoltRenderer.Kind.ICE));
         event.registerEntityRenderer(Skills.TRAP.get(), TrapRenderer::new);
         event.registerEntityRenderer(Skills.RAGE_STORM.get(), RageStormRenderer::new);
+        event.registerEntityRenderer(Skills.GROUND_SKILL.get(), GroundSkillRenderer::new);
     }
 
     private void registerKeys(RegisterKeyMappingsEvent event) {

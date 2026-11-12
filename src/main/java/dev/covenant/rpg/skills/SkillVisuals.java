@@ -171,10 +171,10 @@ public final class SkillVisuals {
             }
             return;
         }
-        var mote = skill == SkillDefinition.FIRE_BOLT ? CombatParticles.EMBER.get()
+        var mote = skill.id().equals(SkillDefinition.FIRE_BOLT.id()) || skill.effect() == SkillDefinition.Effect.FIRESTORM ? CombatParticles.EMBER.get()
                 : skill == SkillDefinition.ICE_BOLT ? CombatParticles.ICE_SHARD.get() : CombatParticles.LIGHTNING_MOTE.get();
         // Native count-zero packets preserve gentle rise or shard orientation without random velocity.
-        player.level().sendParticles(mote, hand.x, hand.y, hand.z, 0, 0, skill == SkillDefinition.FIRE_BOLT ? .018 : 0, 0, 1);
+        player.level().sendParticles(mote, hand.x, hand.y, hand.z, 0, 0, skill.id().equals(SkillDefinition.FIRE_BOLT.id()) || skill.effect() == SkillDefinition.Effect.FIRESTORM ? .018 : 0, 0, 1);
     }
 
     static void rageCharge(ServerPlayer player) {
@@ -221,7 +221,7 @@ public final class SkillVisuals {
     static void markArrow(AbstractArrow arrow, SkillDefinition skill) {
         int style = skill == SkillDefinition.ARCANE_ARROW ? ARCANE_STYLE
                 : skill == SkillDefinition.AIMED_SHOT ? AIMED_STYLE
-                : skill == SkillDefinition.MULTISHOT ? MULTISHOT_STYLE : PIERCING_STYLE;
+                : skill == SkillDefinition.MULTISHOT || skill.effect() == SkillDefinition.Effect.CHANNEL ? MULTISHOT_STYLE : PIERCING_STYLE;
         arrow.setData(RpgData.SKILL_SHOT_STYLE, style);
         arrow.setData(RpgData.SKILL_SHOT, true);
     }

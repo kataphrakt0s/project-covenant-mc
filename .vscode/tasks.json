@@ -2,6 +2,30 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Covenant: Fast checks",
+      "type": "process",
+      "command": "pwsh",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/Dev.ps1", "fast"],
+      "group": {"kind": "test", "isDefault": true},
+      "problemMatcher": []
+    },
+    {
+      "label": "Covenant: Focused GameTests",
+      "type": "process",
+      "command": "pwsh",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/Dev.ps1", "test", "-Tests", "${input:covenantTests}"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Covenant: Full verification",
+      "type": "process",
+      "command": "pwsh",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/Dev.ps1", "verify"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "Covenant: Build",
       "type": "process",
       "command": "pwsh",
@@ -22,6 +46,14 @@
       "command": "pwsh",
       "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/Dev.ps1", "doctor"],
       "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "covenantTests",
+      "type": "promptString",
+      "description": "GameTest ID or wildcard (use Dev.ps1 list-tests to discover IDs)",
+      "default": "pet_*"
     }
   ]
 }

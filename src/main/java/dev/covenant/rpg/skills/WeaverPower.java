@@ -59,7 +59,7 @@ public final class WeaverPower {
                 && loadout.bindings().containsValue(SkillDefinition.THREEFOLD_SYSTEM.id());
     }
     public static Element element(SkillDefinition skill) {
-        if (skill.id().equals(SkillDefinition.FIRE_BOLT.id())) { return Element.FIRE; }
+        if (skill.id().equals(SkillDefinition.FIRE_BOLT.id()) || skill.id().equals(SkillDefinition.FIRESTORM.id())) { return Element.FIRE; }
         if (skill.id().equals(SkillDefinition.ICE_BOLT.id())) { return Element.ICE; }
         return skill.id().equals(SkillDefinition.LIGHTNING_BOLT.id()) ? Element.LIGHTNING : null;
     }

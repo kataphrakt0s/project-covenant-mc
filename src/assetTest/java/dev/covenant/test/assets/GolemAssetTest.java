@@ -1,4 +1,4 @@
-package dev.covenant.example.gecko;
+package dev.covenant.test.assets;
 
 import com.geckolib.loading.loader.GeckoLibGsonLoader;
 import com.geckolib.loading.math.MathParser;

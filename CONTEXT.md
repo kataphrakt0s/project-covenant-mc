@@ -1,5 +1,31 @@
 # Project Covenant context
 
+## Test and validation workflow
+
+Use `scripts/Dev.ps1 fast` for standalone checks, `list-tests` to discover IDs,
+and `test -Tests 'feature_*'` for focused dedicated-server iteration. `build`
+includes fast checks and a production-JAR boundary audit; `verify` is the
+unfiltered full gate. GameTest success requires a fresh XML report with the
+expected case count and a clean process exit. Shared test-only player, chunk
+and completion-cleanup helpers live in `dev.covenant.test.fixture`; registration
+is owned by `CovenantTestMod`, and shipped-asset checks use `src/assetTest`.
+See [the test authoring and configuration guide](docs/TESTING.md). Client,
+multiplayer, retained-world restart and rendered acceptance remain separate.
+
+## Barrage, Firestorm and War Banner
+
+The next three Rank 1 combat skills are implemented, bringing the executable
+roster to 39. Barrage adds held input with per-arrow spending and no separate
+cooldown. Firestorm adds an aimed persistent area and one Fire charge per
+completed cast for learned Discharge. War Banner adds an indestructible stationary
+support source with shared healing and exhaustion protection, with no prerequisite.
+Each ground skill has one deployment per owner and follows transient trap cleanup.
+Tuning lives in the class files `skills/stalker.json`, `skills/weaver.json` and
+`skills/reaver.json`; these are not a complete migration of older skill constants.
+Held input advances the skills wire revision to `skills/7`. The user approved
+all three icon drafts before runtime export. See [skill contracts](docs/RPG_SKILLS.md#barrage-firestorm-and-war-banner)
+and [validation](docs/VALIDATION.md); client appearance/input feel remain manual.
+
 ## Summon polish acceptance and current scope
 
 Hunter's Pet is user-accepted and Phase 7 complete. Elemental Golem now has its

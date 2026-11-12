@@ -63,6 +63,14 @@ Shared meanings may reuse familiar shapes. Descriptive clarity takes priority
 over silhouette variety. The crimson/pale-blue/electric-blue elemental palette
 remains agreed. The workbench is acceptable for now and needs no further pass.
 
+Individual review, 2026-11-12: the user approved all three new 16px skill
+drafts before runtime export: **Barrage** uses three parallel native-style arrows,
+**Firestorm** uses falling crimson fire over a ground mark, and **War Banner**
+uses a familiar red banner on a wooden pole. Sources remain in ignored
+`models/gothic_rework/next_skill_icons.py`; the approved review sheet is ignored
+`.local/icon-review/next-skills/review.png`. This is icon-art approval, not
+Minecraft client validation of the skills or their effects.
+
 Individual review: **Cleave** uses the approved vanilla-shaped iron sword plus
 one broad sweep that widens in an arc toward the blade, with a small crimson
 grip accent. **The user approved the finished 16px icon**, including the widened

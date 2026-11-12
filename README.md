@@ -119,13 +119,18 @@ Follow [development setup](docs/DEVELOPMENT.md) to configure Java 25 and the
 local environment before using the project scripts:
 
 ```powershell
+.\scripts\Dev.ps1 fast
+.\scripts\Dev.ps1 test -Tests 'pet_*'
 .\scripts\Dev.ps1 build
-.\scripts\Dev.ps1 test
+.\scripts\Dev.ps1 verify
 ```
 
 `build` compiles, runs geometry checks, and packages
 `build/libs/covenant-0.1.0-dev.jar`. `test` runs the dedicated-server GameTests.
-Use `.\scripts\Dev.ps1 verify` to run both in one command.
+Use `.\scripts\Dev.ps1 verify` for the unfiltered full gate. `fast` runs standalone
+checks without a server; `list-tests` discovers IDs for focused `test -Tests`
+runs. [Testing and fixture guidelines](docs/TESTING.md) cover test placement,
+configuration, shared fixtures, incremental checks and result reports.
 The development guide also covers deployment to an isolated Prism instance.
 
 ## Documentation

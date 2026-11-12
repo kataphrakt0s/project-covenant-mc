@@ -1,0 +1,3 @@
+{
+  "barrage": { "cost": 6, "arrows_per_second": 3, "arrow_coefficient": 2 }
+}

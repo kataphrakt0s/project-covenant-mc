@@ -1,8 +1,10 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.skills.*;
 
-import com.mojang.authlib.GameProfile;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -12,10 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -553,6 +552,7 @@ public final class TrapGameTests {
     private static void check(boolean value, String message) { if (!value) { throw new IllegalStateException(message); } }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<Entity> entities = new ArrayList<>();
@@ -561,6 +561,7 @@ public final class TrapGameTests {
         final Vec3 origin;
 
         Fixture(GameTestHelper helper, int height) {
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper;
             var pos = helper.absolutePos(new BlockPos(2, height, 2));
             origin = new Vec3(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
@@ -570,11 +571,7 @@ public final class TrapGameTests {
         }
 
         ServerPlayer player(int x) {
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "trap-test-player"), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new Connection(PacketFlow.SERVERBOUND);
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            var player = TestPlayers.create(helper);
             players.add(player); player.setPos(origin.add(x, 0, 0)); player.setNoGravity(true);
             player.setGameMode(GameType.SURVIVAL); player.connection.markClientLoaded();
             player.setYRot(0); player.setXRot(0);
@@ -628,6 +625,8 @@ public final class TrapGameTests {
         }
 
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             listeners.forEach(net.neoforged.neoforge.common.NeoForge.EVENT_BUS::unregister); listeners.clear();
             entities.forEach(Entity::discard);
             players.forEach(player -> {

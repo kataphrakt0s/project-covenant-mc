@@ -14,7 +14,10 @@ import net.minecraft.resources.Identifier;
  */
 public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, double cost,
         int cooldownTicks, int castTicks, Effect effect, double power, double range) {
-    public enum Effect { BOW_SHOT, DISENGAGE, HUNTERS_PET, ELEMENTAL_GOLEM, CLEAVE, REND, RAGE_STORM, BATTLE_CRY, PASSIVE, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, DISCHARGE, THREEFOLD, TELEPORT, TRAP, AURA, COMBO }
+    public enum Effect { BOW_SHOT, CHANNEL, FIRESTORM, WAR_BANNER, DISENGAGE, HUNTERS_PET, ELEMENTAL_GOLEM, CLEAVE, REND, RAGE_STORM, BATTLE_CRY, PASSIVE, ARCANE_BOLT, ELEMENTAL_BOLT, LIGHTNING_BOLT, DISCHARGE, THREEFOLD, TELEPORT, TRAP, AURA, COMBO }
+    public static final SkillDefinition BARRAGE = define("barrage", PlayerClass.STALKER, 6, 0, 0, Effect.CHANNEL, 1, 0);
+    public static final SkillDefinition FIRESTORM = define("firestorm", PlayerClass.WEAVER, 40, 240, 15, Effect.FIRESTORM, 3, 24);
+    public static final SkillDefinition WAR_BANNER = define("war_banner", PlayerClass.REAVER, 35, 700, 0, Effect.WAR_BANNER, 1, 6);
     /** Rank 1: 35 Focus; 600-tick cooldown starts on defeat/dismissal, not summon. See HunterPetData. */
     public static final SkillDefinition HUNTERS_PET = define("hunters_pet", PlayerClass.STALKER, 35, 600, 0, Effect.HUNTERS_PET, 0, 0);
     /** Rank 1: 40 Mana; 600-tick cooldown after dismissal/defeat. Active presses cycle forms for free. */
@@ -73,7 +76,7 @@ public record SkillDefinition(Identifier id, Set<PlayerClass> allowedClasses, do
     public static final List<SkillDefinition> ALL = List.of(PIERCING_SHOT, AIMED_SHOT, DISENGAGE, HUNTERS_PET, ARCANE_ARROW, MULTISHOT, CLEAVE, REND, ARCANE_BOLT,
             LUNGING_COMBO, RIP_AND_RUSH, BATTLE_CRY, RAGE_STORM, BLOOD_FEVER, BEAR_TRAP, FROST_TRAP, FLAME_TRAP, BLAST_TRAP, FIRE_BOLT, ICE_BOLT, LIGHTNING_BOLT,
             DODGE_AURA, SWIFTNESS_AURA, RIPPING_AURA, FORTITUDE_AURA, RAGING_AURA, ICY_VEINS, FLAME_CLOAK, FREEZING_AURA, SHOCK_AURA, IMMOLATION_AURA, ENCHANTING_AURA,
-            DISCHARGE, THREEFOLD_SYSTEM, TELEPORT, ELEMENTAL_GOLEM);
+            DISCHARGE, THREEFOLD_SYSTEM, TELEPORT, ELEMENTAL_GOLEM, BARRAGE, FIRESTORM, WAR_BANNER);
 
     public SkillDefinition {
         allowedClasses = Set.copyOf(allowedClasses);

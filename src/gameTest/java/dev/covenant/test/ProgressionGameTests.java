@@ -1,7 +1,9 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import com.google.gson.JsonParser;
-import com.mojang.authlib.GameProfile;
 import dev.covenant.rpg.*;
 import dev.covenant.rpg.classes.PlayerClass;
 import dev.covenant.rpg.progression.*;
@@ -9,10 +11,7 @@ import dev.covenant.rpg.skills.*;
 import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -245,24 +244,16 @@ final class ProgressionGameTests {
     }
 
     static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper; final List<ServerPlayer> players = new ArrayList<>(); final List<Entity> mobs = new ArrayList<>();
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
-        Fixture(GameTestHelper helper) { this.helper = helper; }
+        Fixture(GameTestHelper helper) {
+            TestCleanup.onFinish(helper, this::close); this.helper = helper; }
         ServerPlayer player(PlayerClass type) {
             return player(type, null);
         }
         ServerPlayer player(PlayerClass type, List<net.minecraft.network.protocol.Packet<?>> packets) {
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "xp" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = packets == null ? new Connection(PacketFlow.SERVERBOUND) : new Connection(PacketFlow.SERVERBOUND) {
-                @Override public void send(net.minecraft.network.protocol.Packet<?> packet, io.netty.channel.ChannelFutureListener listener, boolean flush) {
-                    packets.add(packet); super.send(packet, listener, flush);
-                }
-                @Override public boolean isMemoryConnection() { return true; }
-            };
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            if (packets != null) { net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection); }
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            var player = TestPlayers.create(helper, packet -> { if (packets != null) { packets.add(packet); } });
             player.setGameMode(GameType.SURVIVAL); player.connection.markClientLoaded();
             player.setPos(helper.absoluteVec(new net.minecraft.world.phys.Vec3(2, 100, 2))); player.setNoGravity(true);
             player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
@@ -286,6 +277,8 @@ final class ProgressionGameTests {
             FixtureSkills.learn(player, skill.id(), true); SkillLoadouts.bind(player, 0, skill.id()); Auras.reconcile(player);
         }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             for (var player : players) { Auras.clear(player); if (helper.getLevel().getServer().getPlayerList().getPlayer(player.getUUID()) == player) { helper.getLevel().getServer().getPlayerList().remove(player); } }
             mobs.forEach(Entity::discard); teams.forEach(helper.getLevel().getScoreboard()::removePlayerTeam);
         }

@@ -9,5 +9,10 @@
     "cost": 10, "cooldown_ticks": 500, "stored_fraction": 0.25,
     "capacity": 6, "max_bonus": 0.3, "duration_ticks": 160
   },
-  "teleport": { "cost": 25, "cooldown_ticks": 200, "range": 8 }
+  "teleport": { "cost": 25, "cooldown_ticks": 200, "range": 8 },
+  "firestorm": {
+    "cost": 40, "cooldown_ticks": 240, "cast_ticks": 15, "range": 24,
+    "radius": 4, "duration_ticks": 120, "impacts_per_second": 6, "damage": 3,
+    "splash_radius": 1, "hit_interval_ticks": 10, "burn_ticks": 80, "fall_height": 4
+  }
 }

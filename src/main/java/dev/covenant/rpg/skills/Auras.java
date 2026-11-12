@@ -198,8 +198,10 @@ public final class Auras {
 
     /** All unexpired suppliers count, even where overlapping effects collapse into one modifier. */
     public static Set<UUID> supportOwners(LivingEntity target, boolean offensive) {
-        if (!target.hasData(RpgData.AURAS)) { return Set.of(); }
+        if (!target.hasData(RpgData.AURAS) && !target.hasData(RpgData.BANNER_COVERAGE)) { return Set.of(); }
         var owners = new HashSet<UUID>();
+        if (!offensive) { WarBanners.supportOwners(target, owners); }
+        if (!target.hasData(RpgData.AURAS)) { return owners; }
         long time = now(target);
         var state = target.getData(RpgData.AURAS);
         for (var maps : List.of(state.passive, state.active)) {

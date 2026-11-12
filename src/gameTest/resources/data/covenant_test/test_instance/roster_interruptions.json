@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "function": "covenant_test:roster_interruptions",
+  "environment": "covenant_test:combat_slice",
+  "type": "minecraft:function",
+  "max_ticks": 200
+}

@@ -4,7 +4,8 @@
     "covenant:fire_bolt",
     "covenant:immolation",
     "covenant:discharge_fire",
-    "covenant:discharge_explosion"
+    "covenant:discharge_explosion",
+    "covenant:firestorm"
   ],
   "replace": false
 }

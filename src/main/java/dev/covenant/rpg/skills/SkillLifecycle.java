@@ -20,6 +20,8 @@ public final class SkillLifecycle {
     /** Ends owned activity, committing deferred combo cooldowns before player replacement or saving. */
     public static void cancelPlayer(ServerPlayer player, Reason reason) {
         ClassResources.requireServer(player);
+        Barrage.stop(player);
+        GroundSkillEntity.clear(player);
         Combos.clear(player);
         HunterPets.lifecycle(player, reason);
         ElementalGolems.lifecycle(player,reason);
@@ -48,6 +50,7 @@ public final class SkillLifecycle {
 
     private static void clearTargetOnDeath(LivingEntity target) {
         target.removeData(RpgData.BLEED);
+        target.removeData(RpgData.BANNER_COVERAGE);
         target.removeEffect(Rooted.EFFECT);
         target.removeEffect(ArmorShred.EFFECT);
         target.removeEffect(Vulnerability.EFFECT);
@@ -65,6 +68,7 @@ public final class SkillLifecycle {
         for (var binding : previous.bindings().entrySet()) {
             if (!binding.getValue().equals(next.bindings().get(binding.getKey()))) {
                 Combos.bindingChanged(player, binding.getValue());
+                if (binding.getValue().equals(SkillDefinition.BARRAGE.id())) { Barrage.stop(player); }
             }
         }
         Auras.reconcile(player);

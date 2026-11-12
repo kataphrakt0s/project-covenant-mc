@@ -25,6 +25,9 @@ public final class RpgData {
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Covenant.MOD_ID);
     private static final DeferredRegister.DataComponents COMPONENTS =
             DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, Covenant.MOD_ID);
+    /** Transient target-local banner suppliers and one shared healing clock; never saved or death-copied. */
+    public static final Supplier<AttachmentType<dev.covenant.rpg.skills.WarBanners.Coverage>> BANNER_COVERAGE = ATTACHMENTS.register(
+            "banner_coverage", () -> AttachmentType.builder(dev.covenant.rpg.skills.WarBanners.Coverage::new).build());
     /** Server-only native arrow payload; does not depend on the temporary cosmetic trail. */
     public static final Supplier<AttachmentType<dev.covenant.rpg.skills.StalkerArrows.Shot>> STALKER_SHOT = ATTACHMENTS.register(
             "stalker_shot", () -> AttachmentType.builder(() -> dev.covenant.rpg.skills.StalkerArrows.Shot.EMPTY)

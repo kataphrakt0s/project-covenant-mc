@@ -1,5 +1,8 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.classes.PlayerClass;
 import dev.covenant.rpg.skills.*;
@@ -139,18 +142,15 @@ final class ElementalBoltGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final ServerPlayer player;
         final ArrayList<Entity> entities = new ArrayList<>();
         BlockPos wall;
         Fixture(GameTestHelper helper) {
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper;
-            var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(
-                    new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "bolt-test-player"), false);
-            player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            player = TestPlayers.create(helper);
             player.setGameMode(GameType.SURVIVAL);
             player.connection.markClientLoaded();
             player.setPos(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 90, 1))));
@@ -169,6 +169,8 @@ final class ElementalBoltGameTests {
             helper.getLevel().addFreshEntity(target); entities.add(target); return target;
         }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             entities.forEach(Entity::discard);
             helper.getLevel().getServer().getPlayerList().remove(player);
             if (wall != null) { helper.getLevel().setBlockAndUpdate(wall, Blocks.AIR.defaultBlockState()); }

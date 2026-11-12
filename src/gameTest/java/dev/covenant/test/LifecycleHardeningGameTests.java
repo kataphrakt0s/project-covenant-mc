@@ -1,6 +1,9 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestChunks;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -21,12 +24,9 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -209,17 +209,18 @@ final class LifecycleHardeningGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<Entity> entities = new ArrayList<>();
         final java.util.Set<net.minecraft.world.level.ChunkPos> forced = new java.util.HashSet<>();
-        final net.minecraft.server.level.TicketType laneTicket = new net.minecraft.server.level.TicketType(
-                net.minecraft.server.level.TicketType.NO_TIMEOUT, net.minecraft.server.level.TicketType.FLAG_LOADING
-                | net.minecraft.server.level.TicketType.FLAG_SIMULATION | net.minecraft.server.level.TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        final TestChunks laneTicket;
         boolean closed;
         final Vec3 origin;
 
         Fixture(GameTestHelper helper) {
+            laneTicket = new TestChunks(helper);
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper;
             origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 130, 1)));
         }
@@ -228,18 +229,13 @@ final class LifecycleHardeningGameTests {
             for (int x = net.minecraft.util.Mth.floor(origin.x - 4) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 128) >> 4; x++) {
                 for (int z = net.minecraft.util.Mth.floor(origin.z - 4) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 24) >> 4; z++) {
                     var chunk = new net.minecraft.world.level.ChunkPos(x, z);
-                    if (forced.add(chunk)) { helper.getLevel().getChunkSource().addTicketWithRadius(laneTicket, chunk, 2); }
+                    if (forced.add(chunk)) { laneTicket.load(chunk); }
                 }
             }
         }
 
         ServerPlayer player(PlayerClass type) {
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(),
-                    "life" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new Connection(PacketFlow.SERVERBOUND);
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            var player = TestPlayers.create(helper);
             player.setGameMode(GameType.SURVIVAL);
             player.connection.markClientLoaded();
             player.setPos(origin.add(players.size() * 12, 0, 0));
@@ -267,6 +263,8 @@ final class LifecycleHardeningGameTests {
         }
 
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             if (closed) { return; }
             closed = true;
             for (var player : players) {
@@ -274,7 +272,7 @@ final class LifecycleHardeningGameTests {
                 helper.getLevel().getServer().getPlayerList().remove(player);
             }
             entities.forEach(Entity::discard);
-            forced.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(laneTicket, chunk, 2)); forced.clear();
+            laneTicket.close(); forced.clear();
         }
     }
 }

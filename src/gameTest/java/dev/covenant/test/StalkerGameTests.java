@@ -1,6 +1,8 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -10,12 +12,9 @@ import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -330,6 +329,7 @@ final class StalkerGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final Vec3 origin;
         final List<ServerPlayer> players = new ArrayList<>();
@@ -337,6 +337,7 @@ final class StalkerGameTests {
         final List<BlockPos> blocks = new ArrayList<>();
         final Set<net.minecraft.world.level.ChunkPos> forced = new HashSet<>();
         Fixture(GameTestHelper helper, int height) {
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper; var pos = helper.absolutePos(new BlockPos(2, height, 2));
             origin = new Vec3(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
         }
@@ -348,10 +349,7 @@ final class StalkerGameTests {
             }
         }
         ServerPlayer player() {
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "stalker-test"), false);
-            var p = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new Connection(PacketFlow.SERVERBOUND); new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, p, cookie); players.add(p);
+            var p = TestPlayers.create(helper); players.add(p);
             p.connection.handleAcceptTeleportPacket(new net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket((int) get(p.connection, "awaitingTeleport")));
             p.setPos(origin.add((players.size() - 1) * 12, 0, 0)); p.connection.resetPosition();
             p.setGameMode(GameType.SURVIVAL); p.connection.markClientLoaded(); p.setNoGravity(true); p.setYRot(0); p.setXRot(0);
@@ -381,6 +379,8 @@ final class StalkerGameTests {
         double focus(ServerPlayer p) { return ClassResources.current(p, PlayerClass.STALKER); }
         void block(BlockPos pos) { helper.getLevel().setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState()); blocks.add(pos); }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             entities.forEach(Entity::discard);
             players.forEach(p -> { Combos.clear(p); Auras.clear(p); helper.getLevel().getServer().getPlayerList().remove(p); });
             blocks.forEach(pos -> helper.getLevel().setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState()));

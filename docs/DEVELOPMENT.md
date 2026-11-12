@@ -5,15 +5,23 @@ and isolate Gradle's cache, avoiding the default Java 24 installation.
 
 ```powershell
 .\scripts\Dev.ps1 doctor   # Java, Gradle, Prism, instance pins
+.\scripts\Dev.ps1 fast     # Standalone checks and test configuration audit; no server
+.\scripts\Dev.ps1 list-tests # Discover test IDs grouped by Java suite
 .\scripts\Dev.ps1 build    # Compile/check and package build/libs/covenant-0.1.0-dev.jar
-.\scripts\Dev.ps1 test     # Dedicated GameTests for RPG data/stats (separate from build)
-.\scripts\Dev.ps1 verify   # Build plus dedicated GameTests; recommended before handing off gameplay
+.\scripts\Dev.ps1 test     # All dedicated GameTests; use -Tests 'pet_*' for focused iteration
+.\scripts\Dev.ps1 verify   # Build plus ALL dedicated GameTests; rejects filters
 .\scripts\Dev.ps1 deploy   # Build and copy Covenant + pinned GeckoLib to the isolated Prism instance
 .\scripts\Dev.ps1 prism    # Build, deploy, and launch through Prism
 .\scripts\Dev.ps1 client   # Launch the source-based Gradle development client
 .\scripts\Dev.ps1 server   # Launch the development dedicated server
 .\scripts\Dev.ps1 data     # Run data generation once providers are added
 ```
+
+See [TESTING.md](TESTING.md) for the daily validation loop, suite ownership,
+fixture contracts, test JSON configuration and examples. Start with `fast` and a
+focused `test -Tests` selection; finish gameplay work with `verify`. The command
+checks the fresh XML result count in `build/reports/gameTest/results.xml` as well
+as the server exit code. Unchanged standalone checks use Gradle up-to-date tracking.
 
 Close the development game before deploying another build. Prism's instance is
 `Project Covenant - Dev (26.1.2)`; its baseline is NeoForge, Covenant and GeckoLib.
@@ -356,6 +364,9 @@ and old-preview rejection. These client checks remain manual.
 - `scripts/Dev.ps1 verify` runs both the production build/checks and dedicated
   GameTests in one command. Require the final server log's explicit required-test
   pass line; compilation or a successful task with no test sources is insufficient.
+- Use shared `fixture.TestPlayers`, `fixture.TestChunks` and `fixture.TestCleanup`
+  for connected actors, bounded entity-ticking lanes and failure/timeout cleanup.
+  See [TESTING.md](TESTING.md#fixture-contracts). `runBeforeTestEnd` is not teardown.
 - Packet regressions use NeoForge's registered handlers and native connection
   methods with embedded server players. They cover authority and state transitions,
   but do not substitute for two real clients with latency. For skill hardening,
@@ -368,16 +379,14 @@ and old-preview rejection. These client checks remain manual.
   an authoritative position change must update that anchor to survive the tick.
   `combo_connection_movement` covers both dash distances and walking handoff.
 - Define observable acceptance criteria before implementing a feature.
-- Build with `scripts/Dev.ps1 build`; this includes the dependency-free
-  `radialMenuTest` Java task for sector ordering, boundaries, the center dead zone,
-  and viewport sizing. `skillTreeLayoutTest` also checks full-tree visibility,
-  tier ordering and separate node bounds across GUI sizes. The standard Gradle
-  `test` task has no framework tests.
-- Run `scripts/Dev.ps1 test` for the RPG lifecycle GameTests on a dedicated test
-  server in ignored `runs/gametest`. It exits automatically with a failure code if
-  a required test fails. This is separate from `build`; test sources and fixtures
-  are excluded from the production JAR and normal client/server runs. See
-  `docs/RPG_DATA.md` and `docs/RPG_STATS.md` for coverage and manual lifecycle boundaries.
+- `fast`/`build` run all standalone geometry, Apply feedback and shipped asset
+  checks, plus the GameTest catalogue audit. `build` also audits the production
+  JAR for test/example leakage. The ordinary Gradle `test` task has no framework
+  tests; `NO-SOURCE` does not count as coverage.
+- `test` runs native dedicated GameTests in ignored `runs/gametest`, separately
+  from `build`. Use `list-tests` and `test -Tests 'feature_*'` during iteration;
+  `verify` always runs the complete suite. Test sources/resources are excluded
+  from production packaging and normal client/server runs.
 - For changed resources, registration, or client behavior, hand the relevant Prism
   smoke checks to the user; manual client testing follows the policy above.
 - For common gameplay changes, check dedicated-server startup and the relevant

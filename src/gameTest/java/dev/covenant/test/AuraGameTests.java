@@ -1,5 +1,9 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestChunks;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.skills.*;
 
 import dev.covenant.rpg.PlayerProfiles;
@@ -102,19 +106,17 @@ public final class AuraGameTests {
         var f = new Fixture(helper);
         // Pets are found through the native entity index; a one-block template can
         // border chunks that are not entity-ticking when the test function starts.
-        var ticket = new net.minecraft.server.level.TicketType(net.minecraft.server.level.TicketType.NO_TIMEOUT,
-                net.minecraft.server.level.TicketType.FLAG_LOADING | net.minecraft.server.level.TicketType.FLAG_SIMULATION
-                | net.minecraft.server.level.TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        var ticket = new TestChunks(helper);
         var chunks = new java.util.HashSet<net.minecraft.world.level.ChunkPos>();
         for (int x = net.minecraft.util.Mth.floor(f.origin.x - 7) >> 4; x <= net.minecraft.util.Mth.floor(f.origin.x + 7) >> 4; x++) {
             for (int z = net.minecraft.util.Mth.floor(f.origin.z - 7) >> 4; z <= net.minecraft.util.Mth.floor(f.origin.z + 13) >> 4; z++) {
                 var chunk = new net.minecraft.world.level.ChunkPos(x, z); chunks.add(chunk);
-                helper.getLevel().getChunkSource().addTicketWithRadius(ticket, chunk, 2);
+                ticket.load(chunk);
             }
         }
         Runnable cleanup = () -> {
             f.close();
-            chunks.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(ticket, chunk, 2));
+            ticket.close();
             chunks.clear();
         };
         helper.runBeforeTestEnd(cleanup);
@@ -464,6 +466,7 @@ public final class AuraGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<Entity> entities = new ArrayList<>();
@@ -472,13 +475,10 @@ public final class AuraGameTests {
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
         final Vec3 origin;
         boolean closed;
-        Fixture(GameTestHelper helper) { this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 110, 1))); }
+        Fixture(GameTestHelper helper) {
+            TestCleanup.onFinish(helper, this::close); this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 110, 1))); }
         ServerPlayer player(PlayerClass type, double z) {
-            var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(new com.mojang.authlib.GameProfile(UUID.randomUUID(), "aura" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            var player = TestPlayers.create(helper);
             player.setGameMode(GameType.SURVIVAL); player.connection.markClientLoaded();
             player.setPos(origin.add(0, 0, z)); player.setNoGravity(true); player.setYRot(0); player.setXRot(0);
             player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
@@ -523,6 +523,8 @@ public final class AuraGameTests {
         void tick() { for (var player : players) { player.doTick(); } }
         void block(BlockPos pos) { helper.getLevel().setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState()); blocks.add(pos); }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             if (closed) { return; }
             closed = true;
             listeners.forEach(NeoForge.EVENT_BUS::unregister);

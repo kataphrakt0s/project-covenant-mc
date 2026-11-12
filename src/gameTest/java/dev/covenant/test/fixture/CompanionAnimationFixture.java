@@ -1,4 +1,4 @@
-package dev.covenant.test;
+package dev.covenant.test.fixture;
 
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
@@ -23,8 +23,8 @@ import java.util.Map;
 import net.minecraft.resources.Identifier;
 
 /** Advances the pinned controller with real clips, without a client clock or renderer. */
-final class CompanionAnimationFixture {
-    static <T extends LivingEntity & GeoEntity> void checkActionRecovery(T pet, AnimatableManager<T> manager, String asset) throws ReflectiveOperationException {
+public final class CompanionAnimationFixture {
+    public static <T extends LivingEntity & GeoEntity> void checkActionRecovery(T pet, AnimatableManager<T> manager, String asset) throws ReflectiveOperationException {
         String prefix = "animation." + asset + ".";
         var id = Identifier.fromNamespaceAndPath("covenant", "entity/" + asset);
         var resource = "/assets/covenant/geckolib/animations/entity/" + asset + ".animation.json";

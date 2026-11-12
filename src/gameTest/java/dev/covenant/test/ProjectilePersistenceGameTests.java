@@ -1,6 +1,8 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.mixin.ArrowPiercingAccessor;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
@@ -17,10 +19,7 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -95,6 +94,7 @@ final class ProjectilePersistenceGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final ProblemReporter.Collector reporter = new ProblemReporter.Collector();
         final List<ServerPlayer> players = new ArrayList<>();
@@ -103,17 +103,13 @@ final class ProjectilePersistenceGameTests {
         net.minecraft.world.scores.PlayerTeam team;
 
         Fixture(GameTestHelper helper) {
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper;
             origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(2, 125, 2)));
         }
 
         ServerPlayer player(PlayerClass type, double z) {
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(),
-                    "shot" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new Connection(PacketFlow.SERVERBOUND);
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            var player = TestPlayers.create(helper);
             players.add(player);
             player.setGameMode(GameType.SURVIVAL); player.connection.markClientLoaded();
             player.setPos(origin.add(0, 0, z)); player.setNoGravity(true);
@@ -171,6 +167,8 @@ final class ProjectilePersistenceGameTests {
         }
 
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             for (var player : players) { Auras.clear(player); helper.getLevel().getServer().getPlayerList().remove(player); }
             entities.forEach(Entity::discard);
             if (team != null) { helper.getLevel().getScoreboard().removePlayerTeam(team); }

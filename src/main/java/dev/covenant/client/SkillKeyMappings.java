@@ -18,6 +18,9 @@ import org.lwjgl.glfw.GLFW;
 /** Eight rebindable logical slots. Dispatch only initial presses, with modified mappings taking priority. */
 final class SkillKeyMappings {
     private static final KeyMapping[] SLOTS = new KeyMapping[SkillLoadout.SLOT_COUNT];
+    private static int channelSlot=-1, heartbeat;
+    private static long channelSequence;
+    private static InputConstants.Key channelKey;
 
     private SkillKeyMappings() {}
 
@@ -61,12 +64,48 @@ final class SkillKeyMappings {
                     if ((binding.getKeyModifier() != KeyModifier.NONE) != (pass == 0)) { continue; }
                     if (binding.isActiveAndMatches(key)) {
                         if (minecraft.player.getData(RpgData.SKILL_LOADOUT).bindings().containsKey(slot)) {
-                            ClientPacketDistributor.sendToServer(new SkillNetworking.Use(slot));
+                            var id=minecraft.player.getData(RpgData.SKILL_LOADOUT).bindings().get(slot);
+                            if (dev.covenant.rpg.skills.SkillDefinition.BARRAGE.id().equals(id)) {
+                                stopChannel(); channelSlot=slot; channelKey=binding.getKey(); heartbeat=0;
+                                ClientPacketDistributor.sendToServer(new SkillNetworking.ChannelInput(slot,++channelSequence,true,true));
+                            } else { ClientPacketDistributor.sendToServer(new SkillNetworking.Use(slot)); }
                         }
                         return;
                     }
                 }
             }
         }
+    }
+
+    static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        if (channelSlot<0) { return; }
+        var mc=Minecraft.getInstance();
+        if (mc.player==null || mc.level==null) { channelSlot=-1; return; }
+        boolean down=channelKey.getType()==InputConstants.Type.MOUSE
+                ? GLFW.glfwGetMouseButton(mc.getWindow().handle(),channelKey.getValue())==GLFW.GLFW_PRESS
+                : channelKey.getType()==InputConstants.Type.KEYSYM
+                ? GLFW.glfwGetKey(mc.getWindow().handle(),channelKey.getValue())==GLFW.GLFW_PRESS : SLOTS[channelSlot].isDown();
+        if (!down || !mc.player.isAlive() || mc.screen!=null || mc.getOverlay()!=null || !mc.isWindowActive()
+                || !SLOTS[channelSlot].getKey().equals(channelKey) || !SLOTS[channelSlot].isConflictContextAndModifierActive()
+                || !dev.covenant.rpg.skills.SkillDefinition.BARRAGE.id().equals(mc.player.getData(RpgData.SKILL_LOADOUT).bindings().get(channelSlot))) {
+            stopChannel();
+        } else if (++heartbeat>=5) {
+            heartbeat=0;
+            ClientPacketDistributor.sendToServer(new SkillNetworking.ChannelInput(channelSlot,channelSequence,false,true));
+        }
+    }
+    private static void stopChannel() {
+        if (channelSlot>=0 && Minecraft.getInstance().getConnection()!=null) {
+            ClientPacketDistributor.sendToServer(new SkillNetworking.ChannelInput(channelSlot,channelSequence,false,false));
+        }
+        channelSlot=-1;
+    }
+    /** A mouse-bound channel must not also trigger vanilla's attack/use action on that same button. */
+    static void interaction(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+        if (channelSlot<0) { return; }
+        var mc=Minecraft.getInstance();
+        boolean conflict=event.isUseItem() && mc.options.keyUse.getKey().equals(channelKey)
+                || event.isAttack() && mc.options.keyAttack.getKey().equals(channelKey);
+        if (conflict) { event.setCanceled(true); event.setSwingHand(false); }
     }
 }

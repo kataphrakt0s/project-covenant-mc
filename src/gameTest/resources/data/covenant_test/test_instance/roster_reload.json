@@ -1,0 +1,7 @@
+{
+  "structure": "covenant_test:empty",
+  "function": "covenant_test:roster_reload",
+  "environment": "covenant_test:combat_slice_reload",
+  "type": "minecraft:function",
+  "max_ticks": 1200
+}

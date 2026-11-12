@@ -678,14 +678,49 @@ skill key to dismiss it. Rank 1 uses the accepted provisional balance of 40 heal
 #### Barrage
 Minimum character level: 5.
 
-Planned behavior: fire a rapid sequence of arrows while the skill keybind is held
+Implemented Rank 1 behavior: fire a rapid sequence of arrows while the skill keybind is held
 and sufficient Focus remains. Aim is adjustable throughout firing, allowing the
 player to concentrate on one enemy or sweep across several. Releasing the key or
 running out of sufficient Focus stops firing. There is no fixed burst duration.
 Each arrow spends Focus individually when it fires. Focus regeneration pauses
 while channeling Barrage and resumes when the channel ends. Movement remains
-allowed at normal bow-draw speed during the channel. Firing rate, damage, and
-per-arrow Focus cost are deferred.
+allowed at normal bow-draw speed during the channel.
+
+Agreed Rank 1 numerical baseline (implemented Rank 1): use the existing
+[[Project_Covenant_Stalker_Balance_Proposal]] values: three arrows per second,
+six Focus per arrow, and a native arrow base-damage coefficient of 2.0. These
+provisional values are implemented for playtesting. Barrage has no separate
+skill cooldown: Focus availability and the preserved firing interval limit use.
+After releasing or switching skills, a fresh press can resume Barrage once the
+player has sufficient Focus and the next arrow's firing interval has elapsed.
+
+Agreed firing cadence (implemented Rank 1): stopping and restarting Barrage preserves the
+earliest allowed time of its next arrow. Restarting cannot fire sooner than the
+existing interval permits, so repeated presses cannot exceed the configured
+three-arrows-per-second firing cadence. Resuming may wait for the remaining
+interval; releasing the key does not reset that interval.
+
+Agreed damage interruption (implemented Rank 1): ordinary damage and knockback do not end
+Barrage; the player retains aim control while firing continues. Effects that
+prevent acting, such as freezing, end the channel. Root alone does not prevent
+firing, following the existing distinction between movement and action control.
+
+Agreed channel interruption (implemented Rank 1): successfully activating another combat
+skill ends Barrage and activates that skill immediately. A rejected activation,
+such as a skill still on cooldown, leaves Barrage running. After interruption,
+resuming Barrage requires a fresh press of its keybind; continuing to hold the
+original key does not restart firing.
+
+Agreed ordinary bow interaction (implemented Rank 1): starting ordinary bow use ends
+Barrage and begins the normal bow draw. Starting Barrage during an existing
+ordinary draw cancels that draw without firing its arrow. Ordinary bow use and
+Barrage cannot fire simultaneously. Resuming Barrage after switching to ordinary
+bow use requires a fresh skill-key press.
+
+Agreed lifecycle (implemented Rank 1): owner death, logout, dimension/class change or
+unlearning ends Barrage under the existing skill cleanup policy. The channel
+does not resume after loading or reconnecting, and already-spent Focus is not
+refunded.
 
 #### Snipe
 Minimum character level: 10.
@@ -1207,10 +1242,62 @@ enemy encounter.
 #### War Banner
 Minimum character level: 25.
 
-Planned behavior: plant a temporary stationary banner that grants health
+No skill prerequisite; Enduring Cry is not required. This preserves the current
+tree and allows War Banner to be learned independently at level 25.
+
+Implemented Rank 1 behavior: plant a temporary stationary banner that grants health
 regeneration and prevents hunger loss for the player and nearby allies within
-its radius. Regeneration strength, range, duration, resource cost, and cooldown
-are deferred. Ally identification remains outside this design pass.
+its radius.
+
+Agreed Rank 1 numerical baseline (implemented Rank 1): use the existing
+[[Project_Covenant_Reaver_Balance_Proposal]] values: 35 Rage, a 35-second
+cooldown, a 12-second banner lifetime, a six-block radius, and regeneration of
+one health point per second. These provisional values are implemented for playtesting.
+
+Agreed placement (implemented Rank 1): activation immediately plants War Banner on the
+ground at the player's feet, with no wind-up or remote targeting. Placement
+requires valid supporting ground and clear space for the banner. Airborne or
+blocked placement fails without spending Rage or starting cooldown.
+
+Agreed overlap (implemented Rank 1): each recipient receives at most one War Banner
+regeneration effect, healing at the Rank 1 rate of one health point per second
+regardless of how many eligible banners cover them. Hunger protection does not
+stack. Losing one banner's coverage preserves the benefits while another
+eligible banner still covers the recipient. Overlap and coverage transitions
+must not create extra healing pulses beyond the shared regeneration rate.
+
+Agreed durability (implemented Rank 1): War Banner cannot be destroyed by damage during
+its lifetime. It has no health pool; attacks cannot end its support effect.
+The base lifetime remains 12 seconds, with normal expiry and lifecycle cleanup
+handled separately from damage.
+
+Agreed deployment limit (implemented Rank 1): each player may have at most one active War
+Banner. A successful recast replaces that player's previous banner; failed
+placement preserves the existing banner without spending Rage or starting a
+new cooldown. The limit remains in force when cooldown or duration modifiers
+allow an early recast.
+
+Agreed coverage and recipients (implemented Rank 1): use the existing aura ally policy for
+the owner, scoreboard teammates, and pets owned by the owner or those teammates.
+Coverage is a six-block spherical distance from the banner, with no line-of-sight
+requirement. Walls and nearby floors do not block support for eligible recipients
+within that range. Hunger protection applies only to recipients with a hunger
+system; the regeneration benefit also includes eligible pets.
+
+Agreed hunger protection (implemented Rank 1): while covered, prevent exhaustion from
+accumulating, preserving both hunger and saturation against exhaustion-driven
+loss. The banner restores neither hunger nor saturation and banks no prevented
+exhaustion for later repayment. Existing exhaustion is not cleared on entry;
+coverage must not create an exhaustion debt that drains food after leaving.
+This applies to exhaustion-producing actions such as sprinting, fighting and
+work, not only combat actions.
+
+Agreed lifecycle (implemented Rank 1): use existing trap cleanup rules. The banner and
+its source-owned benefits end on owner death, logout, dimension/class change,
+unlearning or the banner's chunk unloading. It does not keep chunks loaded or
+resume after loading. Expiry, replacement and cleanup refund no Rage and do
+not reset the already-committed cooldown. Other eligible banners may continue
+to supply their own coverage.
 
 #### Rip and Rush
 Minimum character level: 30.
@@ -1379,7 +1466,8 @@ See `docs/RPG_SKILLS.md` for defenses, persistence, and overlap rules.
 Minimum character level: 5.
 
 Implemented Rank 1: completed Fire/Ice/Lightning Bolt casts store one charge of
-that element while Discharge is learned, capped at five each, including misses.
+that element, and completed Firestorm casts store one Fire charge, while
+Discharge is learned, capped at five each, including misses.
 Activate for 30 Mana, a 0.5-second cast and twelve-second cooldown to consume all
 charges in a three-block player-centered area. Each charge adds one damage of
 its element before defenses. An empty bank rejects; an empty area is a paid cast.
@@ -1593,10 +1681,63 @@ are deferred.
 #### Firestorm
 Minimum character level: 20.
 
-Planned behavior: one cast starts a fixed-duration rain of fiery impacts over an
+Implemented Rank 1 behavior: one cast starts a fixed-duration rain of fiery impacts over an
 aimed ground area, igniting enemies hit. The player can move and cast other spells
-while the storm runs. Area size, impact damage and frequency, burn duration,
-storm duration, Mana cost, and cooldown are deferred.
+while the storm runs.
+
+Agreed Rank 1 numerical baseline (implemented, provisional for playtesting):
+
+| Parameter | Rank 1 |
+|---|---:|
+| Mana cost | 40 |
+| Cooldown | 12 seconds (240 game ticks) |
+| Cast time | 0.75 seconds (15 game ticks) |
+| Targeting range | 24 blocks |
+| Storm radius | 4 blocks |
+| Storm duration | 6 seconds (120 game ticks) |
+| Impact frequency | 6 per second across the whole storm |
+| Damage per impact | 3 health points before defenses |
+| Splash radius | 1 block |
+| Per-enemy hit interval | 0.5 seconds (10 game ticks), per storm |
+| Ignition | 4 seconds (80 game ticks) of native burning |
+
+Agreed targeting timing (implemented Rank 1): choose the aimed ground location when the
+cast finishes, allowing aim adjustments during the wind-up. Once created, the
+storm stays fixed at that location; later aim and player movement do not move it.
+
+Agreed indoor behavior (implemented Rank 1): Firestorm works indoors and underground.
+Fiery impacts form in the available space above the targeted ground, with solid
+blocks stopping individual impacts. Open sky is not required; low ceilings may
+shorten the falling-fire visuals.
+
+Agreed impact pattern (implemented Rank 1): fiery impacts land randomly across the storm
+area, each dealing damage within a small splash radius. Enemies can avoid
+individual impacts while inside the overall area. A short per-enemy hit interval
+limits repeated damage from overlapping impacts within a storm. Impact placement
+is not guaranteed to hit a stationary enemy; single-target damage can vary.
+Use the Rank 1 splash radius and hit interval above as the initial tuning.
+
+Agreed deployment limit (implemented Rank 1): each player may have at most one active
+Firestorm. A successful recast replaces that player's previous storm; a failed
+cast leaves the existing storm intact. The limit remains in force when cooldown
+or duration modifiers allow recasting before the previous storm expires.
+
+Agreed multiplayer overlap (implemented Rank 1): different players' Firestorms maintain
+independent per-enemy hit intervals. One player's impact does not consume
+another player's storm hit interval; each storm may attempt damage subject to
+existing defenses. Overlapping storms from multiple players can increase damage,
+while each player retains the one-storm deployment limit.
+
+Agreed Discharge integration (implemented Rank 1): each successfully completed Firestorm
+cast grants one Fire charge while Discharge is learned, using its existing
+charge cap. Grant the charge even if every impact misses, matching Fire Bolt.
+Individual impacts and burning ticks grant no additional charges.
+
+Agreed lifecycle (implemented Rank 1): use existing trap cleanup rules. The storm ends on
+owner death, logout, dimension/class change, unlearning or its containing chunk
+unloading. It does not keep chunks loaded or resume after loading. Expiry,
+replacement and cleanup refund no Mana and do not reset the already-committed
+cooldown.
 
 #### Weaver's Web
 Minimum character level: 20.

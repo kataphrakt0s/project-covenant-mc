@@ -19,7 +19,9 @@ Close the development game before replacing its JAR. If pins or ownership checks
 fail, inspect the local config and instance metadata before changing anything.
 
 Check APIs against the pinned sources and official NeoForge 26.1 documentation.
-Use focused tests where behavior warrants them. For common gameplay, verify
+Use `docs/TESTING.md` for fixture and configuration conventions. Iterate with
+`scripts/Dev.ps1 fast` and `test -Tests 'feature_*'`; `list-tests` discovers IDs.
+Use `verify` for the unfiltered final gameplay gate. For common gameplay, verify
 dedicated-server loading and applicable persistence/network lifecycles through
 automated checks. Do not present empty Gradle test tasks as test coverage.
 

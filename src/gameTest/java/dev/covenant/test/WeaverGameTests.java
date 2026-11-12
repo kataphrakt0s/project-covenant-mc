@@ -1,5 +1,9 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestChunks;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -82,6 +86,17 @@ final class WeaverGameTests {
     }
 
     static void dischargeMixed(GameTestHelper helper) {
+        var ticket = new TestChunks(helper);
+        var centerPos=helper.absolutePos(new BlockPos(1,240,1));
+        var center=new net.minecraft.world.level.ChunkPos(centerPos.getX()>>4,centerPos.getZ()>>4);
+        var chunks=new ArrayList<net.minecraft.world.level.ChunkPos>();
+        for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++) {
+            var chunk=new net.minecraft.world.level.ChunkPos(center.x()+dx,center.z()+dz);chunks.add(chunk);
+            ticket.load(chunk);
+        }
+        Runnable release=()->{ticket.close();chunks.clear();};
+        helper.runBeforeTestEnd(release);
+        helper.startSequence().thenWaitUntil(()->{for(var c:chunks)helper.assertTrue(helper.getLevel().areEntitiesActuallyLoadedAndTicking(c),"Discharge chain fixture chunks must tick");}).thenExecute(()->{
         try (var f = new Fixture(helper, 240)) {
             var p = f.player(); f.charge(p, 7, 7, 7);
             for (var e : WeaverPower.Element.values()) { near(WeaverPower.charges(p, e), 5, "Independent cap"); }
@@ -101,7 +116,8 @@ final class WeaverGameTests {
             FixtureSkills.learn(p, SkillDefinition.DISCHARGE.id(), false);
             check(!Auras.frozen(a), "Unlearning removes owned discharge freeze");
             helper.succeed();
-        }
+        } finally { release.run(); }
+        });
     }
 
     static void dischargeDefenses(GameTestHelper helper) {
@@ -393,16 +409,15 @@ final class WeaverGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper; final Vec3 origin;
         final List<ServerPlayer> players = new ArrayList<>(); final List<Entity> entities = new ArrayList<>();
         final java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> blocks = new java.util.HashMap<>();
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
-        Fixture(GameTestHelper helper, int height) { this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, height, 1))); }
+        Fixture(GameTestHelper helper, int height) {
+            TestCleanup.onFinish(helper, this::close); this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, height, 1))); }
         ServerPlayer player() {
-            var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(new com.mojang.authlib.GameProfile(UUID.randomUUID(), "wea" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var p = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND); new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, p, cookie);
+            var p = TestPlayers.create(helper);
             p.setGameMode(GameType.SURVIVAL); p.connection.markClientLoaded(); p.setNoGravity(true); p.setPos(origin);
             p.setYRot(0); p.setXRot(0); p.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
             PlayerProfiles.selectClass(p, PlayerClass.WEAVER); ClassResources.set(p, PlayerClass.WEAVER, 100); players.add(p); return p;
@@ -440,6 +455,8 @@ final class WeaverGameTests {
         double mana(ServerPlayer p) { return ClassResources.current(p, PlayerClass.WEAVER); }
         void tick() { for (var p : players) { p.doTick(); } }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             for (var p : players) {
                 entities.addAll(p.level().getEntitiesOfClass(ElementalBolt.class, p.getBoundingBox().inflate(64), bolt -> bolt.getOwner() == p));
                 SkillLifecycle.cancelPlayer(p, SkillLifecycle.Reason.LOGOUT); helper.getLevel().getServer().getPlayerList().remove(p);

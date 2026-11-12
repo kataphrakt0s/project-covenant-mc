@@ -1,6 +1,7 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -13,10 +14,7 @@ import dev.covenant.rpg.stats.RpgStats;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -29,11 +27,7 @@ final class RageGameTests {
     private RageGameTests() {}
 
     static void run(GameTestHelper helper) {
-        var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "rage-test-player"), false);
-        var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-        var connection = new Connection(PacketFlow.SERVERBOUND);
-        new io.netty.channel.embedded.EmbeddedChannel(connection);
-        helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        var player = TestPlayers.create(helper);
         var target = EntityType.HUSK.create(helper.getLevel(), EntitySpawnReason.COMMAND);
         try {
             var origin = helper.absolutePos(new BlockPos(2, 32, 2));

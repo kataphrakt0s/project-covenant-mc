@@ -2,7 +2,8 @@
 
 Read `CONTEXT.md` before feature work. Use `skills/covenant-development/SKILL.md`
 for the build, validation, and Prism deployment workflow. See `docs/DEVELOPMENT.md`
-for machine setup and commands.
+for machine setup and commands. Read `docs/TESTING.md` before adding or changing
+tests; use its shared fixtures and focused validation commands.
 
 For 3D model work, when available locally, use `skills/covenant-modeling/SKILL.md`
 and `docs/BLOCKBENCH.md`. These modeling tools, docs and sources are Git-ignored

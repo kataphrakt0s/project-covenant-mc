@@ -1,8 +1,22 @@
 param(
-    [ValidateSet('doctor', 'build', 'test', 'verify', 'deploy', 'prism', 'client', 'server', 'data')]
-    [string]$Task = 'build'
+    [ValidateSet('doctor', 'fast', 'list-tests', 'build', 'test', 'verify', 'deploy', 'prism', 'client', 'server', 'data')]
+    [string]$Task = 'build',
+    [string]$Tests
 )
 . "$PSScriptRoot/Environment.ps1"
+
+if ($PSBoundParameters.ContainsKey('Tests') -and $Task -notin @('test', 'list-tests')) {
+    throw '-Tests is supported only by test and list-tests. verify always runs the complete suite.'
+}
+$TestArguments = @()
+if ($PSBoundParameters.ContainsKey('Tests')) {
+    if ([string]::IsNullOrWhiteSpace($Tests)) { throw '-Tests must not be empty.' }
+    if ($Tests -notmatch ':') { $Tests = "covenant_test:$Tests" }
+    if ($Tests -cnotmatch '^covenant_test:[a-z0-9_*?]+$') {
+        throw '-Tests must be a covenant_test ID or wildcard pattern containing lowercase letters, digits, underscores, * or ?.'
+    }
+    $TestArguments = @("-PgameTests=$Tests")
+}
 
 function Publish-DevMod {
     Invoke-ProjectGradle -Tasks @('build')
@@ -55,8 +69,10 @@ switch ($Task) {
         Write-Host "Instance: $(Get-DevInstance)"
     }
     build { Invoke-ProjectGradle -Tasks @('build') }
-    test { Invoke-ProjectGradle -Tasks @('runGameTestServer') }
-    verify { Invoke-ProjectGradle -Tasks @('build', 'runGameTestServer') }
+    fast { Invoke-ProjectGradle -Tasks @('fastTest') }
+    'list-tests' { Invoke-ProjectGradle -Tasks (@('listGameTests') + $TestArguments) }
+    test { Invoke-ProjectGradle -Tasks (@('gameTest') + $TestArguments) }
+    verify { Invoke-ProjectGradle -Tasks @('verify') }
     deploy { Publish-DevMod }
     prism {
         Publish-DevMod

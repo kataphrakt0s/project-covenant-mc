@@ -868,6 +868,23 @@ Packaged audit passed 52 particle definitions / 322 sprite references. See
 Keep this roadmap as the production-order source; [[Art Direction]] owns the
 agreed style and open aesthetic decisions.
 
+## New combat skill slice: Barrage, Firestorm and War Banner (2026-11-12)
+
+The user reviewed and approved the three native 16px icon drafts before runtime
+export. Barrage uses parallel arrows, Firestorm falling crimson fire over a
+ground mark, and War Banner a familiar red flag on a wooden pole. Editable
+sources and the approved review sheet remain ignored in
+`models/gothic_rework/next_skill_icons.py` and `.local/icon-review/next-skills/`.
+
+Runtime presentation uses native bow poses and quiet arrow trails, a lazily
+created native red-banner item model, and crimson falling-fire particles.
+Supported area footprints and server-tracked individual fall/splash markers use
+depth-tested geometry so essential range information survives Minimal particles.
+The authoritative skill entity supplies real positions; rendering does not
+select targets or authorize damage. This new content does not change earlier
+phase acceptance. In-game banner appearance, first/third-person channel poses,
+indoor Firestorm clarity, Minimal, input feel and multiplayer remain manual.
+
 Related: [[Development Roadmap]], [[Abilities]], [[Progression Vertical Slice]],
 [development workflow](../docs/DEVELOPMENT.md),
 [itemization contract](../docs/ITEMIZATION.md),

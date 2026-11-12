@@ -345,6 +345,7 @@ The skill unlock levels and prerequisite relationships below preserve the curren
 | Focus cost | 6 per arrow (proposed) |
 | Firing rate | 3 arrows/second (proposed) |
 | Damage coefficient | 2.0 per arrow (proposed) |
+| Separate skill cooldown | None (agreed) |
 | Fixed channel duration | None |
 | Focus regeneration while channeling | Paused |
 
@@ -355,6 +356,37 @@ The skill unlock levels and prerequisite relationships below preserve the curren
 - Movement remains possible at normal bow-draw speed.
 - Focus regeneration pauses during the channel and resumes when it ends.
 - Uses native arrow behavior and damage calculation.
+
+Agreed cooldown behavior (implemented Rank 1): Barrage has no separate skill cooldown.
+Focus availability and the preserved firing interval limit use. After releasing
+or switching skills, a fresh press can resume firing once sufficient Focus is
+available and the next arrow's firing interval has elapsed.
+
+Agreed firing cadence (implemented Rank 1): stopping and restarting preserves the earliest
+allowed time of the next arrow. Restarting cannot fire sooner than the existing
+interval permits; repeated presses cannot exceed the configured firing cadence.
+Resuming may wait for the remaining interval, which releasing the key does not
+reset.
+
+Agreed damage interruption (implemented Rank 1): ordinary damage and knockback do not end
+Barrage; aiming remains under player control. Effects that prevent acting, such
+as freezing, end the channel. Root alone does not stop firing under the existing
+movement-versus-action control rules.
+
+Agreed channel interruption (implemented Rank 1): successfully activating another combat
+skill ends Barrage and activates that skill immediately. Rejected activations
+leave the channel running. Resuming after interruption requires a fresh Barrage
+key press; holding the original key does not restart firing.
+
+Agreed ordinary bow interaction (implemented Rank 1): starting ordinary bow use ends
+Barrage and begins the normal bow draw. Starting Barrage during an existing
+ordinary draw cancels that draw without firing its arrow. Ordinary bow use and
+Barrage cannot fire simultaneously; resuming Barrage requires a fresh skill-key
+press.
+
+Agreed lifecycle (implemented Rank 1): owner death, logout, dimension/class change or
+unlearning ends the channel under existing skill cleanup rules. It does not
+resume after loading or reconnecting, and spent Focus is not refunded.
 
 At base values, Barrage consumes 18 Focus per second and fires at the vanilla arrow damage coefficient. A full 100 Focus pool supports approximately 5.5 seconds of continuous firing, excluding timing and rounding.
 

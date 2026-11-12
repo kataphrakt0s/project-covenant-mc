@@ -645,7 +645,7 @@ Ripping Aura and Raging Aura combine additively for +40% bleed damage, not multi
 
 **Unlock:** Level 25  
 **Maximum rank:** 8  
-**Prerequisites:** Enduring Cry
+**Prerequisites:** None (agreed; Enduring Cry is not required)
 
 | Parameter | Rank 1 |
 |---|---:|
@@ -661,6 +661,44 @@ Plants a stationary banner that provides nearby allies:
 - Prevention of exhaustion-driven hunger loss while in range.
 
 It does not refill hunger or saturation.
+
+Agreed placement (implemented Rank 1): activation immediately plants the banner on the
+ground at the player's feet, with no wind-up or remote targeting. Valid
+supporting ground and clear space are required; airborne or blocked placement
+spends no Rage and starts no cooldown.
+
+Agreed overlap (implemented Rank 1): recipients receive at most one regeneration effect
+at one health point per second, independent of the number of covering banners.
+Hunger protection does not stack. Benefits remain while any eligible banner
+covers the recipient; overlap and coverage transitions cannot grant extra
+healing pulses beyond that shared rate.
+
+Agreed durability (implemented Rank 1): the banner cannot be destroyed by damage and has
+no health pool. Attacks cannot end its support effect; its base lifetime remains
+12 seconds, with normal expiry and lifecycle cleanup handled separately.
+
+Agreed deployment limit (implemented Rank 1): each player may have at most one active
+banner. A successful recast replaces their previous banner. Failed placement
+preserves the existing banner, spends no Rage and starts no new cooldown.
+Cooldown or duration modifiers do not bypass this deployment limit.
+
+Agreed coverage and recipients (implemented Rank 1): use existing aura allies: the owner,
+scoreboard teammates, and pets owned by them. Coverage is a six-block sphere
+centered on the banner and ignores line of sight, including walls and nearby
+floors. Regeneration includes eligible pets; hunger protection applies only to
+recipients with a hunger system.
+
+Agreed hunger protection (implemented Rank 1): prevent exhaustion from accumulating while
+covered, preserving hunger and saturation against exhaustion-driven loss without
+restoring either. Prevented exhaustion is never banked for repayment on leaving.
+Do not clear pre-existing exhaustion on entry. Protection applies to exhaustion
+from sprinting, fighting, work and other actions, including outside combat.
+
+Agreed lifecycle (implemented Rank 1): use existing trap cleanup rules. The banner and
+its benefits end on owner death, logout, dimension/class change, unlearning or
+its chunk unloading. It does not keep chunks loaded or resume after loading.
+Expiry, replacement and cleanup refund no Rage and do not reset its committed
+cooldown. Other eligible banners continue supplying their own coverage.
 
 **Purpose:** Area sustain and group defensive utility.
 

@@ -1,5 +1,10 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestChunks;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.CompanionAnimationFixture;
+import dev.covenant.test.fixture.FixtureSkills;
 import com.google.gson.JsonParser;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
@@ -397,32 +402,22 @@ final class HunterPetGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper; final Vec3 origin;
         final List<ServerPlayer> players = new ArrayList<>(); final List<Entity> entities = new ArrayList<>();
         final Map<BlockPos, net.minecraft.world.level.block.state.BlockState> blocks = new HashMap<>();
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
         final List<Runnable> cleanups = new ArrayList<>();
-        final net.minecraft.server.level.TicketType ticket = new net.minecraft.server.level.TicketType(
-                net.minecraft.server.level.TicketType.NO_TIMEOUT, net.minecraft.server.level.TicketType.FLAG_LOADING
-                | net.minecraft.server.level.TicketType.FLAG_SIMULATION | net.minecraft.server.level.TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        final TestChunks ticket;
         final Set<net.minecraft.world.level.ChunkPos> chunks = new HashSet<>();
         Fixture(GameTestHelper helper, int height) {
+            ticket = new TestChunks(helper);
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, height, 1)));
             for (int x = -4; x <= 19; x++) { for (int z = -4; z <= 4; z++) { block(x, -1, z, Blocks.STONE); } }
         }
         ServerPlayer player() {
-            var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(new com.mojang.authlib.GameProfile(UUID.randomUUID(), "pet" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var p = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND) {
-                // EmbeddedChannel is in-process but is not Netty's LocalChannel. Declare that
-                // explicitly so NeoForge does not expect an external config-sync handshake.
-                @Override public boolean isMemoryConnection() { return true; }
-            };
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, p, cookie);
-            // Animated pets send real GeckoLib payloads to tracking players; use NeoForge's
-            // fully negotiated mock setup instead of a vanilla-only embedded connection.
-            net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
+            var p = TestPlayers.create(helper);
             p.setGameMode(GameType.SURVIVAL); p.connection.markClientLoaded(); p.setNoGravity(true); p.setPos(origin);
             p.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
             PlayerProfiles.selectClass(p, PlayerClass.STALKER); ClassResources.set(p, PlayerClass.STALKER, 100); players.add(p);
@@ -433,7 +428,7 @@ final class HunterPetGameTests {
             for (int x = net.minecraft.util.Mth.floor(origin.x - 5) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 20) >> 4; x++) {
                 for (int z = net.minecraft.util.Mth.floor(origin.z - 5) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 5) >> 4; z++) {
                     var chunk = new net.minecraft.world.level.ChunkPos(x, z); chunks.add(chunk);
-                    helper.getLevel().getChunkSource().addTicketWithRadius(ticket, chunk, 2);
+                    ticket.load(chunk);
                 }
             }
         }
@@ -455,11 +450,13 @@ final class HunterPetGameTests {
         long companions(ServerPlayer p) { return helper.getLevel().getEntitiesOfClass(HunterPet.class, p.getBoundingBox().inflate(40), pet -> pet.isAlive() && pet.getOwner() == p).size(); }
         void tick() { for (var p : players) { p.doTick(); } }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             for (var p : players) { HunterPets.dismiss(p); helper.getLevel().getServer().getPlayerList().remove(p); }
             entities.forEach(Entity::discard); blocks.forEach((pos, state) -> helper.getLevel().setBlockAndUpdate(pos, state));
             teams.forEach(helper.getLevel().getScoreboard()::removePlayerTeam);
             cleanups.forEach(Runnable::run);
-            chunks.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(ticket, chunk, 2));
+            ticket.close();
         }
     }
     private static void resetThrottle(ServerPlayer p) {

@@ -1,6 +1,9 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestChunks;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -24,12 +27,9 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
@@ -955,15 +955,14 @@ final class SkillFeedbackGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final Vec3 origin;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<Entity> entities = new ArrayList<>();
         final List<BlockPos> blocks = new ArrayList<>();
         final List<Vec3> sounds = new ArrayList<>();
-        final net.minecraft.server.level.TicketType feedbackTicket = new net.minecraft.server.level.TicketType(
-                net.minecraft.server.level.TicketType.NO_TIMEOUT, net.minecraft.server.level.TicketType.FLAG_LOADING
-                | net.minecraft.server.level.TicketType.FLAG_SIMULATION | net.minecraft.server.level.TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        final TestChunks feedbackTicket;
         final java.util.Set<net.minecraft.world.level.ChunkPos> feedbackChunks = new java.util.HashSet<>();
         final java.util.Map<UUID, List<net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket>> particlePackets = new java.util.HashMap<>();
         final java.util.Map<UUID, List<LightningVisual>> beams = new java.util.HashMap<>();
@@ -972,6 +971,8 @@ final class SkillFeedbackGameTests {
         boolean closed;
 
         Fixture(GameTestHelper helper, int height) {
+            feedbackTicket = new TestChunks(helper);
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper;
             var pos = helper.absolutePos(new BlockPos(2, height, 2));
             origin = new Vec3(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
@@ -979,25 +980,17 @@ final class SkillFeedbackGameTests {
         }
 
         ServerPlayer player(PlayerClass playerClass, SkillDefinition skill) {
-            var identity = UUID.randomUUID();
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(identity, "fb" + identity.toString().substring(0, 8)), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
             var packets = new ArrayList<net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket>();
+            var links = new ArrayList<LightningVisual>();
+            var notices = new ArrayList<net.minecraft.network.protocol.game.ClientboundSystemChatPacket>();
+            var player = TestPlayers.create(helper, packet -> {
+                if (packet instanceof net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket particles) { packets.add(particles); }
+                if (packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket payload && payload.payload() instanceof LightningVisual beam) { links.add(beam); }
+                if (packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket notice) { notices.add(notice); }
+            });
             particlePackets.put(player.getUUID(), packets);
-            var links=new ArrayList<LightningVisual>(); beams.put(player.getUUID(),links);
-            var notices = new ArrayList<net.minecraft.network.protocol.game.ClientboundSystemChatPacket>(); messages.put(player.getUUID(), notices);
-            var connection = new Connection(PacketFlow.SERVERBOUND) {
-                @Override public void send(net.minecraft.network.protocol.Packet<?> packet, io.netty.channel.ChannelFutureListener listener, boolean flush) {
-                    if (packet instanceof net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket particles) { packets.add(particles); }
-                    if (packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket payload && payload.payload() instanceof LightningVisual beam) { links.add(beam); }
-                    if (packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket notice) { notices.add(notice); }
-                    super.send(packet, listener, flush);
-                }
-                @Override public boolean isMemoryConnection() { return true; }
-            };
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            beams.put(player.getUUID(), links);
+            messages.put(player.getUUID(), notices);
             players.add(player);
             try {
                 var pending = player.connection.getClass().getDeclaredField("awaitingTeleport");
@@ -1021,7 +1014,7 @@ final class SkillFeedbackGameTests {
             for (int x = net.minecraft.util.Mth.floor(origin.x - 12) >> 4; x <= net.minecraft.util.Mth.floor(origin.x + 12) >> 4; x++) {
                 for (int z = net.minecraft.util.Mth.floor(origin.z - 12) >> 4; z <= net.minecraft.util.Mth.floor(origin.z + 12) >> 4; z++) {
                     var chunk = new net.minecraft.world.level.ChunkPos(x, z);
-                    if (feedbackChunks.add(chunk)) { helper.getLevel().getChunkSource().addTicketWithRadius(feedbackTicket, chunk, 2); }
+                    if (feedbackChunks.add(chunk)) { feedbackTicket.load(chunk); }
                 }
             }
         }
@@ -1065,6 +1058,8 @@ final class SkillFeedbackGameTests {
         }
 
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             if (closed) { return; }
             closed = true;
             NeoForge.EVENT_BUS.unregister(listener);
@@ -1076,7 +1071,7 @@ final class SkillFeedbackGameTests {
                 helper.getLevel().getServer().getPlayerList().remove(player);
             }
             blocks.forEach(pos -> helper.getLevel().setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState()));
-            feedbackChunks.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(feedbackTicket, chunk, 2));
+            feedbackTicket.close();
         }
     }
 

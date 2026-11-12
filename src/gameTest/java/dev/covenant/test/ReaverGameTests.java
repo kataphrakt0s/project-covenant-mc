@@ -1,5 +1,8 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -328,19 +331,17 @@ final class ReaverGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<Entity> entities = new ArrayList<>();
         final List<BlockPos> blocks = new ArrayList<>();
         final List<net.minecraft.world.scores.PlayerTeam> teams = new ArrayList<>();
         final Vec3 origin;
-        Fixture(GameTestHelper helper) { this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 150, 1))); }
+        Fixture(GameTestHelper helper) {
+            TestCleanup.onFinish(helper, this::close); this.helper = helper; origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 150, 1))); }
         ServerPlayer player(PlayerClass type, double z) {
-            var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(new com.mojang.authlib.GameProfile(UUID.randomUUID(), "rev" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            var player = TestPlayers.create(helper);
             player.setGameMode(GameType.SURVIVAL); player.connection.markClientLoaded(); player.setNoGravity(true);
             player.setPos(origin.add(0, 0, z)); player.setYRot(0); player.setXRot(0);
             player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
@@ -373,6 +374,8 @@ final class ReaverGameTests {
         RageStorm storm(ServerPlayer player) { return storms().stream().filter(storm -> storm.getOwner() == player).findFirst().orElseThrow(() -> new IllegalStateException("Expected released storm")); }
         void tick() { for (var player : players) { player.doTick(); } }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             for (var player : players) { SkillLifecycle.cancelPlayer(player, SkillLifecycle.Reason.LOGOUT); helper.getLevel().getServer().getPlayerList().remove(player); }
             entities.forEach(Entity::discard);
             blocks.forEach(pos -> helper.getLevel().setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState()));

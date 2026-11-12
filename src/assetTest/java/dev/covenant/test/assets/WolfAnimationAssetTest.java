@@ -1,4 +1,4 @@
-package dev.covenant.example.gecko;
+package dev.covenant.test.assets;
 
 import com.geckolib.animation.AnimationProcessor;
 import com.geckolib.animation.object.LoopType;

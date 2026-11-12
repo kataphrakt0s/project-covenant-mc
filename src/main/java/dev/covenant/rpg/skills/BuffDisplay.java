@@ -58,9 +58,11 @@ public record BuffDisplay(long clockOffset, List<Row> rows) {
         var runtime = player.getData(RpgData.SKILL_RUNTIME);
         var auras = player.hasData(RpgData.AURAS) ? player.getData(RpgData.AURAS) : null;
         var golemForm=ElementalGolems.benefit(player);
+        boolean banner=WarBanners.covered(player);
         if (auras == null && runtime.rushSpeedUntil <= now && runtime.bloodFeverCount == 0
-                && (runtime.weaver == null || runtime.weaver.until <= now) && golemForm==null) { clear(player); return; }
+                && (runtime.weaver == null || runtime.weaver.until <= now) && golemForm==null && !banner) { clear(player); return; }
         var rows = new ArrayList<Row>();
+        if (banner) { rows.add(new Row(SkillDefinition.WAR_BANNER.id(),true,0,0)); }
         if (golemForm!=null) { rows.add(new Row(golemForm.benefitId(),true,0,0)); }
         if (auras != null) {
             for (var kind : AURA_KINDS) {

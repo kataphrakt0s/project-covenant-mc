@@ -30,7 +30,7 @@ final class SkillSounds {
         float volume = 0.55f;
         float pitch = 1.0f;
         switch (skill.effect()) {
-            case BOW_SHOT -> {
+            case BOW_SHOT, CHANNEL -> {
                 sound = SoundEvents.ARROW_SHOOT;
                 pitch = skill == SkillDefinition.AIMED_SHOT ? 0.85f
                         : skill == SkillDefinition.MULTISHOT ? 1.0f : 1.2f;
@@ -48,6 +48,8 @@ final class SkillSounds {
             case DISENGAGE -> { sound = SoundEvents.BREEZE_JUMP; volume = 0.4f; pitch = 1.3f; }
             case BATTLE_CRY -> { sound = SoundEvents.BREEZE_SHOOT; pitch = 0.65f; }
             case RAGE_STORM -> { sound = SoundEvents.BREEZE_SHOOT; volume = 0.65f; pitch = 0.9f; }
+            case FIRESTORM -> { sound = SoundEvents.FIRECHARGE_USE; volume = .5f; pitch = .7f; }
+            case WAR_BANNER -> { sound = SoundEvents.WOOL_PLACE; volume = .6f; pitch = .8f; }
             case DISCHARGE -> { sound = SoundEvents.GENERIC_EXPLODE.value(); volume = 0.6f; pitch = 1.6f; }
             case THREEFOLD -> { sound = SoundEvents.AMETHYST_BLOCK_RESONATE; pitch = 1.1f; }
             case TELEPORT -> { sound = SoundEvents.ENDERMAN_TELEPORT; volume = 0.35f; pitch = 1.3f; }

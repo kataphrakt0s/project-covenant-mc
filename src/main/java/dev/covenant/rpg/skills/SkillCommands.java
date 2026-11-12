@@ -101,7 +101,7 @@ public final class SkillCommands {
         var player = source.getPlayerOrException();
         source.sendSuccess(() -> cooldownFeedback(Skills.ignoresCooldowns(player)), false);
         for (var definition : SkillDefinition.ALL) {
-            var skill = HunterPetData.resolve(player, WeaverSkillData.resolve(player, ReaverSkillData.resolve(player, definition)));
+            var skill = CombatSkillData.resolve(player, HunterPetData.resolve(player, WeaverSkillData.resolve(player, ReaverSkillData.resolve(player, definition))));
             source.sendSuccess(() -> Component.translatable("commands.covenant.skill.entry", skill.id().toString(),
                     skill.displayName(), skill.description(),
                     dev.covenant.rpg.stats.RpgStats.scaleSkillValue(player, dev.covenant.rpg.stats.RpgStats.RESOURCE_COST, skill.cost()),

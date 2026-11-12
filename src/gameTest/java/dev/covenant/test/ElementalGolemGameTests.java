@@ -1,5 +1,10 @@
 package dev.covenant.test;
 
+import dev.covenant.test.fixture.TestChunks;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.CompanionAnimationFixture;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.stats.RpgStats;
@@ -12,7 +17,6 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.ChunkPos;
@@ -348,13 +352,16 @@ final class ElementalGolemGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper; final Vec3 origin;
         final List<ServerPlayer> players=new ArrayList<>(); final List<Entity> entities=new ArrayList<>();
         final List<net.minecraft.world.scores.PlayerTeam> teams=new ArrayList<>(); final List<Runnable> cleanup=new ArrayList<>();
         final Map<BlockPos,net.minecraft.world.level.block.state.BlockState> blocks=new HashMap<>();
         final Set<ChunkPos> chunks=new HashSet<>(); boolean closed;
-        final TicketType ticket=new TicketType(TicketType.NO_TIMEOUT,TicketType.FLAG_LOADING|TicketType.FLAG_SIMULATION|TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
+        final TestChunks ticket;
         Fixture(GameTestHelper helper,int height) {
+            ticket = new TestChunks(helper);
+            TestCleanup.onFinish(helper, this::close);
             this.helper=helper; origin=Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1,height,1)));
             helper.runBeforeTestEnd(() -> {
                 close();
@@ -363,7 +370,8 @@ final class ElementalGolemGameTests {
             for (int x=-4;x<=18;x++) { for (int z=-4;z<=4;z++) { block(x,-1,z,Blocks.STONE); } }
             for (int x=net.minecraft.util.Mth.floor(origin.x-4)>>4;x<=net.minecraft.util.Mth.floor(origin.x+19)>>4;x++) {
                 for (int z=net.minecraft.util.Mth.floor(origin.z-4)>>4;z<=net.minecraft.util.Mth.floor(origin.z+5)>>4;z++) {
-                    var chunk=new ChunkPos(x,z); chunks.add(chunk); helper.getLevel().getChunkSource().addTicketWithRadius(ticket,chunk,2);
+                    var chunk=new ChunkPos(x,z); chunks.add(chunk);
+                    ticket.load(chunk);
                 }
             }
         }
@@ -371,11 +379,7 @@ final class ElementalGolemGameTests {
             helper.assertTrue(helper.getLevel().areEntitiesActuallyLoadedAndTicking(chunk),"Golem fixture chunk "+chunk+" must tick entities");
         } }
         ServerPlayer player() {
-            var cookie=net.minecraft.server.network.CommonListenerCookie.createInitial(new com.mojang.authlib.GameProfile(UUID.randomUUID(),"golem"+UUID.randomUUID().toString().substring(0,7)),false);
-            var p=new ServerPlayer(helper.getLevel().getServer(),helper.getLevel(),cookie.gameProfile(),cookie.clientInformation());
-            var connection=new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND) { @Override public boolean isMemoryConnection() { return true; } };
-            new io.netty.channel.embedded.EmbeddedChannel(connection); helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection,p,cookie);
-            net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
+            var p = TestPlayers.create(helper);
             p.setGameMode(GameType.SURVIVAL); p.connection.markClientLoaded(); p.setNoGravity(true); p.setPos(origin);
             p.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1); PlayerProfiles.selectClass(p,PlayerClass.WEAVER);
             FixtureSkills.learn(p,SkillDefinition.ELEMENTAL_GOLEM.id(),true);
@@ -401,12 +405,14 @@ final class ElementalGolemGameTests {
         void tick() { if (!closed) { players.forEach(ServerPlayer::doTick); } }
         void run(Runnable action) { try { action.run(); } catch (RuntimeException|Error error) { close(); throw error; } }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             if (closed) { return; } closed=true;
             cleanup.forEach(Runnable::run);
             players.forEach(p -> { ElementalGolems.dismiss(p); helper.getLevel().getServer().getPlayerList().remove(p); });
             entities.forEach(Entity::discard); blocks.forEach((pos,state) -> helper.getLevel().setBlockAndUpdate(pos,state));
             teams.forEach(helper.getLevel().getScoreboard()::removePlayerTeam);
-            chunks.forEach(chunk -> helper.getLevel().getChunkSource().removeTicketWithRadius(ticket,chunk,2));
+            ticket.close();
         }
     }
     private static boolean key(Component value,String key) { return value.getContents() instanceof TranslatableContents t

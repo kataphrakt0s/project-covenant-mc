@@ -1,6 +1,8 @@
 package dev.covenant.test;
 
-import com.mojang.authlib.GameProfile;
+import dev.covenant.test.fixture.TestCleanup;
+import dev.covenant.test.fixture.TestPlayers;
+import dev.covenant.test.fixture.FixtureSkills;
 import dev.covenant.rpg.PlayerProfiles;
 import dev.covenant.rpg.RpgData;
 import dev.covenant.rpg.classes.PlayerClass;
@@ -18,12 +20,9 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -155,21 +154,19 @@ final class StatusDisplayGameTests {
     }
 
     private static final class Fixture implements AutoCloseable {
+        private boolean cleanupComplete;
         final GameTestHelper helper;
         final Vec3 origin;
         final List<ServerPlayer> players = new ArrayList<>();
         final List<PlayerTeam> teams = new ArrayList<>();
         boolean closed;
         Fixture(GameTestHelper helper) {
+            TestCleanup.onFinish(helper, this::close);
             this.helper = helper;
             origin = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(1, 245, 1)));
         }
         ServerPlayer player(PlayerClass type, double z) {
-            var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "status" + UUID.randomUUID().toString().substring(0, 8)), false);
-            var player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-            var connection = new Connection(PacketFlow.SERVERBOUND);
-            new io.netty.channel.embedded.EmbeddedChannel(connection);
-            helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie); players.add(player);
+            var player = TestPlayers.create(helper); players.add(player);
             try {
                 var pending = player.connection.getClass().getDeclaredField("awaitingTeleport"); pending.setAccessible(true);
                 player.connection.handleAcceptTeleportPacket(new net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket(pending.getInt(player.connection)));
@@ -198,6 +195,8 @@ final class StatusDisplayGameTests {
             catch (RuntimeException error) { close(); throw error; }
         }
         @Override public void close() {
+            if (cleanupComplete) { return; }
+            cleanupComplete = true;
             if (closed) { return; } closed = true;
             for (var player : players) {
                 SkillLifecycle.cancelPlayer(player, SkillLifecycle.Reason.LOGOUT);

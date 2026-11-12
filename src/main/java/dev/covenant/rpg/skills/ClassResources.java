@@ -111,7 +111,7 @@ public final class ClassResources {
                 ? (Auras.active(player, Auras.Kind.RAGING) ? 0 : Auras.passive(player, Auras.Kind.RAGING) ? -3 : -SkillConfig.RAGE_DEPLETION.get()) : regeneration(player, type);
         for (var other : PlayerClass.all()) {
             double amount = current(player, other);
-            if (other == type) { amount = Math.clamp(amount + delta / 4, 0, maximum(player, other)); }
+            if (other == type && !(other == PlayerClass.STALKER && Barrage.active(player))) { amount = Math.clamp(amount + delta / 4, 0, maximum(player, other)); }
             if (!previous.balances().containsKey(other.id()) || previous.balances().get(other.id()) != amount) {
                 next = next.withBalance(other.id(), amount);
             }

@@ -1,0 +1,194 @@
+import groovy.json.JsonSlurper
+import java.util.regex.Pattern
+import java.util.zip.ZipFile
+
+// Keep the test mod's required Covenant version in step with the production pin.
+def testedModVersion = project.mod_version
+tasks.named('processGameTestResources') {
+    inputs.property('testedModVersion', testedModVersion)
+    filesMatching('META-INF/neoforge.mods.toml') { expand mod_version: testedModVersion }
+}
+
+// Success markers make unchanged standalone checks incremental. Failed reruns remove the marker.
+def standaloneCheck = { String name, String sourceSet, String main, Object assets = [] ->
+    tasks.register(name, JavaExec) {
+        group = 'verification'
+        description = "Runs ${main} without a Minecraft server."
+        classpath = sourceSets[sourceSet].runtimeClasspath
+        mainClass = main
+        javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+        inputs.files(classpath).withPropertyName('runtime').withNormalizer(ClasspathNormalizer)
+        inputs.files(assets).withPropertyName('assets').withPathSensitivity(PathSensitivity.RELATIVE)
+        def marker = layout.buildDirectory.file("reports/standalone/${name}.passed")
+        outputs.file(marker)
+        doFirst { marker.get().asFile.delete() }
+        doLast {
+            marker.get().asFile.parentFile.mkdirs()
+            marker.get().asFile.text = "${main} passed\n"
+        }
+    }
+}
+def fastChecks = [
+    radialMenuTest: 'RadialMenuLayoutTest', lightningPathTest: 'LightningPathTest',
+    rageStormShapeTest: 'RageStormShapeTest', skillTreeLayoutTest: 'SkillTreeLayoutTest',
+    professionTreeLayoutTest: 'ProfessionTreeLayoutTest', applyFeedbackTest: 'ApplyFeedbackTest'
+].collect { name, main -> standaloneCheck(name, 'geometryTest', "dev.covenant.client.${main}") }
+def assetChecks = [wolfAnimationAssetTest: 'WolfAnimationAssetTest', golemAssetTest: 'GolemAssetTest'].collect { name, main ->
+    standaloneCheck(name, 'assetTest', "dev.covenant.test.assets.${main}", fileTree('src/main/resources/assets/covenant'))
+}
+// Disposable authoring exports remain opt-in and are not cached against unspecified files.
+tasks.register('geckoAssetTest', JavaExec) {
+    group = 'verification'
+    classpath = sourceSets.assetTest.runtimeClasspath
+    mainClass = 'dev.covenant.test.assets.GeckoAssetTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+    if (providers.gradleProperty('geckoAssets').isPresent()) { args providers.gradleProperty('geckoAssets').get() }
+}
+
+def catalogFile = file('src/gameTest/java/dev/covenant/test/CovenantTestMod.java')
+def resources = file('src/gameTest/resources/data/covenant_test')
+def testJava = file('src/gameTest/java/dev/covenant/test')
+def instanceFiles = fileTree(new File(resources, 'test_instance')).matching { include '**/*.json' }
+def suiteFiles = fileTree(testJava).matching { include '*GameTests.java' }
+def catalog = {
+    def registrations = []
+    (catalogFile.getText('UTF-8') =~ /FUNCTIONS\.register\("([a-z0-9_]+)", \(\) -> (\w+)::(\w+)\);/).each { match ->
+        registrations.add([id: "covenant_test:${match[1]}".toString(), suite: match[2], method: match[3]])
+    }
+    if (registrations.empty) { throw new GradleException('GameTest catalogue is empty or registration syntax changed.') }
+    registrations
+}
+def selection = providers.gradleProperty('gameTests').getOrElse('covenant_test:*')
+def selectedTests = {
+    if (!(selection ==~ /covenant_test:[a-z0-9_*?]+/)) {
+        throw new GradleException('gameTests must be a covenant_test: ID or wildcard pattern (* and ?).')
+    }
+    def pattern = Pattern.compile(selection.collect { c -> c == '*' ? '.*' : c == '?' ? '.' : Pattern.quote(c) }.join())
+    def selected = catalog().findAll { pattern.matcher(it.id).matches() }
+    if (selected.empty) { throw new GradleException("No GameTests match '${selection}'. Use listGameTests.") }
+    selected
+}
+tasks.register('validateGameTests') {
+    group = 'verification'
+    description = 'Checks registration, instance configuration and fixture boundaries before server startup.'
+    inputs.dir('src/gameTest')
+    def marker = layout.buildDirectory.file('reports/gameTest/catalogue.passed')
+    outputs.file(marker)
+    doLast {
+        marker.get().asFile.delete()
+        def entries = catalog()
+        def ids = entries.collect { it.id }
+        if (ids.toSet().size() != ids.size()) { throw new GradleException('Duplicate GameTest registration.') }
+        def instances = instanceFiles.files
+        def instanceIds = instances.collect { "covenant_test:${it.name - '.json'}".toString() }.toSet()
+        if (instanceIds != ids.toSet()) {
+            throw new GradleException("GameTest registrations/instances differ: missing JSON ${ids.toSet() - instanceIds}, missing registration ${instanceIds - ids.toSet()}")
+        }
+        instances.each { source ->
+            def data = new JsonSlurper().parse(source, 'UTF-8')
+            def id = "covenant_test:${source.name - '.json'}"
+            if (data.type != 'minecraft:function' || data.function != id || !(data.max_ticks instanceof Integer) || data.max_ticks <= 0
+                    || !(data.get('setup_ticks', 0) instanceof Integer) || data.get('setup_ticks', 0) < 0
+                    || data.get('required', true) != true || data.get('manual_only', false) != false
+                    || data.get('max_attempts', 1) != 1 || data.get('required_successes', 1) != 1) {
+                throw new GradleException("Invalid required, single-attempt GameTest definition: ${source}")
+            }
+            if (data.structure != 'covenant_test:empty') { throw new GradleException("Declare/audit a new fixture structure explicitly: ${source}") }
+            if (data.environment != 'minecraft:default') {
+                def environment = data.environment?.replace('covenant_test:', '')
+                if (!data.environment?.startsWith('covenant_test:') || !new File(resources, "test_environment/${environment}.json").isFile()) {
+                    throw new GradleException("Missing test environment in ${source}")
+                }
+            }
+        }
+        entries.each { entry ->
+            def source = new File(testJava, "${entry.suite}.java")
+            if (!source.isFile() || !(source.getText('UTF-8') =~ /\bstatic\s+void\s+${entry.method}\s*\(GameTestHelper\b/).find()) {
+                throw new GradleException("Missing GameTest method: ${entry.suite}.${entry.method}")
+            }
+        }
+        suiteFiles.each { source ->
+            if (source.name != 'SkillNetworkingGameTests.java' && (source.getText('UTF-8') =~ /new\s+(?:net\.minecraft\.network\.)?Connection\(/).find()) {
+                throw new GradleException("Use fixture.TestPlayers in ${source.name}")
+            }
+            if ((source.getText('UTF-8') =~ /new\s+(?:net\.minecraft\.server\.level\.)?TicketType\(/).find()) {
+                throw new GradleException("Use fixture.TestChunks in ${source.name}")
+            }
+        }
+        marker.get().asFile.parentFile.mkdirs()
+        marker.get().asFile.text = "${entries.size()} required GameTests; registrations and instances agree\n"
+        logger.lifecycle("Validated ${entries.size()} required GameTest definitions.")
+    }
+}
+tasks.register('listGameTests') {
+    group = 'verification'
+    dependsOn 'validateGameTests'
+    doLast {
+        def selected = selectedTests()
+        selected.groupBy { it.suite }.sort().each { suite, entries ->
+            logger.lifecycle("${suite}:\n  ${entries.collect { it.id }.sort().join('\n  ')}")
+        }
+        logger.lifecycle("${selected.size()} tests selected by ${selection}")
+    }
+}
+tasks.register('fastTest') {
+    group = 'verification'
+    description = 'Standalone geometry/feedback/assets, test configuration audit and example compilation; no server.'
+    dependsOn fastChecks, assetChecks, 'validateGameTests', 'compileGeckoExampleJava'
+}
+tasks.named('check') { dependsOn 'fastTest' }
+
+def report = layout.buildDirectory.file('reports/gameTest/results.xml')
+tasks.named('runGameTestServer') {
+    dependsOn 'validateGameTests'
+    doFirst {
+        def selected = selectedTests()
+        logger.lifecycle("Running ${selected.size()} required GameTests matching ${selection}")
+        report.get().asFile.parentFile.mkdirs()
+        report.get().asFile.delete()
+    }
+    doLast {
+        if (!report.get().asFile.isFile()) { throw new GradleException('GameTest server produced no XML report.') }
+        def xml = new groovy.xml.XmlSlurper().parse(report.get().asFile)
+        def cases = xml.'**'.findAll { it.name() == 'testcase' }
+        def expected = selectedTests().collect { it.id }.sort()
+        def actual = cases.collect { it.@name.text() }.sort()
+        if (actual != expected || cases.any { it.failure.size() || it.error.size() || it.skipped.size() }) {
+            throw new GradleException("GameTest report is incomplete or failed: ${report.get().asFile}")
+        }
+        logger.lifecycle("Verified ${cases.size()} GameTest results: ${report.get().asFile}")
+    }
+}
+tasks.register('gameTest') {
+    group = 'verification'
+    description = 'Dedicated GameTests; -PgameTests=covenant_test:pet_* selects a subset.'
+    dependsOn 'runGameTestServer'
+}
+def productionJar = tasks.named('jar').flatMap { it.archiveFile }
+tasks.register('checkProductionJar') {
+    group = 'verification'
+    dependsOn 'jar'
+    inputs.file(productionJar)
+    doLast {
+        new ZipFile(productionJar.get().asFile).withCloseable { jar ->
+            def forbidden = jar.entries().findAll { entry ->
+                entry.name.startsWith('dev/covenant/test/') || entry.name.startsWith('dev/covenant/example/')
+                        || entry.name.startsWith('data/covenant_test/') || entry.name.endsWith('Test.class')
+            }
+            if (!forbidden.empty) { throw new GradleException("Test/example content in production JAR: ${forbidden}") }
+            def metadata = jar.getEntry('META-INF/neoforge.mods.toml')
+            if (metadata == null || jar.getInputStream(metadata).getText('UTF-8').contains('covenant_test')) {
+                throw new GradleException('Missing production metadata or test mod metadata leaked into JAR.')
+            }
+        }
+    }
+}
+tasks.named('build') { dependsOn 'checkProductionJar' }
+tasks.register('verify') {
+    group = 'verification'
+    description = 'Production build plus every required dedicated GameTest.'
+    dependsOn 'build', 'gameTest'
+    if (providers.gradleProperty('gameTests').isPresent()) {
+        throw new GradleException('verify cannot be filtered. Use gameTest for focused iteration.')
+    }
+}
